@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import UTC, datetime
-from decimal import Decimal
 
 from websockets.asyncio.client import connect
+
+from ai_trader.ingestion.agg_trade import AggTrade
 
 STREAM_URL = "wss://data-stream.binance.vision/ws/btcusdt@aggTrade"
 SAMPLE_SIZE = 10
@@ -23,6 +24,7 @@ async def main() -> None:
         for number in range(1, SAMPLE_SIZE + 1):
             message = await asyncio.wait_for(websocket.recv(), timeout=30)
             event = json.loads(message)
+            trade = AggTrade.from_event(event)
 
             if number == 1:
                 print("\nFirst raw Binance event:")
@@ -30,20 +32,15 @@ async def main() -> None:
                 print("\nParsed trades:")
 
             trade_time = datetime.fromtimestamp(
-                event["T"] / 1000,
+                trade.trade_time_ms / 1000,
                 tz=UTC,
             ).isoformat(timespec="milliseconds")
 
-            price = Decimal(event["p"])
-            quantity = Decimal(event["q"])
-
-            # m=True means the buyer was the resting maker,
-            # so the incoming aggressive order was a sell.
-            aggressor_side = "SELL" if event["m"] else "BUY"
-
             print(
-                f"{number:02d} | id={event['a']} | {trade_time} | "
-                f"{aggressor_side:4} | price={price} | quantity={quantity}"
+                f"{number:02d} | id={trade.aggregate_trade_id} | "
+                f"{trade_time} | {trade.aggressor_side:4} | "
+                f"price={trade.price} | quantity={trade.quantity} | "
+                f"underlying_trades={trade.underlying_trade_count}"
             )
 
     print("Finished: received 10 aggregate trades.")
