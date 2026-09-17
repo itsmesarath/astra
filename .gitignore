@@ -1,0 +1,33 @@
+# Project environment
+.venv/
+.env
+.env.*
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Notebook-generated files
+.ipynb_checkpoints/
+
+# Local editor settings
+.vscode/
+
+# Large or generated project data
+data/raw/*
+data/processed/*
+checkpoints/*
+logs/*
+
+# Keep placeholder files that preserve empty directories in Git
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!checkpoints/.gitkeep
+!logs/.gitkeep
+
+# Operating-system files
+.DS_Store
+Thumbs.db
