@@ -24,6 +24,11 @@ async def main() -> None:
             message = await asyncio.wait_for(websocket.recv(), timeout=30)
             event = json.loads(message)
 
+            if number == 1:
+                print("\nFirst raw Binance event:")
+                print(json.dumps(event, indent=2))
+                print("\nParsed trades:")
+
             trade_time = datetime.fromtimestamp(
                 event["T"] / 1000,
                 tz=UTC,
@@ -37,8 +42,8 @@ async def main() -> None:
             aggressor_side = "SELL" if event["m"] else "BUY"
 
             print(
-                f"{number:02d} | {trade_time} | {aggressor_side:4} | "
-                f"price={price} | quantity={quantity}"
+                f"{number:02d} | id={event['a']} | {trade_time} | "
+                f"{aggressor_side:4} | price={price} | quantity={quantity}"
             )
 
     print("Finished: received 10 aggregate trades.")
