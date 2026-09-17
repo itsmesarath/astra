@@ -35,3 +35,24 @@ Binance market data
     -> hard risk engine
     -> paper-trading execution
     -> evaluation and retraining
+    
+## Local development setup
+
+Open Command Prompt in the project directory, then run:
+
+```cmd
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -e ".[dev]"
+python -m pip install -r requirements\gpu-cu132.txt
+```
+
+Verify the installation:
+
+```cmd
+python -m ai_trader.diagnostics
+python -m ruff check .
+python -m ruff format --check .
+python -m pytest -v
+```
