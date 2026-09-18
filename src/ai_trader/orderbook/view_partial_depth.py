@@ -4,19 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import json
-from decimal import Decimal
 
 from websockets.asyncio.client import connect
 
+from ai_trader.orderbook.snapshot import PartialDepthSnapshot
+
 STREAM_URL = "wss://data-stream.binance.vision/ws/btcusdt@depth5@100ms"
 SAMPLE_SIZE = 10
-
-
-def parse_levels(raw_levels: list[list[str]]) -> list[tuple[Decimal, Decimal]]:
-    """Convert Binance price and quantity strings to exact decimals."""
-    return [
-        (Decimal(price_text), Decimal(quantity_text)) for price_text, quantity_text in raw_levels
-    ]
 
 
 async def main() -> None:
@@ -29,46 +23,22 @@ async def main() -> None:
         for number in range(1, SAMPLE_SIZE + 1):
             message = await asyncio.wait_for(websocket.recv(), timeout=30)
             event = json.loads(message)
+            snapshot = PartialDepthSnapshot.from_event(event)
 
             if number == 1:
                 print("\nFirst raw depth snapshot:")
                 print(json.dumps(event, indent=2))
                 print("\nSnapshot summaries:")
 
-            bids = parse_levels(event["bids"])
-            asks = parse_levels(event["asks"])
-
-            if not bids or not asks:
-                raise ValueError("Snapshot must contain bids and asks.")
-
-            best_bid_price, best_bid_quantity = bids[0]
-            best_ask_price, best_ask_quantity = asks[0]
-
-            spread = best_ask_price - best_bid_price
-            midpoint = (best_bid_price + best_ask_price) / 2
-
-            total_bid_quantity = sum(
-                (quantity for _, quantity in bids),
-                Decimal("0"),
-            )
-            total_ask_quantity = sum(
-                (quantity for _, quantity in asks),
-                Decimal("0"),
-            )
-            total_quantity = total_bid_quantity + total_ask_quantity
-
-            imbalance = (
-                (total_bid_quantity - total_ask_quantity) / total_quantity
-                if total_quantity
-                else Decimal("0")
-            )
-
             print(
-                f"{number:02d} | update={event['lastUpdateId']} | "
-                f"bid={best_bid_price} ({best_bid_quantity} BTC) | "
-                f"ask={best_ask_price} ({best_ask_quantity} BTC) | "
-                f"spread={spread} | midpoint={midpoint} | "
-                f"top5_imbalance={imbalance:+.4f}"
+                f"{number:02d} | update={snapshot.update_id} | "
+                f"bid={snapshot.best_bid.price} "
+                f"({snapshot.best_bid.quantity} BTC) | "
+                f"ask={snapshot.best_ask.price} "
+                f"({snapshot.best_ask.quantity} BTC) | "
+                f"spread={snapshot.spread} | "
+                f"midpoint={snapshot.midpoint} | "
+                f"top5_imbalance={snapshot.imbalance:+.4f}"
             )
 
     print("Finished: received 10 top-five snapshots.")
