@@ -8,6 +8,7 @@ import urllib.request
 
 from websockets.asyncio.client import connect
 
+from ai_trader.features.orderbook import OrderBookFeatures
 from ai_trader.orderbook.depth_update import DepthUpdate
 from ai_trader.orderbook.local_book import LocalOrderBook, SequenceGapError
 
@@ -99,20 +100,26 @@ async def main() -> None:
         max_queue=1024,
     ) as websocket:
         book = await synchronize(websocket)
-        print("\nLive synchronized book:")
+        print("\nLive synchronized book features:")
 
         for number in range(1, DISPLAY_UPDATES + 1):
             update = await receive_update(websocket)
             book.apply(update)
 
+            features = OrderBookFeatures.from_book(
+                book,
+                levels=5,
+            )
+
             print(
-                f"{number:02d} | update={book.update_id} | "
-                f"bid={book.best_bid.price} "
-                f"({book.best_bid.quantity} BTC) | "
-                f"ask={book.best_ask.price} "
-                f"({book.best_ask.quantity} BTC) | "
-                f"spread={book.spread} | "
-                f"levels={len(book.bids)}/{len(book.asks)}"
+                f"{number:02d} | update={features.update_id} | "
+                f"bid={features.best_bid_price} | "
+                f"ask={features.best_ask_price} | "
+                f"spread={features.spread} | "
+                f"microprice={features.microprice:.8f} | "
+                f"depth5={features.bid_depth}/"
+                f"{features.ask_depth} BTC | "
+                f"imbalance5={features.imbalance:+.4f}"
             )
 
     print("Finished: local book remained continuous.")
