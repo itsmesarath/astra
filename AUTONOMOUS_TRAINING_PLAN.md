@@ -186,9 +186,9 @@ reserve final sessions so discovered patterns can be falsified out of sample.
 
 ## Next milestone
 
-Expand historical evidence across substantially more days and market regimes, reserving a larger
-final block before any new comparisons. Add cost-aware PnL, drawdown, turnover, and exposure metrics
-to historical walk-forward evaluation, then improve the 15-minute feature/threshold candidate using
-validation sessions only. The first 14-day study rejected every horizon; its two final sessions
-remain unevaluated. Only economically viable, walk-forward-stable setups should become QLoRA
-training examples or advance to autonomous paper evaluation.
+Replace the rejected 15-minute hypothesis using training and validation sessions only. Investigate
+lower-turnover entry filters, volatility-scaled barriers, and maker-versus-taker cost assumptions,
+then require positive net PnL, acceptable drawdown, and stability across folds. The 60-day study's
+final 10 sessions remain unevaluated and must be used only after a successor is frozen. Only an
+economically viable, walk-forward-stable setup should become QLoRA training examples or advance to
+autonomous paper evaluation.

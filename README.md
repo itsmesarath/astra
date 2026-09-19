@@ -76,6 +76,11 @@ The linear trainer and session-aware walk-forward evaluator detect this historic
 schema explicitly and preserve its ordered feature names in checkpoints and reports. They reject
 mixed or mismatched schemas even when the numeric dimensions happen to agree.
 
+For kline datasets, walk-forward reports also simulate one non-overlapping long position at a time.
+Use `--starting-balance` and `--position-fraction` to set research capital assumptions. Reports
+include cost-adjusted PnL, closed-trade drawdown, turnover, exposure, profit factor, and signals
+skipped while a prior trade was open. This remains offline evaluation and cannot place an order.
+
 ## Local development setup
 
 Open Command Prompt in the project directory, then run:

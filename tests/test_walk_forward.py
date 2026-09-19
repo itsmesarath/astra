@@ -139,6 +139,7 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
     source_path = tmp_path / "kline.csv"
     rows = []
     for session in ("one", "two", "three", "four"):
+        row_index = 0
         for direction in (-1, 0, 1):
             for _ in range(3):
                 row = {name: str(direction * 0.2) for name in KLINE_FEATURE_COLUMNS}
@@ -146,11 +147,22 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
                 row["close_location"] = "0.5"
                 row["target_direction"] = str(direction)
                 row["source_session"] = session
+                row["entry_time_ms"] = str(row_index * 2000)
+                row["future_event_time_ms"] = str(row_index * 2000 + 999)
+                row["net_return_bps"] = str(direction * 10)
                 rows.append(row)
+                row_index += 1
     with source_path.open("w", encoding="utf-8", newline="") as output_file:
         writer = csv.DictWriter(
             output_file,
-            fieldnames=(*KLINE_FEATURE_COLUMNS, "target_direction", "source_session"),
+            fieldnames=(
+                *KLINE_FEATURE_COLUMNS,
+                "target_direction",
+                "source_session",
+                "entry_time_ms",
+                "future_event_time_ms",
+                "net_return_bps",
+            ),
         )
         writer.writeheader()
         writer.writerows(rows)
@@ -171,3 +183,5 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
     assert report.feature_names == KLINE_MODEL_FEATURE_NAMES
     assert report.evaluated_sessions == ("three",)
     assert report.held_out_sessions == ("four",)
+    assert report.aggregate_economics is not None
+    assert report.aggregate_economics.net_pnl > 0

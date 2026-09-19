@@ -34,3 +34,36 @@ candidate, but two days are not sufficient as a durable final test.
 Next evidence should cover substantially more regimes, reserve a larger final block, and evaluate
 net PnL, drawdown, and turnover in addition to label precision. These results must not be presented
 as evidence of a profitable strategy.
+
+## 2025-01-01 through 2025-03-01 BTCUSDT Spot study
+
+This follow-up expanded the same 15-minute candidate to 60 UTC source sessions and 86,400 verified
+one-minute candles. The first 20 sessions seeded training, the next 30 sessions were evaluated by
+expanding walk-forward folds, and the final 10 sessions (February 20 through March 1) were excluded
+from fitting, selection, and reported metrics.
+
+The labeling, linear-model, and Spot decision thresholds remained consistent with the earlier
+study. Economic simulation allocated 10% of current balance per trade, allowed one long position at
+a time, and used the already cost-adjusted label return. Signals arriving during an open trade were
+skipped. Drawdown is measured at closed-trade equity points because candle data cannot reconstruct
+the exact intrabar equity path.
+
+| Metric | Result |
+| --- | ---: |
+| Validation rows | 40,950 |
+| Balanced accuracy | 0.4052 |
+| Macro F1 | 0.3988 |
+| Long signals | 764 |
+| Non-overlapping trades | 370 |
+| Winning / losing trades | 97 / 273 |
+| Starting / ending balance | $10,000.00 / $9,168.75 |
+| Net PnL | -$831.25 (-8.31%) |
+| Maximum closed-trade drawdown | 8.33% |
+| Turnover | 70.93x starting capital |
+| Exposure | 3.17% |
+| Profit factor | 0.179 |
+
+Decision: reject the 15-minute candidate. Expanding the evidence made the economic failure clearer,
+so the final 10 sessions must not be spent evaluating this rejected configuration. The next research
+iteration should change the setup economics or feature hypothesis using training/validation evidence
+and retain the final block for a genuinely frozen successor.

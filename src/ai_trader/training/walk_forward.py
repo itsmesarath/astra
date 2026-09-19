@@ -11,6 +11,14 @@ from pathlib import Path
 
 import numpy as np
 
+from ai_trader.backtesting.economic_metrics import (
+    EconomicConfig,
+    EconomicEvaluation,
+    TradeOutcome,
+    aggregate_economic_evaluations,
+    economic_evaluation_payload,
+    evaluate_spot_economics,
+)
 from ai_trader.trading.decision_policy import DecisionPolicy
 from ai_trader.trading.evaluate_decision_policy import (
     PolicyEvaluation,
@@ -36,6 +44,7 @@ from ai_trader.training.train_linear import (
 
 SOURCE_SESSION_COLUMN = "source_session"
 DEFAULT_OUTPUT_DIRECTORY = Path("data/processed/walk_forward")
+ECONOMIC_COLUMNS = {"entry_time_ms", "future_event_time_ms", "net_return_bps"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +53,7 @@ class SessionPartition:
 
     name: str
     partition: ModelPartition
+    outcomes: tuple[TradeOutcome, ...] | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,20 +69,23 @@ class WalkForwardFold:
     epochs_trained: int
     validation: ClassificationReport
     policy: PolicyEvaluation
+    economics: EconomicEvaluation | None
 
 
 @dataclass(frozen=True, slots=True)
 class WalkForwardReport:
-    """Aggregate validation evidence without held-out-session access."""
+    """Aggregate validation evidence without held-out-session use."""
 
     source_path: Path
     feature_names: tuple[str, ...]
+    economic_config: EconomicConfig
     total_sessions: int
     evaluated_sessions: tuple[str, ...]
     held_out_sessions: tuple[str, ...]
     folds: tuple[WalkForwardFold, ...]
     aggregate_validation: ClassificationReport
     aggregate_policy: PolicyEvaluation
+    aggregate_economics: EconomicEvaluation | None
 
 
 def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
@@ -91,10 +104,16 @@ def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
             feature_names = infer_model_feature_names(reader.fieldnames)
         except ValueError as error:
             raise ValueError(f"{path.name}: {error}") from error
+        economic_columns = ECONOMIC_COLUMNS & set(reader.fieldnames)
+        if economic_columns and economic_columns != ECONOMIC_COLUMNS:
+            missing_text = ", ".join(sorted(ECONOMIC_COLUMNS - economic_columns))
+            raise ValueError(f"{path.name} has incomplete economic columns: {missing_text}.")
+        has_economic_outcomes = economic_columns == ECONOMIC_COLUMNS
 
         session_names: list[str] = []
         session_features: list[list[np.ndarray]] = []
         session_targets: list[list[int]] = []
+        session_outcomes: list[list[TradeOutcome]] = []
         completed_sessions: set[str] = set()
         current_session: str | None = None
 
@@ -114,6 +133,7 @@ def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
                 session_names.append(session)
                 session_features.append([])
                 session_targets.append([])
+                session_outcomes.append([])
                 current_session = session
 
             try:
@@ -129,6 +149,17 @@ def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
 
             session_features[-1].append(features)
             session_targets[-1].append(target)
+            if has_economic_outcomes:
+                try:
+                    outcome = TradeOutcome(
+                        entry_time_ms=int(row["entry_time_ms"]),
+                        exit_time_ms=int(row["future_event_time_ms"]),
+                        net_return_bps=float(row["net_return_bps"]),
+                    )
+                    outcome.validate()
+                except ValueError as error:
+                    raise ValueError(f"{path.name} line {line_number}: {error}") from error
+                session_outcomes[-1].append(outcome)
 
     if not session_names:
         raise ValueError(f"{path.name} contains no data rows.")
@@ -141,11 +172,13 @@ def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
                 targets=np.asarray(targets, dtype=np.int64),
                 feature_names=feature_names,
             ),
+            outcomes=tuple(outcomes) if has_economic_outcomes else None,
         )
-        for name, features, targets in zip(
+        for name, features, targets, outcomes in zip(
             session_names,
             session_features,
             session_targets,
+            session_outcomes,
             strict=True,
         )
     )
@@ -221,6 +254,7 @@ def run_walk_forward(
     minimum_training_sessions: int = 2,
     held_out_session_count: int = 1,
     policy: DecisionPolicy | None = None,
+    economic_config: EconomicConfig | None = None,
 ) -> WalkForwardReport:
     """Run expanding-window validation while reserving final sessions."""
     if minimum_training_sessions <= 0:
@@ -229,7 +263,8 @@ def run_walk_forward(
         raise ValueError("Held-out session count must be positive.")
 
     sessions = load_session_partitions(source_path)
-    active_policy = policy or DecisionPolicy()
+    active_policy = policy or DecisionPolicy(allow_short=False)
+    active_economic_config = economic_config or EconomicConfig()
     required_sessions = minimum_training_sessions + held_out_session_count + 1
     if len(sessions) < required_sessions:
         raise ValueError(
@@ -259,6 +294,16 @@ def run_walk_forward(
             validation_session.partition.targets.tolist(),
             active_policy,
         )
+        economics = (
+            evaluate_spot_economics(
+                probabilities.tolist(),
+                validation_session.outcomes,
+                active_policy,
+                active_economic_config,
+            )
+            if validation_session.outcomes is not None
+            else None
+        )
         folds.append(
             WalkForwardFold(
                 index=len(folds) + 1,
@@ -270,13 +315,18 @@ def run_walk_forward(
                 epochs_trained=fit.epochs_trained,
                 validation=fit.validation,
                 policy=policy_report,
+                economics=economics,
             )
         )
 
     immutable_folds = tuple(folds)
+    fold_economics = tuple(fold.economics for fold in immutable_folds if fold.economics is not None)
+    if fold_economics and len(fold_economics) != len(immutable_folds):
+        raise ValueError("Economic outcome availability must be consistent across sessions.")
     return WalkForwardReport(
         source_path=source_path,
         feature_names=sessions[0].partition.feature_names,
+        economic_config=active_economic_config,
         total_sessions=len(sessions),
         evaluated_sessions=tuple(fold.validation_session for fold in immutable_folds),
         held_out_sessions=tuple(session.name for session in sessions[validation_stop:]),
@@ -286,6 +336,11 @@ def run_walk_forward(
         ),
         aggregate_policy=aggregate_policy_evaluations(
             tuple(fold.policy for fold in immutable_folds),
+        ),
+        aggregate_economics=(
+            aggregate_economic_evaluations(fold_economics, active_economic_config)
+            if fold_economics
+            else None
         ),
     )
 
@@ -331,11 +386,17 @@ def write_walk_forward_report(
         "feature_names": list(report.feature_names),
         "training_configuration": asdict(config),
         "decision_policy": asdict(policy),
+        "economic_configuration": asdict(report.economic_config),
         "total_sessions": report.total_sessions,
         "evaluated_sessions": list(report.evaluated_sessions),
         "held_out_sessions": list(report.held_out_sessions),
         "aggregate_validation": classification_report_payload(report.aggregate_validation),
         "aggregate_policy": policy_evaluation_payload(report.aggregate_policy),
+        "aggregate_economics": (
+            economic_evaluation_payload(report.aggregate_economics)
+            if report.aggregate_economics is not None
+            else None
+        ),
         "folds": [
             {
                 "index": fold.index,
@@ -347,6 +408,11 @@ def write_walk_forward_report(
                 "epochs_trained": fold.epochs_trained,
                 "validation": classification_report_payload(fold.validation),
                 "policy": policy_evaluation_payload(fold.policy),
+                "economics": (
+                    economic_evaluation_payload(fold.economics)
+                    if fold.economics is not None
+                    else None
+                ),
             }
             for fold in report.folds
         ],
@@ -371,6 +437,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--class-weight-power", type=float, default=1.0)
     parser.add_argument("--minimum-direction-probability", type=float, default=0.55)
     parser.add_argument("--minimum-probability-margin", type=float, default=0.10)
+    parser.add_argument("--starting-balance", type=float, default=10_000.0)
+    parser.add_argument("--position-fraction", type=float, default=1.0)
     parser.add_argument(
         "--allow-short",
         action="store_true",
@@ -402,12 +470,17 @@ def main() -> None:
         minimum_probability_margin=args.minimum_probability_margin,
         allow_short=args.allow_short,
     )
+    economic_config = EconomicConfig(
+        starting_balance=args.starting_balance,
+        position_fraction=args.position_fraction,
+    )
     report = run_walk_forward(
         args.path,
         config,
         minimum_training_sessions=args.minimum_training_sessions,
         held_out_session_count=args.held_out_session_count,
         policy=policy,
+        economic_config=economic_config,
     )
     output_path = args.output or (
         DEFAULT_OUTPUT_DIRECTORY / f"{args.path.stem}_linear_walk_forward.json"
@@ -440,6 +513,17 @@ def main() -> None:
         f"coverage={report.aggregate_policy.coverage:.6f}, "
         f"directional_precision={report.aggregate_policy.directional_precision:.6f}"
     )
+    if report.aggregate_economics is not None:
+        economics = report.aggregate_economics
+        print(
+            "Aggregate economics: "
+            f"trades={economics.accepted_trades}, "
+            f"net_pnl={economics.net_pnl:.2f}, "
+            f"return={economics.return_pct:.4f}%, "
+            f"closed_trade_drawdown={economics.maximum_closed_trade_drawdown_pct:.4f}%, "
+            f"turnover={economics.turnover_multiple:.4f}x, "
+            f"exposure={economics.exposure_ratio:.4f}"
+        )
     print(f"Report: {output_path.resolve()}")
 
 
