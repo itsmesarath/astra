@@ -35,7 +35,31 @@ Binance market data
     -> hard risk engine
     -> paper-trading execution
     -> evaluation and retraining
-    
+```
+
+## Public historical Spot data
+
+The historical downloader uses Binance's unauthenticated public-data archive. It verifies each
+published SHA-256 checksum, retains the original ZIP and checksum, and writes a normalized CSV with
+millisecond timestamps plus a request manifest. It never reads API credentials or submits orders.
+
+Download completed daily BTCUSDT 5-minute candles:
+
+```cmd
+python -m ai_trader.ingestion.download_binance_history --data-type klines --interval 5m --start-date 2024-01-01 --end-date 2024-01-31
+```
+
+Download completed daily aggregate trades:
+
+```cmd
+python -m ai_trader.ingestion.download_binance_history --data-type aggTrades --start-date 2024-01-01 --end-date 2024-01-02
+```
+
+Outputs go under `data/raw/binance_spot_history` by default. A request cannot include the current
+UTC day because Binance daily archives are only reproducible after a day has completed. Historical
+archives do not contain order-book depth, so kline/aggregate-trade models must use a separate
+feature schema from the live depth-capture pipeline.
+
 ## Local development setup
 
 Open Command Prompt in the project directory, then run:

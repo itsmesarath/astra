@@ -107,6 +107,11 @@ edge. Before treating results as meaningful, accumulate many independent session
 Dataset manifests must retain source hashes, capture times, schemas, feature configuration, label
 configuration, and exact session assignments.
 
+The public Binance Spot archive downloader is now the historical-data entry point. Daily source
+archives are checksum verified, retained unchanged, and normalized to millisecond CSVs with a
+request manifest. Archived klines and aggregate trades do not reproduce historical order-book
+depth, so historical models must not silently substitute them for depth features.
+
 ## Automation and recovery
 
 The autonomous runner should be a finite-state cycle, not an unstructured collection of scripts.
@@ -179,16 +184,10 @@ reserve final sessions so discovered patterns can be falsified out of sample.
 3. Diagnose drift, data failures, and model regressions.
 4. Keep paper and Testnet available at all times; live mode remains explicitly armed and bounded.
 
-## Tomorrow's milestone
+## Next milestone
 
-Start Phase A by implementing the cycle manifest and state machine around local, already-captured
-session files. The first version will not download anything or run continuously. It will prove that
-one offline cycle is deterministic, resumable, auditable, and unable to reach live execution.
-
-After that foundation is tested, decide which operating mode is intended:
-
-1. **Strict offline:** external files are placed into an inbox and the local cycle processes them.
-2. **Read-only online data, paper-only trading:** an isolated public-data collector creates inbox
-   files, but training and execution remain local and no authenticated exchange capability exists.
-
-This decision changes only data arrival. It does not change the paper-only execution boundary.
+Build a causal historical feature and triple-barrier labeling pipeline for 1-minute, 5-minute, and
+15-minute Spot horizons. It must treat each UTC day as a source session, prevent rolling windows or
+labels from crossing those boundaries, and model fees and slippage before declaring a setup
+tradable. Only economically viable, walk-forward-stable setups should become QLoRA training
+examples or advance to autonomous paper evaluation.
