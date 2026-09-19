@@ -186,8 +186,9 @@ reserve final sessions so discovered patterns can be falsified out of sample.
 
 ## Next milestone
 
-Download a multi-day research range, split whole UTC sessions, and add the historical kline feature
-schema to the linear baseline and walk-forward evaluator. Compare 1-minute, 5-minute, and 15-minute
-cost-adjusted labels without consulting the final held-out sessions. Only economically viable,
-walk-forward-stable setups should become QLoRA training examples or advance to autonomous paper
-evaluation.
+Expand historical evidence across substantially more days and market regimes, reserving a larger
+final block before any new comparisons. Add cost-aware PnL, drawdown, turnover, and exposure metrics
+to historical walk-forward evaluation, then improve the 15-minute feature/threshold candidate using
+validation sessions only. The first 14-day study rejected every horizon; its two final sessions
+remain unevaluated. Only economically viable, walk-forward-stable setups should become QLoRA
+training examples or advance to autonomous paper evaluation.

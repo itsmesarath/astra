@@ -22,9 +22,9 @@ from ai_trader.training.metrics import (
     evaluate_classification,
 )
 from ai_trader.training.model_data import (
-    REQUIRED_SOURCE_COLUMNS,
     ModelPartition,
-    row_to_model_features,
+    infer_model_feature_names,
+    row_to_schema_features,
 )
 from ai_trader.training.train_linear import (
     TrainingConfig,
@@ -66,6 +66,7 @@ class WalkForwardReport:
     """Aggregate validation evidence without held-out-session access."""
 
     source_path: Path
+    feature_names: tuple[str, ...]
     total_sessions: int
     evaluated_sessions: tuple[str, ...]
     held_out_sessions: tuple[str, ...]
@@ -81,11 +82,15 @@ def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
         if reader.fieldnames is None:
             raise ValueError(f"{path.name} does not contain a header.")
 
-        required_columns = REQUIRED_SOURCE_COLUMNS | {SOURCE_SESSION_COLUMN}
+        required_columns = {"target_direction", SOURCE_SESSION_COLUMN}
         missing_columns = required_columns - set(reader.fieldnames)
         if missing_columns:
             missing_text = ", ".join(sorted(missing_columns))
             raise ValueError(f"{path.name} is missing columns: {missing_text}.")
+        try:
+            feature_names = infer_model_feature_names(reader.fieldnames)
+        except ValueError as error:
+            raise ValueError(f"{path.name}: {error}") from error
 
         session_names: list[str] = []
         session_features: list[list[np.ndarray]] = []
@@ -112,7 +117,7 @@ def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
                 current_session = session
 
             try:
-                features = row_to_model_features(row)
+                features = row_to_schema_features(row, feature_names)
                 target = int(row["target_direction"])
             except ValueError as error:
                 raise ValueError(f"{path.name} line {line_number}: {error}") from error
@@ -134,6 +139,7 @@ def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
             partition=ModelPartition(
                 features=np.vstack(features).astype(np.float64, copy=False),
                 targets=np.asarray(targets, dtype=np.int64),
+                feature_names=feature_names,
             ),
         )
         for name, features, targets in zip(
@@ -150,9 +156,13 @@ def combine_partitions(sessions: tuple[SessionPartition, ...]) -> ModelPartition
     if not sessions:
         raise ValueError("At least one session is required.")
 
+    feature_names = {session.partition.feature_names for session in sessions}
+    if len(feature_names) != 1:
+        raise ValueError("Source sessions must use one model feature schema.")
     return ModelPartition(
         features=np.vstack([session.partition.features for session in sessions]),
         targets=np.concatenate([session.partition.targets for session in sessions]),
+        feature_names=feature_names.pop(),
     )
 
 
@@ -266,6 +276,7 @@ def run_walk_forward(
     immutable_folds = tuple(folds)
     return WalkForwardReport(
         source_path=source_path,
+        feature_names=sessions[0].partition.feature_names,
         total_sessions=len(sessions),
         evaluated_sessions=tuple(fold.validation_session for fold in immutable_folds),
         held_out_sessions=tuple(session.name for session in sessions[validation_stop:]),
@@ -317,6 +328,7 @@ def write_walk_forward_report(
         "schema_version": 1,
         "model_type": "linear_direction_classifier",
         "source_dataset": str(report.source_path.resolve()),
+        "feature_names": list(report.feature_names),
         "training_configuration": asdict(config),
         "decision_policy": asdict(policy),
         "total_sessions": report.total_sessions,
@@ -404,7 +416,7 @@ def main() -> None:
 
     print("Mode: SESSION-AWARE WALK-FORWARD VALIDATION")
     print(f"Source sessions: {report.total_sessions}")
-    print(f"Held out untouched: {', '.join(report.held_out_sessions)}")
+    print(f"Held out from fitting and validation: {', '.join(report.held_out_sessions)}")
     for fold in report.folds:
         print(
             f"Fold {fold.index}: train_sessions={len(fold.training_sessions)}, "

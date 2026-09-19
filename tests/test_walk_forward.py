@@ -8,7 +8,9 @@ from pathlib import Path
 
 import pytest
 
+from ai_trader.features.kline_dataset import KLINE_FEATURE_COLUMNS
 from ai_trader.trading.decision_policy import DecisionPolicy
+from ai_trader.training.model_data import KLINE_MODEL_FEATURE_NAMES
 from ai_trader.training.train_linear import TrainingConfig
 from ai_trader.training.walk_forward import (
     load_session_partitions,
@@ -130,3 +132,42 @@ def test_rejects_too_few_sessions_for_configuration(tmp_path: Path) -> None:
             minimum_training_sessions=2,
             held_out_session_count=1,
         )
+
+
+def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
+    """The same validation engine must retain the explicit kline feature order."""
+    source_path = tmp_path / "kline.csv"
+    rows = []
+    for session in ("one", "two", "three", "four"):
+        for direction in (-1, 0, 1):
+            for _ in range(3):
+                row = {name: str(direction * 0.2) for name in KLINE_FEATURE_COLUMNS}
+                row["taker_buy_ratio"] = "0.5"
+                row["close_location"] = "0.5"
+                row["target_direction"] = str(direction)
+                row["source_session"] = session
+                rows.append(row)
+    with source_path.open("w", encoding="utf-8", newline="") as output_file:
+        writer = csv.DictWriter(
+            output_file,
+            fieldnames=(*KLINE_FEATURE_COLUMNS, "target_direction", "source_session"),
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+    report = run_walk_forward(
+        source_path,
+        TrainingConfig(
+            max_epochs=40,
+            patience=5,
+            learning_rate=0.1,
+            weight_decay=0,
+            device="cpu",
+        ),
+        minimum_training_sessions=2,
+        held_out_session_count=1,
+    )
+
+    assert report.feature_names == KLINE_MODEL_FEATURE_NAMES
+    assert report.evaluated_sessions == ("three",)
+    assert report.held_out_sessions == ("four",)

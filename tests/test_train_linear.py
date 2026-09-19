@@ -181,3 +181,21 @@ def test_rejects_partition_feature_count_mismatch() -> None:
             test,
             TrainingConfig(device="cpu"),
         )
+
+
+def test_rejects_equal_width_but_different_feature_schemas() -> None:
+    """Column count alone cannot establish train/validation schema compatibility."""
+    train = make_separable_partition()
+    validation = make_separable_partition()
+    test = make_separable_partition()
+    train = ModelPartition(train.features, train.targets, ("first", "second"))
+    validation = ModelPartition(validation.features, validation.targets, ("other", "second"))
+    test = ModelPartition(test.features, test.targets, ("first", "second"))
+
+    with pytest.raises(ValueError, match="feature schemas must match"):
+        train_linear_baseline(
+            train,
+            validation,
+            test,
+            TrainingConfig(device="cpu"),
+        )

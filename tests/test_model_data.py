@@ -10,8 +10,10 @@ import numpy as np
 import pytest
 
 from ai_trader.training.model_data import (
+    KLINE_MODEL_FEATURE_NAMES,
     MODEL_FEATURE_NAMES,
     load_model_partition,
+    row_to_kline_model_features,
     row_to_model_features,
 )
 
@@ -138,3 +140,36 @@ def test_rejects_invalid_feature_values() -> None:
         match="Total base volume cannot be negative",
     ):
         row_to_model_features(negative_volume)
+
+
+def make_kline_row() -> dict[str, str]:
+    """Create one complete stationary historical-kline feature row."""
+    row = {name: "0.25" for name in KLINE_MODEL_FEATURE_NAMES}
+    row["taker_buy_ratio"] = "0.4"
+    row["close_location"] = "0.6"
+    row["target_direction"] = "1"
+    return row
+
+
+def test_loads_explicit_historical_kline_feature_schema(tmp_path: Path) -> None:
+    """Historical partitions must retain their feature identity and column order."""
+    path = tmp_path / "kline.csv"
+    write_rows(path, [make_kline_row()])
+
+    partition = load_model_partition(path)
+
+    assert partition.feature_names == KLINE_MODEL_FEATURE_NAMES
+    assert partition.columns == len(KLINE_MODEL_FEATURE_NAMES)
+    np.testing.assert_array_equal(
+        partition.features[0],
+        row_to_kline_model_features(make_kline_row()),
+    )
+
+
+def test_rejects_invalid_kline_bounded_features() -> None:
+    """Candle ratios with impossible values must fail before training."""
+    row = make_kline_row()
+    row["close_location"] = "1.1"
+
+    with pytest.raises(ValueError, match="Close location must be between"):
+        row_to_kline_model_features(row)

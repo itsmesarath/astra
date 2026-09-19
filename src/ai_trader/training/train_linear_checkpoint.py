@@ -13,10 +13,7 @@ from ai_trader.training.evaluate_majority import (
     print_evaluation,
 )
 from ai_trader.training.metrics import ClassificationReport
-from ai_trader.training.model_data import (
-    MODEL_FEATURE_NAMES,
-    load_model_partition,
-)
+from ai_trader.training.model_data import load_model_partition
 from ai_trader.training.train_linear import (
     LinearFitResult,
     TrainingConfig,
@@ -188,7 +185,7 @@ def main() -> None:
         checkpoint_directory,
         result.model,
         result.standardizer,
-        feature_names=MODEL_FEATURE_NAMES,
+        feature_names=train.feature_names,
         training_metadata=training_metadata,
     )
 

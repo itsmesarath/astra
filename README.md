@@ -72,6 +72,10 @@ day. Labels subtract configured entry and exit fees plus slippage. If profit and
 both touched within one candle, the label records the stop first to avoid optimistic intrabar bias.
 The defaults model market-order execution and are research assumptions, not guaranteed fills.
 
+The linear trainer and session-aware walk-forward evaluator detect this historical kline feature
+schema explicitly and preserve its ordered feature names in checkpoints and reports. They reject
+mixed or mismatched schemas even when the numeric dimensions happen to agree.
+
 ## Local development setup
 
 Open Command Prompt in the project directory, then run:

@@ -10,6 +10,8 @@ from pathlib import Path
 
 import numpy as np
 
+from ai_trader.features.kline_dataset import KLINE_FEATURE_COLUMNS
+
 MODEL_FEATURE_NAMES = (
     "spread_bps",
     "microprice_offset_bps",
@@ -36,6 +38,8 @@ REQUIRED_SOURCE_COLUMNS = {
     "target_direction",
 }
 
+KLINE_MODEL_FEATURE_NAMES = tuple(KLINE_FEATURE_COLUMNS)
+
 BASIS_POINTS_PER_UNIT = Decimal("10000")
 
 
@@ -45,6 +49,7 @@ class ModelPartition:
 
     features: np.ndarray
     targets: np.ndarray
+    feature_names: tuple[str, ...] = ()
 
     @property
     def rows(self) -> int:
@@ -145,6 +150,52 @@ def row_to_model_features(
     )
 
 
+def row_to_kline_model_features(row: dict[str, str]) -> np.ndarray:
+    """Read the explicit stationary historical-kline feature schema."""
+    values = []
+    for column in KLINE_MODEL_FEATURE_NAMES:
+        value = read_decimal(row, column)
+        values.append(float(value))
+
+    features = np.asarray(values, dtype=np.float64)
+    if not np.isfinite(features).all():
+        raise ValueError("Kline model features must be finite.")
+
+    taker_buy_ratio = features[KLINE_MODEL_FEATURE_NAMES.index("taker_buy_ratio")]
+    close_location = features[KLINE_MODEL_FEATURE_NAMES.index("close_location")]
+    if not 0 <= taker_buy_ratio <= 1:
+        raise ValueError("Taker-buy ratio must be between 0 and 1.")
+    if not 0 <= close_location <= 1:
+        raise ValueError("Close location must be between 0 and 1.")
+    return features
+
+
+def infer_model_feature_names(fieldnames: list[str] | tuple[str, ...]) -> tuple[str, ...]:
+    """Select one unambiguous supported causal feature schema from a CSV header."""
+    columns = set(fieldnames)
+    has_orderbook_schema = REQUIRED_SOURCE_COLUMNS <= columns
+    has_kline_schema = set(KLINE_MODEL_FEATURE_NAMES) <= columns and "target_direction" in columns
+    if has_orderbook_schema and has_kline_schema:
+        raise ValueError("Dataset contains multiple supported model feature schemas.")
+    if has_orderbook_schema:
+        return MODEL_FEATURE_NAMES
+    if has_kline_schema:
+        return KLINE_MODEL_FEATURE_NAMES
+    raise ValueError("Dataset does not contain a supported model feature schema.")
+
+
+def row_to_schema_features(
+    row: dict[str, str],
+    feature_names: tuple[str, ...],
+) -> np.ndarray:
+    """Transform a row using its already-detected causal feature schema."""
+    if feature_names == MODEL_FEATURE_NAMES:
+        return row_to_model_features(row)
+    if feature_names == KLINE_MODEL_FEATURE_NAMES:
+        return row_to_kline_model_features(row)
+    raise ValueError("Unsupported model feature schema.")
+
+
 def load_model_partition(path: Path) -> ModelPartition:
     """Load a split CSV using only the explicit causal schema."""
     feature_rows = []
@@ -156,14 +207,14 @@ def load_model_partition(path: Path) -> ModelPartition:
         if reader.fieldnames is None:
             raise ValueError(f"{path.name} does not contain a header.")
 
-        missing_columns = REQUIRED_SOURCE_COLUMNS - set(reader.fieldnames)
-        if missing_columns:
-            missing_text = ", ".join(sorted(missing_columns))
-            raise ValueError(f"{path.name} is missing columns: {missing_text}.")
+        try:
+            feature_names = infer_model_feature_names(reader.fieldnames)
+        except ValueError as error:
+            raise ValueError(f"{path.name}: {error}") from error
 
         for line_number, row in enumerate(reader, start=2):
             try:
-                features = row_to_model_features(row)
+                features = row_to_schema_features(row, feature_names)
                 target = int(row["target_direction"])
             except ValueError as error:
                 raise ValueError(f"{path.name} line {line_number}: {error}") from error
@@ -191,4 +242,5 @@ def load_model_partition(path: Path) -> ModelPartition:
     return ModelPartition(
         features=feature_matrix,
         targets=target_vector,
+        feature_names=feature_names,
     )

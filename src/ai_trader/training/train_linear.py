@@ -189,6 +189,10 @@ def fit_linear_baseline(
 
     if train.columns != validation.columns:
         raise ValueError("Train and validation feature counts must match.")
+    if bool(train.feature_names) != bool(validation.feature_names):
+        raise ValueError("Train and validation feature schemas must both be identified.")
+    if train.feature_names != validation.feature_names:
+        raise ValueError("Train and validation feature schemas must match.")
 
     set_reproducible_seed(config.seed)
     device = resolve_device(config.device)
@@ -289,6 +293,12 @@ def train_linear_baseline(
     """Train on train, select on validation, then evaluate test once."""
     if not (train.columns == validation.columns == test.columns):
         raise ValueError("Train, validation, and test feature counts must match.")
+    feature_schemas = [partition.feature_names for partition in (train, validation, test)]
+    if any(feature_schemas) and not all(feature_schemas):
+        raise ValueError("Train, validation, and test feature schemas must all be identified.")
+    named_schemas = {schema for schema in feature_schemas if schema}
+    if len(named_schemas) > 1:
+        raise ValueError("Train, validation, and test feature schemas must match.")
 
     fit = fit_linear_baseline(train, validation, config)
     device = resolve_device(fit.device)
