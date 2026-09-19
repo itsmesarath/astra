@@ -84,6 +84,14 @@ Optional CLI controls include `--minimum-reentry-delay-minutes`,
 `--maximum-trades-per-session`, `--session-profit-target`, and `--session-loss-limit`; reports count
 signals rejected by each control.
 
+## Research validity and next milestone
+
+Read the [strategy research reset](STRATEGY_RESEARCH_PLAN.md) before interpreting backtests.
+Current walk-forward metrics reuse the evaluation session for checkpoint selection, and the
+label-based simulator has gap-fill and capital-accounting limitations. Existing reports are
+exploratory, not independent evidence of profitability. The next milestone repairs these issues
+before testing a slower strategy or expanding model training. Execution remains offline/paper-only.
+
 ## Local development setup
 
 Open Command Prompt in the project directory, then run:

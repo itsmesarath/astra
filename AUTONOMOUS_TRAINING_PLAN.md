@@ -186,10 +186,14 @@ reserve final sessions so discovered patterns can be falsified out of sample.
 
 ## Next milestone
 
-Replace the rejected fixed-barrier 15-minute hypothesis using training and validation sessions only.
-Implement causal volatility-scaled barriers and explicit execution-cost profiles, then require
-positive net PnL, acceptable drawdown, and stability across folds. Lower-turnover filters bounded
-losses but did not create positive expectancy, so further threshold tuning is not justified. The
-60-day study's final 10 sessions remain unevaluated and must be used only after a successor is
-frozen. Only an economically viable, walk-forward-stable setup should become QLoRA training examples
-or advance to autonomous paper evaluation.
+Repair experimental validity before replacing the rejected strategy. The
+[strategy research reset](STRATEGY_RESEARCH_PLAN.md) documents checkpoint-selection leakage,
+impossible gap-stop fills, capital-accounting inconsistencies, and holdout provenance limitations.
+First separate fitting, tuning, and forward evaluation; then implement a causal execution ledger.
+After those gates, test the registered slower trend-pullback hypothesis with volatility-scaled
+price barriers and explicit cost stresses. No live connectivity is part of this milestone.
+
+The final 10 sessions have no reported performance evaluation, but were parsed and included in
+aggregate label counts; they are not a pristine lockbox. Keep them unopened and reserve fresh
+confirmation data after freezing the protocol. Only credible out-of-sample economics should lead
+to model expansion, QLoRA examples, or autonomous paper promotion.

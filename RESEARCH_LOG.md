@@ -85,3 +85,27 @@ Decision: reject every filter variant. The controls successfully bound activity 
 do not convert the underlying negative expectancy into a profitable strategy. Further threshold
 tuning on these same sessions would increase selection bias. The next candidate must change the
 label/feature hypothesis, beginning with causal volatility-scaled barriers.
+
+## 2026-09-19 independent methodology audit
+
+The [strategy research reset](STRATEGY_RESEARCH_PLAN.md) supersedes the previous immediate next
+step. No new historical strategy trial or final-block evaluation was run during this audit.
+
+Corrections to interpreting the studies above:
+
+- Each reported walk-forward session also selected its model's best epoch. These are exploratory,
+  validation-selected results, not independent forward estimates. Rejected candidates remain
+  rejected; no corrected profitability claim is available yet.
+- Stop fills ignore adverse opening gaps. A synthetic fixture returned a 99.84 exit on a candle
+  with a 99.10 high. Economic reports inherit this labeling limitation.
+- Per-session dollar controls reset capital, whereas aggregate PnL compounds capital. Future
+  trade PnL is recognized at selection time; the rejection-reason ledger is not causal.
+- The February 20-March 1 block was excluded from fitting, selection and reported performance,
+  but its labels were parsed and contributed to aggregate dataset counts. Earlier wording must
+  not be read as a claim of zero access. January 13-14 was subsequently reused as training data
+  and is no longer an independent holdout.
+
+Implementation priority: nested chronological fit/tune/evaluate partitions, gap-aware execution
+and continuous capital accounting, then a preregistered trend-pullback experiment. Qwen adaptation
+remains conditional on trustworthy evaluation and a demonstrated improvement over simpler models.
+This commit records the audit and plan only; the identified implementation issues remain open.
