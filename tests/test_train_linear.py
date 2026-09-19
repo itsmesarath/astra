@@ -13,6 +13,7 @@ from ai_trader.training.model_data import ModelPartition
 from ai_trader.training.train_linear import (
     TrainingConfig,
     set_reproducible_seed,
+    soften_class_weights,
     train_linear_baseline,
     validate_config,
 )
@@ -129,9 +130,36 @@ def test_rejects_invalid_training_configuration() -> None:
 
     with pytest.raises(
         ValueError,
+        match="Class-weight power",
+    ):
+        validate_config(TrainingConfig(class_weight_power=1.1))
+
+    with pytest.raises(
+        ValueError,
         match="Device must be",
     ):
         validate_config(TrainingConfig(device="invalid"))
+
+
+def test_softens_inverse_frequency_class_weights() -> None:
+    """Weight power should interpolate between none and full balancing."""
+    full_weights = np.asarray(
+        [4.0, 1.0, 9.0],
+        dtype=np.float32,
+    )
+
+    np.testing.assert_allclose(
+        soften_class_weights(full_weights, 0.0),
+        np.asarray([1.0, 1.0, 1.0]),
+    )
+    np.testing.assert_allclose(
+        soften_class_weights(full_weights, 0.5),
+        np.asarray([2.0, 1.0, 3.0]),
+    )
+    np.testing.assert_allclose(
+        soften_class_weights(full_weights, 1.0),
+        full_weights,
+    )
 
 
 def test_rejects_partition_feature_count_mismatch() -> None:

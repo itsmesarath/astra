@@ -140,6 +140,7 @@ def test_creates_complete_json_safe_training_metadata(
         "patience": 20,
         "learning_rate": 0.02,
         "weight_decay": 0.001,
+        "class_weight_power": 1.0,
         "seed": 123,
         "device": "cpu",
     }

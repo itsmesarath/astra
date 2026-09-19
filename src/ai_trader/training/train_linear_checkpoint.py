@@ -125,6 +125,12 @@ def parse_args() -> argparse.Namespace:
         default=0.0001,
     )
     parser.add_argument(
+        "--class-weight-power",
+        type=float,
+        default=1.0,
+        help=("Inverse-frequency weight exponent from 0 (unweighted) to 1 (fully balanced)."),
+    )
+    parser.add_argument(
         "--seed",
         type=int,
         default=42,
@@ -148,6 +154,7 @@ def main() -> None:
         patience=args.patience,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
+        class_weight_power=args.class_weight_power,
         seed=args.seed,
         device=args.device,
     )

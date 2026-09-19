@@ -42,6 +42,7 @@ class TrainingConfig:
     patience: int = 50
     learning_rate: float = 0.01
     weight_decay: float = 0.0001
+    class_weight_power: float = 1.0
     seed: int = 42
     device: str = "auto"
 
@@ -70,6 +71,8 @@ def validate_config(config: TrainingConfig) -> None:
         raise ValueError("Learning rate must be greater than zero.")
     if config.weight_decay < 0:
         raise ValueError("Weight decay cannot be negative.")
+    if not 0 <= config.class_weight_power <= 1:
+        raise ValueError("Class-weight power must be between zero and one.")
     if config.seed < 0:
         raise ValueError("Random seed cannot be negative.")
     if config.device not in {"auto", "cpu", "cuda"}:
@@ -146,6 +149,20 @@ def clone_state_dict(
     return {name: value.detach().cpu().clone() for name, value in model.state_dict().items()}
 
 
+def soften_class_weights(
+    class_weights: np.ndarray,
+    power: float,
+) -> np.ndarray:
+    """Reduce inverse-frequency weighting while preserving class order."""
+    if not 0 <= power <= 1:
+        raise ValueError("Class-weight power must be between zero and one.")
+
+    return np.power(
+        np.asarray(class_weights, dtype=np.float32),
+        power,
+    ).astype(np.float32, copy=False)
+
+
 def train_linear_baseline(
     train: ModelPartition,
     validation: ModelPartition,
@@ -180,7 +197,10 @@ def train_linear_baseline(
     )
     train_targets = to_target_tensor(train.targets, device)
 
-    class_weights = calculate_class_weights(train.targets)
+    class_weights = soften_class_weights(
+        calculate_class_weights(train.targets),
+        config.class_weight_power,
+    )
     weight_tensor = torch.from_numpy(class_weights).to(device)
 
     model = LinearDirectionClassifier(input_features=train.columns).to(device)
@@ -287,6 +307,12 @@ def parse_args() -> argparse.Namespace:
         default=0.0001,
     )
     parser.add_argument(
+        "--class-weight-power",
+        type=float,
+        default=1.0,
+        help=("Inverse-frequency weight exponent from 0 (unweighted) to 1 (fully balanced)."),
+    )
+    parser.add_argument(
         "--seed",
         type=int,
         default=42,
@@ -315,6 +341,7 @@ def main() -> None:
         patience=args.patience,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
+        class_weight_power=args.class_weight_power,
         seed=args.seed,
         device=args.device,
     )
