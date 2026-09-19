@@ -10,6 +10,7 @@ import pytest
 from ai_trader.trading.decision_policy import DecisionPolicy
 from ai_trader.trading.evaluate_decision_policy import (
     evaluate_prediction_file,
+    evaluate_probability_rows,
 )
 
 
@@ -140,5 +141,25 @@ def test_rejects_invalid_actual_direction(tmp_path: Path) -> None:
     ):
         evaluate_prediction_file(
             path,
+            DecisionPolicy(),
+        )
+
+
+def test_evaluates_in_memory_probability_rows() -> None:
+    """Walk-forward evaluation can reuse policy metrics without CSV files."""
+    report = evaluate_probability_rows(
+        [(0.8, 0.1, 0.1), (0.1, 0.2, 0.7)],
+        [-1, 0],
+        DecisionPolicy(),
+    )
+
+    assert report.short_signals == 1
+    assert report.long_signals == 1
+    assert report.directional_precision == pytest.approx(0.5)
+
+    with pytest.raises(ValueError, match="equal lengths"):
+        evaluate_probability_rows(
+            [(0.8, 0.1, 0.1)],
+            [],
             DecisionPolicy(),
         )

@@ -15,7 +15,7 @@ from ai_trader.models.linear_classifier import (
 from ai_trader.training.metrics import evaluate_classification
 from ai_trader.training.standardize import fit_standardizer
 from ai_trader.training.train_linear import (
-    LinearTrainingResult,
+    LinearFitResult,
     TrainingConfig,
 )
 from ai_trader.training.train_linear_checkpoint import (
@@ -25,7 +25,7 @@ from ai_trader.training.train_linear_checkpoint import (
 )
 
 
-def make_training_result() -> LinearTrainingResult:
+def make_training_result() -> LinearFitResult:
     """Create a small result object for metadata testing."""
     model = LinearDirectionClassifier(input_features=2)
     standardizer = fit_standardizer(
@@ -41,7 +41,7 @@ def make_training_result() -> LinearTrainingResult:
         predicted=[-1, 0, 0],
     )
 
-    return LinearTrainingResult(
+    return LinearFitResult(
         model=model,
         standardizer=standardizer,
         best_epoch=7,
@@ -51,7 +51,6 @@ def make_training_result() -> LinearTrainingResult:
             dtype=np.float32,
         ),
         validation=report,
-        test=report,
         device="cpu",
     )
 
@@ -149,6 +148,6 @@ def test_creates_complete_json_safe_training_metadata(
     assert metadata["epochs_trained"] == 57
     assert metadata["class_weights"] == [2.0, 0.5, 2.5]
     assert metadata["validation"]["total"] == 3
-    assert metadata["test"]["total"] == 3
+    assert "test" not in metadata
 
     json.dumps(metadata)

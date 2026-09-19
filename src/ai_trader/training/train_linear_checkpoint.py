@@ -18,9 +18,9 @@ from ai_trader.training.model_data import (
     load_model_partition,
 )
 from ai_trader.training.train_linear import (
-    LinearTrainingResult,
+    LinearFitResult,
     TrainingConfig,
-    train_linear_baseline,
+    fit_linear_baseline,
 )
 
 DEFAULT_CHECKPOINT_DIRECTORY = Path("checkpoints")
@@ -70,7 +70,7 @@ def create_training_metadata(
     *,
     split_directory: Path,
     config: TrainingConfig,
-    result: LinearTrainingResult,
+    result: LinearFitResult,
     created_at: datetime,
 ) -> dict[str, object]:
     """Create complete JSON-safe training metadata."""
@@ -86,7 +86,6 @@ def create_training_metadata(
         "epochs_trained": result.epochs_trained,
         "class_weights": result.class_weights.tolist(),
         "validation": classification_report_to_dict(result.validation),
-        "test": classification_report_to_dict(result.test),
     }
 
 
@@ -163,12 +162,10 @@ def main() -> None:
 
     train = load_model_partition(split_directory / "train.csv")
     validation = load_model_partition(split_directory / "validation.csv")
-    test = load_model_partition(split_directory / "test.csv")
 
-    result = train_linear_baseline(
+    result = fit_linear_baseline(
         train,
         validation,
-        test,
         config,
     )
 
@@ -178,7 +175,6 @@ def main() -> None:
     print(f"Epochs trained: {result.epochs_trained}")
 
     print_evaluation("Validation", result.validation)
-    print_evaluation("Test", result.test)
 
     created_at = datetime.now(UTC)
     training_metadata = create_training_metadata(

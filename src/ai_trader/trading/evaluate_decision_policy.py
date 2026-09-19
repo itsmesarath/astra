@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -73,6 +74,65 @@ def find_latest_prediction_file() -> Path:
     return max(candidates, key=lambda path: path.stat().st_mtime)
 
 
+def evaluate_probability_rows(
+    probabilities: Sequence[Sequence[float]],
+    actual_directions: Sequence[int],
+    policy: DecisionPolicy,
+) -> PolicyEvaluation:
+    """Evaluate fixed probability thresholds on in-memory targets."""
+    if len(probabilities) != len(actual_directions):
+        raise ValueError("Probabilities and actual directions must have equal lengths.")
+    if len(probabilities) == 0:
+        raise ValueError("At least one probability row is required.")
+
+    short_signals = 0
+    flat_decisions = 0
+    long_signals = 0
+    correct_short_signals = 0
+    correct_long_signals = 0
+    short_outcomes = [0, 0, 0]
+    long_outcomes = [0, 0, 0]
+    reason_counts: Counter[str] = Counter()
+    for probability_row, actual_direction in zip(
+        probabilities,
+        actual_directions,
+        strict=True,
+    ):
+        if actual_direction not in {-1, 0, 1}:
+            raise ValueError("Row has an invalid actual direction; expected -1, 0, or 1.")
+
+        decision = decide_position(
+            probability_row,
+            policy,
+        )
+        reason_counts[decision.reason] += 1
+
+        if decision.intent == "SHORT":
+            short_signals += 1
+            short_outcomes[actual_direction + 1] += 1
+            if actual_direction == -1:
+                correct_short_signals += 1
+        elif decision.intent == "LONG":
+            long_signals += 1
+            long_outcomes[actual_direction + 1] += 1
+            if actual_direction == 1:
+                correct_long_signals += 1
+        else:
+            flat_decisions += 1
+
+    return PolicyEvaluation(
+        rows=len(probabilities),
+        short_signals=short_signals,
+        flat_decisions=flat_decisions,
+        long_signals=long_signals,
+        correct_short_signals=correct_short_signals,
+        correct_long_signals=correct_long_signals,
+        short_outcomes=tuple(short_outcomes),
+        long_outcomes=tuple(long_outcomes),
+        reason_counts=dict(reason_counts),
+    )
+
+
 def evaluate_prediction_file(
     path: Path,
     policy: DecisionPolicy,
@@ -84,16 +144,8 @@ def evaluate_prediction_file(
         "probability_up",
         "actual_direction",
     }
-
-    short_signals = 0
-    flat_decisions = 0
-    long_signals = 0
-    correct_short_signals = 0
-    correct_long_signals = 0
-    short_outcomes = [0, 0, 0]
-    long_outcomes = [0, 0, 0]
-    reason_counts: Counter[str] = Counter()
-    rows = 0
+    probability_rows = []
+    actual_directions = []
 
     with path.open(encoding="utf-8", newline="") as input_file:
         reader = csv.DictReader(input_file)
@@ -108,54 +160,30 @@ def evaluate_prediction_file(
 
         for line_number, row in enumerate(reader, start=2):
             try:
-                probabilities = (
-                    float(row["probability_down"]),
-                    float(row["probability_neutral"]),
-                    float(row["probability_up"]),
+                probability_rows.append(
+                    (
+                        float(row["probability_down"]),
+                        float(row["probability_neutral"]),
+                        float(row["probability_up"]),
+                    )
                 )
-                actual_direction = int(row["actual_direction"])
+                actual_directions.append(int(row["actual_direction"]))
             except ValueError as error:
                 raise ValueError(
                     f"{path.name} line {line_number} contains an invalid numeric value."
                 ) from error
 
-            if actual_direction not in {-1, 0, 1}:
-                raise ValueError(f"{path.name} line {line_number} has an invalid actual direction.")
-
-            decision = decide_position(
-                probabilities,
-                policy,
-            )
-            reason_counts[decision.reason] += 1
-            rows += 1
-
-            if decision.intent == "SHORT":
-                short_signals += 1
-                short_outcomes[actual_direction + 1] += 1
-                if actual_direction == -1:
-                    correct_short_signals += 1
-            elif decision.intent == "LONG":
-                long_signals += 1
-                long_outcomes[actual_direction + 1] += 1
-                if actual_direction == 1:
-                    correct_long_signals += 1
-            else:
-                flat_decisions += 1
-
-    if rows == 0:
+    if not probability_rows:
         raise ValueError(f"{path.name} contains no prediction rows.")
 
-    return PolicyEvaluation(
-        rows=rows,
-        short_signals=short_signals,
-        flat_decisions=flat_decisions,
-        long_signals=long_signals,
-        correct_short_signals=correct_short_signals,
-        correct_long_signals=correct_long_signals,
-        short_outcomes=tuple(short_outcomes),
-        long_outcomes=tuple(long_outcomes),
-        reason_counts=dict(reason_counts),
-    )
+    try:
+        return evaluate_probability_rows(
+            probability_rows,
+            actual_directions,
+            policy,
+        )
+    except ValueError as error:
+        raise ValueError(f"{path.name}: {error}") from error
 
 
 def parse_args() -> argparse.Namespace:

@@ -48,8 +48,8 @@ class TrainingConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class LinearTrainingResult:
-    """Result of validation-selected linear training."""
+class LinearFitResult:
+    """Result of fitting and selecting a model with validation data only."""
 
     model: LinearDirectionClassifier
     standardizer: Standardizer
@@ -57,8 +57,14 @@ class LinearTrainingResult:
     epochs_trained: int
     class_weights: np.ndarray
     validation: ClassificationReport
-    test: ClassificationReport
     device: str
+
+
+@dataclass(frozen=True, slots=True)
+class LinearTrainingResult(LinearFitResult):
+    """Validation-selected result with one final test evaluation."""
+
+    test: ClassificationReport
 
 
 def validate_config(config: TrainingConfig) -> None:
@@ -120,13 +126,23 @@ def predict_directions(
     features: torch.Tensor,
 ) -> np.ndarray:
     """Return decoded direction predictions."""
+    probabilities = predict_probabilities(model, features)
+    class_indices = probabilities.argmax(axis=1)
+    return decode_directions(class_indices)
+
+
+def predict_probabilities(
+    model: LinearDirectionClassifier,
+    features: torch.Tensor,
+) -> np.ndarray:
+    """Return DOWN, NEUTRAL, and UP probabilities."""
     model.eval()
 
     with torch.no_grad():
         logits = model(features)
-        class_indices = logits.argmax(dim=1).detach().cpu().numpy()
+        probabilities = torch.softmax(logits, dim=1)
 
-    return decode_directions(class_indices)
+    return probabilities.detach().cpu().numpy()
 
 
 def evaluate_model(
@@ -163,17 +179,16 @@ def soften_class_weights(
     ).astype(np.float32, copy=False)
 
 
-def train_linear_baseline(
+def fit_linear_baseline(
     train: ModelPartition,
     validation: ModelPartition,
-    test: ModelPartition,
     config: TrainingConfig,
-) -> LinearTrainingResult:
-    """Train on train, select on validation, then evaluate test once."""
+) -> LinearFitResult:
+    """Train on earlier data and select an epoch using validation only."""
     validate_config(config)
 
-    if not (train.columns == validation.columns == test.columns):
-        raise ValueError("Train, validation, and test feature counts must match.")
+    if train.columns != validation.columns:
+        raise ValueError("Train and validation feature counts must match.")
 
     set_reproducible_seed(config.seed)
     device = resolve_device(config.device)
@@ -181,7 +196,6 @@ def train_linear_baseline(
     standardizer = fit_standardizer(train.features)
     standardized_train = standardizer.transform(train.features)
     standardized_validation = standardizer.transform(validation.features)
-    standardized_test = standardizer.transform(test.features)
 
     train_features = to_feature_tensor(
         standardized_train,
@@ -189,10 +203,6 @@ def train_linear_baseline(
     )
     validation_features = to_feature_tensor(
         standardized_validation,
-        device,
-    )
-    test_features = to_feature_tensor(
-        standardized_test,
         device,
     )
     train_targets = to_target_tensor(train.targets, device)
@@ -259,21 +269,46 @@ def train_linear_baseline(
         validation_features,
         validation.targets,
     )
-    final_test_report = evaluate_model(
-        model,
-        test_features,
-        test.targets,
-    )
-
-    return LinearTrainingResult(
+    return LinearFitResult(
         model=model,
         standardizer=standardizer,
         best_epoch=best_epoch,
         epochs_trained=epochs_trained,
         class_weights=class_weights,
         validation=final_validation_report,
-        test=final_test_report,
         device=str(device),
+    )
+
+
+def train_linear_baseline(
+    train: ModelPartition,
+    validation: ModelPartition,
+    test: ModelPartition,
+    config: TrainingConfig,
+) -> LinearTrainingResult:
+    """Train on train, select on validation, then evaluate test once."""
+    if not (train.columns == validation.columns == test.columns):
+        raise ValueError("Train, validation, and test feature counts must match.")
+
+    fit = fit_linear_baseline(train, validation, config)
+    device = resolve_device(fit.device)
+    standardized_test = fit.standardizer.transform(test.features)
+    test_features = to_feature_tensor(standardized_test, device)
+    test_report = evaluate_model(
+        fit.model,
+        test_features,
+        test.targets,
+    )
+
+    return LinearTrainingResult(
+        model=fit.model,
+        standardizer=fit.standardizer,
+        best_epoch=fit.best_epoch,
+        epochs_trained=fit.epochs_trained,
+        class_weights=fit.class_weights,
+        validation=fit.validation,
+        device=fit.device,
+        test=test_report,
     )
 
 
