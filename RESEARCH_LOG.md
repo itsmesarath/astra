@@ -67,3 +67,21 @@ Decision: reject the 15-minute candidate. Expanding the evidence made the econom
 so the final 10 sessions must not be spent evaluating this rejected configuration. The next research
 iteration should change the setup economics or feature hypothesis using training/validation evidence
 and retain the final block for a genuinely frozen successor.
+
+### Lower-turnover policy comparison
+
+Three fixed policy variants were compared on the same 30 validation sessions. This is exploratory
+model-selection evidence, not a new independent test. All variants used 10% position allocation;
+the final 10 sessions remained excluded.
+
+| Policy | Trades | Net PnL | Drawdown | Turnover |
+| --- | ---: | ---: | ---: | ---: |
+| Original probability 0.55 / margin 0.10 | 370 | -$831.25 (-8.31%) | 8.33% | 70.93x |
+| Probability 0.65 / margin 0.15 | 209 | -$475.97 (-4.76%) | 4.78% | 40.80x |
+| Stricter policy plus 30-minute re-entry delay | 32 | -$80.38 (-0.80%) | 0.82% | 6.38x |
+| Delayed, maximum 3 trades/day, $10 session targets | 24 | -$48.58 (-0.49%) | 0.51% | 4.79x |
+
+Decision: reject every filter variant. The controls successfully bound activity and loss, but they
+do not convert the underlying negative expectancy into a profitable strategy. Further threshold
+tuning on these same sessions would increase selection bias. The next candidate must change the
+label/feature hypothesis, beginning with causal volatility-scaled barriers.

@@ -439,6 +439,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--minimum-probability-margin", type=float, default=0.10)
     parser.add_argument("--starting-balance", type=float, default=10_000.0)
     parser.add_argument("--position-fraction", type=float, default=1.0)
+    parser.add_argument("--minimum-reentry-delay-minutes", type=int, default=0)
+    parser.add_argument("--maximum-trades-per-session", type=int)
+    parser.add_argument("--session-profit-target", type=float)
+    parser.add_argument("--session-loss-limit", type=float)
     parser.add_argument(
         "--allow-short",
         action="store_true",
@@ -473,6 +477,10 @@ def main() -> None:
     economic_config = EconomicConfig(
         starting_balance=args.starting_balance,
         position_fraction=args.position_fraction,
+        minimum_reentry_delay_ms=args.minimum_reentry_delay_minutes * 60_000,
+        maximum_trades_per_session=args.maximum_trades_per_session,
+        session_profit_target=args.session_profit_target,
+        session_loss_limit=args.session_loss_limit,
     )
     report = run_walk_forward(
         args.path,

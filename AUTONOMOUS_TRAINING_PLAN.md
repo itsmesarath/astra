@@ -186,9 +186,10 @@ reserve final sessions so discovered patterns can be falsified out of sample.
 
 ## Next milestone
 
-Replace the rejected 15-minute hypothesis using training and validation sessions only. Investigate
-lower-turnover entry filters, volatility-scaled barriers, and maker-versus-taker cost assumptions,
-then require positive net PnL, acceptable drawdown, and stability across folds. The 60-day study's
-final 10 sessions remain unevaluated and must be used only after a successor is frozen. Only an
-economically viable, walk-forward-stable setup should become QLoRA training examples or advance to
-autonomous paper evaluation.
+Replace the rejected fixed-barrier 15-minute hypothesis using training and validation sessions only.
+Implement causal volatility-scaled barriers and explicit execution-cost profiles, then require
+positive net PnL, acceptable drawdown, and stability across folds. Lower-turnover filters bounded
+losses but did not create positive expectancy, so further threshold tuning is not justified. The
+60-day study's final 10 sessions remain unevaluated and must be used only after a successor is
+frozen. Only an economically viable, walk-forward-stable setup should become QLoRA training examples
+or advance to autonomous paper evaluation.

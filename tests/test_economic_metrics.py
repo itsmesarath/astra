@@ -109,6 +109,14 @@ def test_validates_capital_and_outcome_inputs() -> None:
         EconomicConfig(starting_balance=0).validate()
     with pytest.raises(ValueError, match="Position fraction"):
         EconomicConfig(position_fraction=1.1).validate()
+    with pytest.raises(ValueError, match="re-entry delay"):
+        EconomicConfig(minimum_reentry_delay_ms=-1).validate()
+    with pytest.raises(ValueError, match="Maximum trades"):
+        EconomicConfig(maximum_trades_per_session=0).validate()
+    with pytest.raises(ValueError, match="Session profit target"):
+        EconomicConfig(session_profit_target=0).validate()
+    with pytest.raises(ValueError, match="Session loss limit"):
+        EconomicConfig(session_loss_limit=float("inf")).validate()
     with pytest.raises(ValueError, match="invalid time interval"):
         TradeOutcome(1000, 999, 1).validate()
     with pytest.raises(ValueError, match="100% or more"):
@@ -128,3 +136,51 @@ def test_payload_omits_individual_trade_returns() -> None:
 
     assert payload["accepted_trades"] == 1
     assert "trade_net_returns_bps" not in payload
+
+
+def test_applies_cooldown_and_trade_count_limits() -> None:
+    """Cooldown and session trade caps must reject otherwise valid long signals audibly."""
+    outcomes = (
+        TradeOutcome(0, 999, 10),
+        TradeOutcome(1500, 2499, 10),
+        TradeOutcome(3000, 3999, 10),
+        TradeOutcome(5000, 5999, 10),
+    )
+    report = evaluate_spot_economics(
+        (LONG, LONG, LONG, LONG),
+        outcomes,
+        spot_policy(),
+        EconomicConfig(
+            minimum_reentry_delay_ms=1000,
+            maximum_trades_per_session=2,
+        ),
+    )
+
+    assert report.accepted_trades == 2
+    assert report.skipped_cooldown_signals == 1
+    assert report.skipped_trade_limit_signals == 1
+    assert report.skipped_session_limit_signals == 0
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        EconomicConfig(session_profit_target=50),
+        EconomicConfig(session_loss_limit=50),
+    ],
+)
+def test_stops_new_entries_after_session_pnl_limit(config: EconomicConfig) -> None:
+    """Realized session targets must stop new exposure while preserving the triggering trade."""
+    first_return = 100 if config.session_profit_target is not None else -100
+    report = evaluate_spot_economics(
+        (LONG, LONG),
+        (
+            TradeOutcome(0, 999, first_return),
+            TradeOutcome(2000, 2999, 100),
+        ),
+        spot_policy(),
+        config,
+    )
+
+    assert report.accepted_trades == 1
+    assert report.skipped_session_limit_signals == 1

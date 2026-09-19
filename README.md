@@ -80,6 +80,9 @@ For kline datasets, walk-forward reports also simulate one non-overlapping long 
 Use `--starting-balance` and `--position-fraction` to set research capital assumptions. Reports
 include cost-adjusted PnL, closed-trade drawdown, turnover, exposure, profit factor, and signals
 skipped while a prior trade was open. This remains offline evaluation and cannot place an order.
+Optional CLI controls include `--minimum-reentry-delay-minutes`,
+`--maximum-trades-per-session`, `--session-profit-target`, and `--session-loss-limit`; reports count
+signals rejected by each control.
 
 ## Local development setup
 
