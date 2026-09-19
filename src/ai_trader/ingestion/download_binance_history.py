@@ -81,6 +81,7 @@ class DownloadResult:
     checksum_path: str
     normalized_path: str
     sha256: str
+    normalized_sha256: str
     archive_bytes: int
     rows: int
     source_timestamp_unit: str
@@ -329,6 +330,7 @@ def acquire_archive(
 
     spec.checksum_path.write_text(checksum_text.strip() + "\n", encoding="utf-8")
     rows = normalize_archive(spec)
+    normalized_digest = sha256_file(spec.normalized_path)
     source_timestamp_unit = "microseconds" if spec.day >= date(2025, 1, 1) else "milliseconds"
     return DownloadResult(
         date=spec.day.isoformat(),
@@ -336,6 +338,7 @@ def acquire_archive(
         checksum_path=str(spec.checksum_path),
         normalized_path=str(spec.normalized_path),
         sha256=actual_digest,
+        normalized_sha256=normalized_digest,
         archive_bytes=spec.archive_path.stat().st_size,
         rows=rows,
         source_timestamp_unit=source_timestamp_unit,

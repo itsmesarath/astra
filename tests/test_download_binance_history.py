@@ -202,6 +202,10 @@ def test_downloads_verifies_normalizes_and_manifests_aggregate_trades(
     assert manifest["archives"][0]["rows"] == 2
     assert manifest["archives"][0]["source_timestamp_unit"] == "microseconds"
     assert manifest["archives"][0]["downloaded"] is True
+    assert (
+        manifest["archives"][0]["normalized_sha256"]
+        == hashlib.sha256(spec.normalized_path.read_bytes()).hexdigest()
+    )
     assert normalized_rows[0]["trade_time_ms"] == "1735776000123"
     assert spec.archive_path.read_bytes() == archive_bytes
     assert spec.checksum_path.is_file()

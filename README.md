@@ -60,6 +60,18 @@ UTC day because Binance daily archives are only reproducible after a day has com
 archives do not contain order-book depth, so kline/aggregate-trade models must use a separate
 feature schema from the live depth-capture pipeline.
 
+Build causal 1-, 5-, and 15-minute Spot datasets from a verified 1-minute kline manifest:
+
+```cmd
+python -m ai_trader.features.kline_dataset data\raw\binance_spot_history\manifest_BTCUSDT_klines_1m_2024-01-01_2024-01-31.json --output-directory data\processed\btcusdt_kline_research
+```
+
+Every UTC day is a distinct `source_session`. Sixty-bar rolling features reset at each session
+boundary, labels enter at the next bar's open, and future barrier windows never cross into another
+day. Labels subtract configured entry and exit fees plus slippage. If profit and stop barriers are
+both touched within one candle, the label records the stop first to avoid optimistic intrabar bias.
+The defaults model market-order execution and are research assumptions, not guaranteed fills.
+
 ## Local development setup
 
 Open Command Prompt in the project directory, then run:

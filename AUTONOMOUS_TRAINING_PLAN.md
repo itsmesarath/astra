@@ -186,8 +186,8 @@ reserve final sessions so discovered patterns can be falsified out of sample.
 
 ## Next milestone
 
-Build a causal historical feature and triple-barrier labeling pipeline for 1-minute, 5-minute, and
-15-minute Spot horizons. It must treat each UTC day as a source session, prevent rolling windows or
-labels from crossing those boundaries, and model fees and slippage before declaring a setup
-tradable. Only economically viable, walk-forward-stable setups should become QLoRA training
-examples or advance to autonomous paper evaluation.
+Download a multi-day research range, split whole UTC sessions, and add the historical kline feature
+schema to the linear baseline and walk-forward evaluator. Compare 1-minute, 5-minute, and 15-minute
+cost-adjusted labels without consulting the final held-out sessions. Only economically viable,
+walk-forward-stable setups should become QLoRA training examples or advance to autonomous paper
+evaluation.
