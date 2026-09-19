@@ -10,12 +10,14 @@ from pathlib import Path
 
 from ai_trader.training.time_split import (
     IndexRange,
+    create_purged_session_split,
     create_purged_time_split,
 )
 
 DEFAULT_DATA_DIRECTORY = Path("data/processed")
 DEFAULT_TRAIN_FRACTION = 0.70
 DEFAULT_VALIDATION_FRACTION = 0.15
+SOURCE_SESSION_COLUMN = "source_session"
 
 REQUIRED_COLUMNS = {
     "schema_version",
@@ -40,6 +42,7 @@ class PartitionSummary:
     down_labels: int
     neutral_labels: int
     up_labels: int
+    source_sessions: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -139,6 +142,8 @@ def summarize_partition(
     path: Path,
     rows: list[dict[str, str]],
     index_range: IndexRange,
+    *,
+    source_sessions: tuple[str, ...] = (),
 ) -> PartitionSummary:
     """Calculate size and class counts for one partition."""
     partition_rows = rows[index_range.start : index_range.stop]
@@ -153,6 +158,7 @@ def summarize_partition(
         down_labels=directions.count(-1),
         neutral_labels=directions.count(0),
         up_labels=directions.count(1),
+        source_sessions=source_sessions,
     )
 
 
@@ -170,7 +176,18 @@ def partition_manifest(
             "neutral": summary.neutral_labels,
             "up": summary.up_labels,
         },
+        "source_session_count": len(summary.source_sessions),
+        "source_sessions": list(summary.source_sessions),
     }
+
+
+def unique_sessions(rows: list[dict[str, str]], index_range: IndexRange) -> tuple[str, ...]:
+    """Return source sessions in first-observed order for a row range."""
+    return tuple(
+        dict.fromkeys(
+            row[SOURCE_SESSION_COLUMN] for row in rows[index_range.start : index_range.stop]
+        )
+    )
 
 
 def split_labeled_dataset(
@@ -189,12 +206,35 @@ def split_labeled_dataset(
     except ValueError as error:
         raise ValueError("Dataset contains an invalid event timestamp.") from error
 
-    split = create_purged_time_split(
-        event_times_ms,
-        future_event_times_ms,
-        train_fraction=train_fraction,
-        validation_fraction=validation_fraction,
-    )
+    uses_session_boundaries = SOURCE_SESSION_COLUMN in fieldnames
+    if uses_session_boundaries:
+        source_sessions = [row[SOURCE_SESSION_COLUMN] for row in rows]
+        split = create_purged_session_split(
+            event_times_ms,
+            future_event_times_ms,
+            source_sessions,
+            train_fraction=train_fraction,
+            validation_fraction=validation_fraction,
+        )
+        train_sessions = unique_sessions(
+            rows,
+            IndexRange(0, split.purged_after_train.stop),
+        )
+        validation_sessions = unique_sessions(
+            rows,
+            IndexRange(split.validation.start, split.purged_after_validation.stop),
+        )
+        test_sessions = unique_sessions(rows, split.test)
+    else:
+        split = create_purged_time_split(
+            event_times_ms,
+            future_event_times_ms,
+            train_fraction=train_fraction,
+            validation_fraction=validation_fraction,
+        )
+        train_sessions = ()
+        validation_sessions = ()
+        test_sessions = ()
 
     output_directory.mkdir(parents=True, exist_ok=True)
 
@@ -226,18 +266,21 @@ def split_labeled_dataset(
         train_path,
         rows,
         split.train,
+        source_sessions=train_sessions,
     )
     validation_summary = summarize_partition(
         "validation",
         validation_path,
         rows,
         split.validation,
+        source_sessions=validation_sessions,
     )
     test_summary = summarize_partition(
         "test",
         test_path,
         rows,
         split.test,
+        source_sessions=test_sessions,
     )
 
     manifest_path = output_directory / "manifest.json"
@@ -248,6 +291,10 @@ def split_labeled_dataset(
         "train_fraction": train_fraction,
         "validation_fraction": validation_fraction,
         "test_fraction": (1.0 - train_fraction - validation_fraction),
+        "split_strategy": (
+            "source_session_boundaries" if uses_session_boundaries else "row_boundaries"
+        ),
+        "source_session_column": (SOURCE_SESSION_COLUMN if uses_session_boundaries else None),
         "purged_rows": split.purged_rows,
         "purged_ranges": {
             "after_train": {

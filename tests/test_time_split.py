@@ -2,7 +2,10 @@
 
 import pytest
 
-from ai_trader.training.time_split import create_purged_time_split
+from ai_trader.training.time_split import (
+    create_purged_session_split,
+    create_purged_time_split,
+)
 
 
 def test_creates_chronological_split_and_purges_overlap() -> None:
@@ -118,4 +121,69 @@ def test_rejects_split_when_purge_removes_training_section() -> None:
             [(index + 10) * 100 for index in range(10)],
             train_fraction=0.60,
             validation_fraction=0.20,
+        )
+
+
+def test_session_split_uses_only_source_session_boundaries() -> None:
+    """Requested fractions must not divide a capture session."""
+    event_times_ms = [index * 100 for index in range(20)]
+    future_event_times_ms = [event_time + 50 for event_time in event_times_ms]
+    source_sessions = [f"session_{index // 4}" for index in range(20)]
+
+    split = create_purged_session_split(
+        event_times_ms,
+        future_event_times_ms,
+        source_sessions,
+        train_fraction=0.60,
+        validation_fraction=0.20,
+    )
+
+    assert (split.train.start, split.train.stop) == (0, 12)
+    assert (split.validation.start, split.validation.stop) == (12, 16)
+    assert (split.test.start, split.test.stop) == (16, 20)
+    assert split.purged_rows == 0
+
+
+def test_session_split_selects_closest_valid_boundary_pair() -> None:
+    """Uneven sessions should produce the closest three-way row allocation."""
+    event_times_ms = [index * 100 for index in range(20)]
+    future_event_times_ms = [event_time + 50 for event_time in event_times_ms]
+    source_sessions = [
+        *("large",) * 9,
+        *("medium",) * 5,
+        *("small",) * 3,
+        *("tail",) * 3,
+    ]
+
+    split = create_purged_session_split(
+        event_times_ms,
+        future_event_times_ms,
+        source_sessions,
+        train_fraction=0.60,
+        validation_fraction=0.20,
+    )
+
+    assert split.train.stop == 14
+    assert split.validation.start == 14
+    assert split.validation.stop == 17
+    assert split.test.start == 17
+
+
+def test_session_split_rejects_noncontiguous_or_insufficient_sessions() -> None:
+    """A session identifier must describe exactly one chronological group."""
+    event_times_ms = [0, 100, 200, 300]
+    future_event_times_ms = [50, 150, 250, 350]
+
+    with pytest.raises(ValueError, match="one contiguous row range"):
+        create_purged_session_split(
+            event_times_ms,
+            future_event_times_ms,
+            ["first", "second", "first", "third"],
+        )
+
+    with pytest.raises(ValueError, match="At least three source sessions"):
+        create_purged_session_split(
+            event_times_ms,
+            future_event_times_ms,
+            ["first", "first", "second", "second"],
         )

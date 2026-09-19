@@ -20,6 +20,7 @@ FIELDNAMES = (
     "target_direction",
     "midpoint",
 )
+SESSION_FIELDNAMES = (*FIELDNAMES, "source_session")
 
 
 def make_labeled_rows() -> list[dict[str, str]]:
@@ -47,12 +48,14 @@ def make_labeled_rows() -> list[dict[str, str]]:
 def write_labeled_dataset(
     path: Path,
     rows: list[dict[str, str]],
+    *,
+    fieldnames: tuple[str, ...] = FIELDNAMES,
 ) -> None:
     """Write a labeled CSV fixture."""
     with path.open("w", encoding="utf-8", newline="") as output_file:
         writer = csv.DictWriter(
             output_file,
-            fieldnames=FIELDNAMES,
+            fieldnames=fieldnames,
         )
         writer.writeheader()
         writer.writerows(rows)
@@ -170,6 +173,76 @@ def test_rejects_multiple_label_configurations(
         split_labeled_dataset(
             dataset_path,
             output_directory,
+            train_fraction=0.60,
+            validation_fraction=0.20,
+        )
+
+
+def test_keeps_each_source_session_in_exactly_one_partition(tmp_path: Path) -> None:
+    """Combined capture sessions must never be divided across output files."""
+    dataset_path = tmp_path / "combined.csv"
+    output_directory = tmp_path / "split"
+    rows = make_labeled_rows()
+    for index, row in enumerate(rows):
+        row["source_session"] = f"session_{index // 4}"
+        row["future_event_time_ms"] = str(index * 100 + 50)
+    write_labeled_dataset(
+        dataset_path,
+        rows,
+        fieldnames=SESSION_FIELDNAMES,
+    )
+
+    report = split_labeled_dataset(
+        dataset_path,
+        output_directory,
+        train_fraction=0.60,
+        validation_fraction=0.20,
+    )
+
+    partition_sessions = {
+        "train": {row["source_session"] for row in read_rows(report.train.path)},
+        "validation": {row["source_session"] for row in read_rows(report.validation.path)},
+        "test": {row["source_session"] for row in read_rows(report.test.path)},
+    }
+    assert partition_sessions == {
+        "train": {"session_0", "session_1", "session_2"},
+        "validation": {"session_3"},
+        "test": {"session_4"},
+    }
+    assert not (partition_sessions["train"] & partition_sessions["validation"])
+    assert not (partition_sessions["train"] & partition_sessions["test"])
+    assert not (partition_sessions["validation"] & partition_sessions["test"])
+
+    with report.manifest_path.open(encoding="utf-8") as input_file:
+        manifest = json.load(input_file)
+
+    assert manifest["split_strategy"] == "source_session_boundaries"
+    assert manifest["source_session_column"] == "source_session"
+    assert manifest["partitions"]["train"]["source_sessions"] == [
+        "session_0",
+        "session_1",
+        "session_2",
+    ]
+    assert manifest["partitions"]["validation"]["source_sessions"] == ["session_3"]
+    assert manifest["partitions"]["test"]["source_sessions"] == ["session_4"]
+
+
+def test_rejects_noncontiguous_source_session_rows(tmp_path: Path) -> None:
+    """Repeated separated session blocks are ambiguous and must fail closed."""
+    dataset_path = tmp_path / "combined.csv"
+    rows = make_labeled_rows()
+    for index, row in enumerate(rows):
+        row["source_session"] = ("first", "second", "first", "third")[index // 5]
+    write_labeled_dataset(
+        dataset_path,
+        rows,
+        fieldnames=SESSION_FIELDNAMES,
+    )
+
+    with pytest.raises(ValueError, match="one contiguous row range"):
+        split_labeled_dataset(
+            dataset_path,
+            tmp_path / "split",
             train_fraction=0.60,
             validation_fraction=0.20,
         )
