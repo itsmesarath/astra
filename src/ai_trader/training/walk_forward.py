@@ -58,15 +58,18 @@ class SessionPartition:
 
 @dataclass(frozen=True, slots=True)
 class WalkForwardFold:
-    """One expanding-window training and validation result."""
+    """One disjoint fit/tune/evaluate result; validation names mean evaluation."""
 
     index: int
     training_sessions: tuple[str, ...]
+    tuning_sessions: tuple[str, ...]
     validation_session: str
     training_rows: int
+    tuning_rows: int
     validation_rows: int
     best_epoch: int
     epochs_trained: int
+    tuning: ClassificationReport
     validation: ClassificationReport
     policy: PolicyEvaluation
     economics: EconomicEvaluation | None
@@ -74,7 +77,7 @@ class WalkForwardFold:
 
 @dataclass(frozen=True, slots=True)
 class WalkForwardReport:
-    """Aggregate validation evidence without held-out-session use."""
+    """Forward evidence; held-out rows are still parsed but never fitted or scored."""
 
     source_path: Path
     feature_names: tuple[str, ...]
@@ -252,20 +255,28 @@ def run_walk_forward(
     config: TrainingConfig,
     *,
     minimum_training_sessions: int = 2,
+    tuning_session_count: int = 1,
     held_out_session_count: int = 1,
     policy: DecisionPolicy | None = None,
     economic_config: EconomicConfig | None = None,
 ) -> WalkForwardReport:
-    """Run expanding-window validation while reserving final sessions."""
+    """Fit older sessions, tune on recent past sessions, then score the next session.
+
+    minimum_training_sessions counts fitting sessions only, excluding tuning.
+    The legacy validation report fields now describe evaluation-only results.
+    """
     if minimum_training_sessions <= 0:
         raise ValueError("Minimum training sessions must be positive.")
     if held_out_session_count <= 0:
         raise ValueError("Held-out session count must be positive.")
+    if tuning_session_count <= 0:
+        raise ValueError("Tuning session count must be positive.")
 
     sessions = load_session_partitions(source_path)
     active_policy = policy or DecisionPolicy(allow_short=False)
     active_economic_config = economic_config or EconomicConfig()
-    required_sessions = minimum_training_sessions + held_out_session_count + 1
+    first_evaluation = minimum_training_sessions + tuning_session_count
+    required_sessions = first_evaluation + held_out_session_count + 1
     if len(sessions) < required_sessions:
         raise ValueError(
             "Walk-forward evaluation requires at least "
@@ -275,13 +286,16 @@ def run_walk_forward(
     validation_stop = len(sessions) - held_out_session_count
     folds = []
 
-    for validation_position in range(minimum_training_sessions, validation_stop):
-        training_sessions = sessions[:validation_position]
+    for validation_position in range(first_evaluation, validation_stop):
+        tuning_start = validation_position - tuning_session_count
+        training_sessions = sessions[:tuning_start]
+        tuning_sessions = sessions[tuning_start:validation_position]
         validation_session = sessions[validation_position]
         training_partition = combine_partitions(training_sessions)
+        tuning_partition = combine_partitions(tuning_sessions)
         fit = fit_linear_baseline(
             training_partition,
-            validation_session.partition,
+            tuning_partition,
             config,
         )
         validation_features = to_feature_tensor(
@@ -289,6 +303,10 @@ def run_walk_forward(
             resolve_device(fit.device),
         )
         probabilities = predict_probabilities(fit.model, validation_features)
+        evaluation = evaluate_classification(
+            validation_session.partition.targets.tolist(),
+            [CLASS_LABELS[index] for index in probabilities.argmax(axis=1)],
+        )
         policy_report = evaluate_probability_rows(
             probabilities.tolist(),
             validation_session.partition.targets.tolist(),
@@ -308,12 +326,15 @@ def run_walk_forward(
             WalkForwardFold(
                 index=len(folds) + 1,
                 training_sessions=tuple(session.name for session in training_sessions),
+                tuning_sessions=tuple(session.name for session in tuning_sessions),
                 validation_session=validation_session.name,
                 training_rows=training_partition.rows,
+                tuning_rows=tuning_partition.rows,
                 validation_rows=validation_session.partition.rows,
                 best_epoch=fit.best_epoch,
                 epochs_trained=fit.epochs_trained,
-                validation=fit.validation,
+                tuning=fit.validation,
+                validation=evaluation,
                 policy=policy_report,
                 economics=economics,
             )
@@ -380,7 +401,10 @@ def write_walk_forward_report(
     """Write one auditable walk-forward evaluation report."""
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "evaluation_protocol": "expanding_fit_past_tune_next_session_evaluate",
+        "validation_fields_mean": "evaluation_only",
+        "held_out_access": "parsed_but_not_fitted_selected_or_scored",
         "model_type": "linear_direction_classifier",
         "source_dataset": str(report.source_path.resolve()),
         "feature_names": list(report.feature_names),
@@ -401,11 +425,14 @@ def write_walk_forward_report(
             {
                 "index": fold.index,
                 "training_sessions": list(fold.training_sessions),
+                "tuning_sessions": list(fold.tuning_sessions),
                 "validation_session": fold.validation_session,
                 "training_rows": fold.training_rows,
+                "tuning_rows": fold.tuning_rows,
                 "validation_rows": fold.validation_rows,
                 "best_epoch": fold.best_epoch,
                 "epochs_trained": fold.epochs_trained,
+                "tuning": classification_report_payload(fold.tuning),
                 "validation": classification_report_payload(fold.validation),
                 "policy": policy_evaluation_payload(fold.policy),
                 "economics": (
@@ -428,7 +455,18 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("path", type=Path, help="Combined labeled multi-session CSV.")
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--minimum-training-sessions", type=int, default=2)
+    parser.add_argument(
+        "--minimum-training-sessions",
+        type=int,
+        default=2,
+        help="Minimum fitting sessions, excluding the tuning block.",
+    )
+    parser.add_argument(
+        "--tuning-session-count",
+        type=int,
+        default=1,
+        help="Recent past sessions reserved for checkpoint selection, not fitting.",
+    )
     parser.add_argument("--held-out-session-count", type=int, default=1)
     parser.add_argument("--max-epochs", type=int, default=500)
     parser.add_argument("--patience", type=int, default=50)
@@ -486,6 +524,7 @@ def main() -> None:
         args.path,
         config,
         minimum_training_sessions=args.minimum_training_sessions,
+        tuning_session_count=args.tuning_session_count,
         held_out_session_count=args.held_out_session_count,
         policy=policy,
         economic_config=economic_config,
@@ -495,12 +534,13 @@ def main() -> None:
     )
     write_walk_forward_report(output_path, report, config, policy)
 
-    print("Mode: SESSION-AWARE WALK-FORWARD VALIDATION")
+    print("Mode: SESSION-AWARE FIT/TUNE/FORWARD EVALUATION")
     print(f"Source sessions: {report.total_sessions}")
     print(f"Held out from fitting and validation: {', '.join(report.held_out_sessions)}")
     for fold in report.folds:
         print(
             f"Fold {fold.index}: train_sessions={len(fold.training_sessions)}, "
+            f"tuning_sessions={len(fold.tuning_sessions)}, "
             f"validation={fold.validation_session}, "
             f"rows={fold.validation_rows}, "
             f"balanced_accuracy={fold.validation.balanced_accuracy:.6f}, "

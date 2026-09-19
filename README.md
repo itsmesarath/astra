@@ -87,10 +87,17 @@ signals rejected by each control.
 ## Research validity and next milestone
 
 Read the [strategy research reset](STRATEGY_RESEARCH_PLAN.md) before interpreting backtests.
-Current walk-forward metrics reuse the evaluation session for checkpoint selection, and the
-label-based simulator has gap-fill and capital-accounting limitations. Existing reports are
-exploratory, not independent evidence of profitability. The next milestone repairs these issues
-before testing a slower strategy or expanding model training. Execution remains offline/paper-only.
+Walk-forward report schema 2 separates fitting, past-session checkpoint tuning, and next-session
+evaluation. `--minimum-training-sessions` counts fitting sessions only;
+`--tuning-session-count` (default 1) adds a disjoint tuning block. For a 20-session initial prefix,
+use `--minimum-training-sessions 15 --tuning-session-count 5`. Legacy `validation` metric fields
+now mean evaluation-only; tuning metrics and session names are recorded separately. Schema 1
+reports reused the scored session for checkpoint selection and remain exploratory.
+
+This is not yet a complete evaluation hardening: the loader still parses reserved rows, timestamp
+and label-boundary checks need strengthening, and the label-based simulator still has gap-fill and
+capital-accounting limitations. No new historical profitability claim has been made. Execution
+remains offline/paper-only.
 
 ## Local development setup
 

@@ -7,6 +7,13 @@ model has been trained, but no tested configuration has demonstrated an economic
 fine-tuning is not the next bottleneck. Keep execution offline and paper-only; this work adds no
 account access, credentials, or live-order capability.
 
+Implementation update (2026-09-19): schema-2 walk-forward reports now use disjoint fitting,
+past-only tuning, and next-session evaluation. Regression tests cover checkpoint/prediction
+invariance under changed evaluation labels and changed later-session data. This closes the direct
+checkpoint-selection leak in finding 1, not every task in step 1 below. Strict timestamp/label
+boundary enforcement, pre-parse lockbox exclusion and reproducibility manifests remain pending.
+No new historical strategy trial was run. The other audit findings still apply.
+
 ## Findings that change the next milestone
 
 1. **Checkpoint selection and reported evaluation share the same session.** In

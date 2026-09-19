@@ -6,10 +6,12 @@ import csv
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from ai_trader.features.kline_dataset import KLINE_FEATURE_COLUMNS
 from ai_trader.trading.decision_policy import DecisionPolicy
+from ai_trader.training import walk_forward
 from ai_trader.training.model_data import KLINE_MODEL_FEATURE_NAMES
 from ai_trader.training.train_linear import TrainingConfig
 from ai_trader.training.walk_forward import (
@@ -71,7 +73,7 @@ def test_runs_expanding_validation_and_reserves_final_session(tmp_path: Path) ->
     """Only intermediate sessions may contribute walk-forward metrics."""
     source_path = tmp_path / "combined.csv"
     output_path = tmp_path / "walk_forward.json"
-    session_names = ("one", "two", "three", "four", "held-out")
+    session_names = ("one", "two", "three", "four", "five", "held-out")
     write_rows(source_path, make_rows(session_names))
     config = TrainingConfig(
         max_epochs=80,
@@ -91,12 +93,18 @@ def test_runs_expanding_validation_and_reserves_final_session(tmp_path: Path) ->
     )
     write_walk_forward_report(output_path, report, config, policy)
 
-    assert report.total_sessions == 5
-    assert report.evaluated_sessions == ("three", "four")
+    assert report.total_sessions == 6
+    assert report.evaluated_sessions == ("four", "five")
     assert report.held_out_sessions == ("held-out",)
     assert len(report.folds) == 2
     assert report.folds[0].training_sessions == ("one", "two")
     assert report.folds[1].training_sessions == ("one", "two", "three")
+    assert report.folds[0].tuning_sessions == ("three",)
+    assert report.folds[1].tuning_sessions == ("four",)
+    assert report.folds[0].tuning_rows == 12
+    for fold in report.folds:
+        assert set(fold.training_sessions).isdisjoint(fold.tuning_sessions)
+        assert fold.validation_session not in (*fold.training_sessions, *fold.tuning_sessions)
     assert report.aggregate_validation.total == 24
     assert report.aggregate_validation.macro_f1 == pytest.approx(1.0)
     assert report.aggregate_policy.rows == 24
@@ -106,6 +114,10 @@ def test_runs_expanding_validation_and_reserves_final_session(tmp_path: Path) ->
         payload = json.load(input_file)
 
     assert payload["held_out_sessions"] == ["held-out"]
+    assert payload["schema_version"] == 2
+    assert payload["validation_fields_mean"] == "evaluation_only"
+    assert payload["folds"][0]["tuning_sessions"] == ["three"]
+    assert payload["folds"][0]["tuning"]["total"] == 12
     assert payload["aggregate_validation"]["total"] == 24
     assert payload["aggregate_policy"]["directional_precision"] == pytest.approx(1.0)
 
@@ -125,7 +137,7 @@ def test_rejects_too_few_sessions_for_configuration(tmp_path: Path) -> None:
     source_path = tmp_path / "combined.csv"
     write_rows(source_path, make_rows(("one", "two", "three")))
 
-    with pytest.raises(ValueError, match="requires at least 4"):
+    with pytest.raises(ValueError, match="requires at least 5"):
         run_walk_forward(
             source_path,
             TrainingConfig(device="cpu"),
@@ -138,7 +150,7 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
     """The same validation engine must retain the explicit kline feature order."""
     source_path = tmp_path / "kline.csv"
     rows = []
-    for session in ("one", "two", "three", "four"):
+    for session in ("one", "two", "three", "four", "five"):
         row_index = 0
         for direction in (-1, 0, 1):
             for _ in range(3):
@@ -181,7 +193,86 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
     )
 
     assert report.feature_names == KLINE_MODEL_FEATURE_NAMES
-    assert report.evaluated_sessions == ("three",)
-    assert report.held_out_sessions == ("four",)
+    assert report.evaluated_sessions == ("four",)
+    assert report.held_out_sessions == ("five",)
     assert report.aggregate_economics is not None
     assert report.aggregate_economics.net_pnl > 0
+
+
+@pytest.mark.parametrize("tuning_count", [0, -1])
+def test_rejects_nonpositive_tuning_count(tmp_path: Path, tuning_count: int) -> None:
+    """A missing tuning block must not restore evaluation-day selection."""
+    with pytest.raises(ValueError, match="Tuning session count must be positive"):
+        run_walk_forward(
+            tmp_path / "unused.csv",
+            TrainingConfig(device="cpu"),
+            tuning_session_count=tuning_count,
+        )
+
+
+def test_multiple_tuning_sessions(tmp_path: Path) -> None:
+    """The configured tuning window slides while fitting expands."""
+    source = tmp_path / "combined.csv"
+    write_rows(source, make_rows(("a", "b", "c", "d", "e", "f", "g")))
+    report = run_walk_forward(
+        source,
+        TrainingConfig(max_epochs=2, patience=1, device="cpu"),
+        minimum_training_sessions=2,
+        tuning_session_count=2,
+    )
+    assert report.evaluated_sessions == ("e", "f")
+    assert report.folds[0].training_sessions == ("a", "b")
+    assert report.folds[0].tuning_sessions == ("c", "d")
+    assert report.folds[1].training_sessions == ("a", "b", "c")
+    assert report.folds[1].tuning_sessions == ("d", "e")
+    assert report.folds[0].tuning_rows == 24
+
+
+@pytest.mark.parametrize("changed_session", ["evaluation", "future", "held-out"])
+def test_future_targets_cannot_select_current_checkpoint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    changed_session: str,
+) -> None:
+    """Changing outcomes unavailable at fit time cannot affect the first fold."""
+    source = tmp_path / "combined.csv"
+    rows = make_rows(("fit-one", "fit-two", "tune", "evaluation", "future", "held-out"))
+    config = TrainingConfig(max_epochs=30, patience=5, learning_rate=0.1, device="cpu")
+    captured_fits = []
+    captured_predictions = []
+    original_fit = walk_forward.fit_linear_baseline
+    original_predict = walk_forward.predict_probabilities
+
+    def capture_fit(*args, **kwargs):
+        fitted = original_fit(*args, **kwargs)
+        captured_fits.append(fitted)
+        return fitted
+
+    def capture_predictions(*args, **kwargs):
+        probabilities = original_predict(*args, **kwargs)
+        captured_predictions.append(probabilities.copy())
+        return probabilities
+
+    monkeypatch.setattr(walk_forward, "fit_linear_baseline", capture_fit)
+    monkeypatch.setattr(walk_forward, "predict_probabilities", capture_predictions)
+    write_rows(source, rows)
+    original = run_walk_forward(source, config)
+    for row in rows:
+        if row["source_session"] == changed_session:
+            row["target_direction"] = str(-int(row["target_direction"]))
+            if changed_session != "evaluation":
+                row["book_imbalance"] = "0.321"
+    write_rows(source, rows)
+    changed = run_walk_forward(source, config)
+
+    first, second = captured_fits[0], captured_fits[2]
+    assert first.best_epoch == second.best_epoch
+    assert first.epochs_trained == second.epochs_trained
+    for name, tensor in first.model.state_dict().items():
+        assert tensor.equal(second.model.state_dict()[name])
+    np.testing.assert_array_equal(captured_predictions[0], captured_predictions[2])
+    assert original.folds[0].tuning == changed.folds[0].tuning
+    if changed_session == "evaluation":
+        assert original.folds[0].validation != changed.folds[0].validation
+    else:
+        assert original.folds[0] == changed.folds[0]

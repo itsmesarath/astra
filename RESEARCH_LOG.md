@@ -109,3 +109,20 @@ Implementation priority: nested chronological fit/tune/evaluate partitions, gap-
 and continuous capital accounting, then a preregistered trend-pullback experiment. Qwen adaptation
 remains conditional on trustworthy evaluation and a demonstrated improvement over simpler models.
 This commit records the audit and plan only; the identified implementation issues remain open.
+
+### Follow-up: separate fitting, checkpoint tuning and evaluation
+
+The walk-forward evaluator now reserves a configurable past-only tuning block. Fitting expands
+over older sessions; early stopping and best-epoch selection use only tuning sessions; the next
+session supplies evaluation metrics. Schema 2 reports distinguish tuning from evaluation while
+retaining legacy `validation` field names for evaluation metrics. The CLI minimum-training count
+excludes tuning sessions, so 15 fit + 5 tune preserves a 20-session initial prefix.
+
+Synthetic regressions check that changing evaluation labels cannot alter that fold's model or
+predictions, and that later-session changes cannot alter earlier results. No historical dataset,
+final-block performance or new strategy was evaluated. Offline/paper-only behavior is unchanged.
+
+Next session: enforce chronological timestamps and label boundaries, exclude lockbox outcomes
+before parsing, and finish provenance manifests. Then fix gap fills and continuous portfolio
+accounting before any strategy comparison. Existing economic results remain unsuitable for
+promotion; this checkpoint addresses selection leakage only.
