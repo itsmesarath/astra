@@ -19,12 +19,15 @@ class DecisionPolicy:
 
     minimum_direction_probability: float = 0.55
     minimum_probability_margin: float = 0.10
+    allow_short: bool = True
 
     def __post_init__(self) -> None:
         if not 0 <= self.minimum_direction_probability <= 1:
             raise ValueError("Minimum direction probability must be between zero and one.")
         if not 0 <= self.minimum_probability_margin <= 1:
             raise ValueError("Minimum probability margin must be between zero and one.")
+        if not isinstance(self.allow_short, bool):
+            raise TypeError("allow_short must be a Boolean.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +103,15 @@ def decide_position(
             confidence=confidence,
             probability_margin=probability_margin,
             reason="neutral_is_most_likely",
+        )
+
+    if predicted_direction == -1 and not policy.allow_short:
+        return Decision(
+            predicted_direction=predicted_direction,
+            intent="FLAT",
+            confidence=confidence,
+            probability_margin=probability_margin,
+            reason="short_not_allowed",
         )
 
     if confidence < policy.minimum_direction_probability:

@@ -281,6 +281,7 @@ def main() -> None:
     policy = DecisionPolicy(
         minimum_direction_probability=0.55,
         minimum_probability_margin=0.10,
+        allow_short=False,
     )
     policy_report = evaluate_prediction_file(
         predictions_path,

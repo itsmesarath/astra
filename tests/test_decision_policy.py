@@ -129,3 +129,18 @@ def test_rejects_invalid_probabilities_and_policy() -> None:
         match="Minimum probability margin",
     ):
         DecisionPolicy(minimum_probability_margin=-0.1)
+
+    with pytest.raises(TypeError, match="allow_short"):
+        DecisionPolicy(allow_short=1)  # type: ignore[arg-type]
+
+
+def test_spot_policy_converts_short_signal_to_flat() -> None:
+    """Spot mode must never turn a bearish prediction into short exposure."""
+    decision = decide_position(
+        [0.80, 0.10, 0.10],
+        DecisionPolicy(allow_short=False),
+    )
+
+    assert decision.predicted_direction == -1
+    assert decision.intent == "FLAT"
+    assert decision.reason == "short_not_allowed"

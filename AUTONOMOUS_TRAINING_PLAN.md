@@ -2,25 +2,26 @@
 
 ## Objective
 
-Build a recoverable system that can ingest read-only public market data, validate and store it,
+Build a recoverable Binance Spot system that can ingest public market data, validate and store it,
 train candidate models offline, promote only candidates that pass fixed validation gates, and run
-the selected model through simulated paper execution.
-
-The system must never submit a live order, hold exchange credentials, or expose a code path that
-can be switched into live execution.
+the selected model through paper, Spot Testnet, or explicitly armed Spot live execution.
 
 ## Safety boundary
 
-- Market-data access is read-only and uses public endpoints only.
+- Paper mode remains the default and requires no credentials.
+- Execution modes are explicit: `paper`, `spot_testnet`, and `spot_live`.
+- Spot intentions are long or flat only; the system cannot create short exposure.
 - Raw captures are immutable once a session is closed.
 - Feature generation, labeling, training, and evaluation run on local files.
-- Model output is only a position intention: `SHORT`, `FLAT`, or `LONG`.
+- Model output is only a Spot position intention: `FLAT` or `LONG`.
 - The deterministic risk engine remains authoritative.
-- The only broker implementation is the local `PaperBroker`.
-- No API keys, secrets, authenticated exchange clients, or live-order adapters are permitted.
-- A kill switch must stop new paper exposure while still allowing simulated flattening.
-- Candidate promotion is atomic and reversible; a failed cycle leaves the previous paper model in
-  place.
+- Every broker implementation must pass the same deterministic risk decision before execution.
+- Credentials come only from environment or an OS secret store and are never written to artifacts.
+- API keys must have withdrawals disabled and should use IP restrictions and minimum permissions.
+- Live mode requires a separate arming flag and cannot be enabled by a model output.
+- A kill switch must stop new exposure in every mode while still allowing flattening.
+- Candidate promotion is atomic and reversible; model promotion never automatically enables live
+  mode.
 
 ## Intended autonomous cycle
 
@@ -65,6 +66,14 @@ and repeatedly fitting almost identical data.
 
 No model advances because it is more complex. It advances only when validation-only economic
 evidence improves without unacceptable drawdown or unstable fold results.
+
+### Stage 4: Qwen3-4B-Base meta-policy
+
+- Run the base model quantized and train versioned QLoRA adapters rather than all parameters.
+- Serialize causal, embargoed market windows and deterministic numeric-model outputs.
+- Restrict output to validated long/flat regime JSON; reject malformed or out-of-range output.
+- Treat Qwen as a slower regime/meta-policy model, never as the broker or risk engine.
+- Compare it with numeric baselines under identical walk-forward and cost assumptions.
 
 ## Promotion requirements
 
@@ -141,6 +150,10 @@ Required operational controls:
 3. Put linear and MLP candidates through identical walk-forward folds.
 4. Record champion-versus-candidate comparisons.
 
+Before model training, run cost-adjusted trade-setup studies on training sessions only. Future
+returns define outcomes, while model inputs remain strictly causal. Embargo overlapping windows and
+reserve final sessions so discovered patterns can be falsified out of sample.
+
 ### Phase C: autonomous paper inference
 
 1. Replay new completed captures through the current paper champion.
@@ -148,12 +161,23 @@ Required operational controls:
 3. Add session-level monitoring, forced paper flattening, and kill-switch tests.
 4. Keep training and paper inference isolated so model replacement is atomic.
 
-### Phase D: sustained evidence
+### Phase D: Spot Testnet and live execution
+
+1. Define a shared broker protocol and add an authenticated, read-only account client.
+2. Reconcile balances, symbol filters, open orders, and fills before permitting new exposure.
+3. Add Spot Testnet execution with deterministic long/flat sizing, stop loss, take profit, session
+   profit target, session loss limit, drawdown limit, and maximum trade count.
+4. Require sustained Testnet evidence and explicit operator arming before `spot_live` is available.
+5. Keep live credentials outside the repository and prevent withdrawal permission.
+6. Fail closed on time drift, stale data, ambiguous order state, reconciliation failure, or network
+   timeout.
+
+### Phase E: sustained evidence
 
 1. Run many autonomous cycles without manual repair.
 2. Require stable results across independent future sessions.
 3. Diagnose drift, data failures, and model regressions.
-4. Keep the project paper-only; live execution is outside this roadmap.
+4. Keep paper and Testnet available at all times; live mode remains explicitly armed and bounded.
 
 ## Tomorrow's milestone
 

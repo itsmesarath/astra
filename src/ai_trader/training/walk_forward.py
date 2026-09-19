@@ -359,6 +359,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--class-weight-power", type=float, default=1.0)
     parser.add_argument("--minimum-direction-probability", type=float, default=0.55)
     parser.add_argument("--minimum-probability-margin", type=float, default=0.10)
+    parser.add_argument(
+        "--allow-short",
+        action="store_true",
+        help="Allow short signals; disabled by default for Spot compatibility.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--device",
@@ -383,6 +388,7 @@ def main() -> None:
     policy = DecisionPolicy(
         minimum_direction_probability=args.minimum_direction_probability,
         minimum_probability_margin=args.minimum_probability_margin,
+        allow_short=args.allow_short,
     )
     report = run_walk_forward(
         args.path,
