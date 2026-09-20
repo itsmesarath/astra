@@ -226,3 +226,33 @@ This closes the capital-path inconsistency, not the full execution milestone. In
 precomputed outcome labels; turnover remains twice entry notional and drawdown is closed-trade
 only. Next: independent candle replay, candle-close marked equity, simulated buy/sell turnover and
 entry-latency stress scenarios. Execution remains paper-only and live adapters remain disabled.
+
+## Independent candle execution replay
+
+Added a separate `backtesting.candle_replay` API accepting raw candle sessions and ordered
+completed-close long-signal timestamps. It does not read precomputed outcomes or call their
+calculator. Signals enter at the next open plus an optional full-bar delay. Entry sizing reserves
+fees inside the cash budget and rounds base quantity down; cash and cooldown carry across sessions.
+Each session resets only its entry count and realized-PnL gate reference. Open positions liquidate
+at the final close, and signals whose scheduled entry falls outside the session expire.
+
+Stop/target reference geometry matches labeling v2: opening hits first, then conservative
+intrabar stop-first ordering. Replay independently charges per-fill quote fees and adverse price
+slippage, so costed returns are not forced to equal additive-bps labels. Stop losses remain subject
+to gap/slippage risk. Marks value open positions at each candle close without a hypothetical exit
+fee reserve. Reports include both marked-close and closed-trade drawdown, actual simulated buy/sell
+notional turnover, exposure, fills, trade PnL, signal decisions, session balances and configuration.
+Input-content hashes cover candles and supplied signals; new JSON reports refuse overwrites.
+
+Verification: clean baseline of 299 tests; completed suite 338 tests, Ruff lint/format and diff
+checks passing. Synthetic fixtures verify independent calculation, zero-cost label-reference
+parity, hand-calculated fees/slippage/turnover, cash conservation, adverse gaps, ambiguous touches,
+unrealized drawdown, entry delays, session liquidation, risk resets, carried cooldowns, future-suffix
+invariance, invalid inputs and report persistence. No historical data, held-out block, live
+connectivity or research training was used.
+
+Scope: research API only, not yet used by walk-forward reports or promotion gates. Supplied
+signals must be generated causally; timestamp checks cannot prove that. Intrabar equity, queues,
+volume-dependent execution and exchange-specific filters remain unmodeled. Next connect frozen
+walk-forward predictions to explicit research candle sessions and compare next-open/delayed replay,
+without opening reserved sessions or claiming profitability from these engineering tests.

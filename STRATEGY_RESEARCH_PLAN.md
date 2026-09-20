@@ -181,8 +181,12 @@ exchange fills. Existing historical datasets remain unchanged. Schema-4 walk-for
 now settle label-based PnL at exit, carry capital/cooldowns across sessions, reset session counters
 and PnL references, and summarize the same settlements instead of a second capital path. Observation
 duration now uses the maximum exit and includes inter-session gaps. This addresses finding 5 and
-the interval part of finding 6; independent candle replay, marked equity, actual simulated turnover,
-latency stress tests and the remaining provenance gates above are still pending.
+the interval part of finding 6. A separate candle-replay API now independently executes reference
+barriers with per-fill fees/adverse slippage, marked-close equity, simulated buy/sell turnover and
+full-bar entry delays. Synthetic fixtures verify zero-cost label parity and hand-calculated costed
+fills; labels' additive-bps PnL is not assumed equal to actual fill accounting. Session-end forced
+liquidation and caller-supplied causal signals are explicit assumptions. Walk-forward replay
+integration, exchange/volume realism and the remaining provenance gates above are still pending.
 
 Bailey, Borwein, Lopez de Prado and Zhu, [The Probability of Backtest Overfitting](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf),
 explain why repeated strategy selection on the same history creates false discoveries. This

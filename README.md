@@ -136,6 +136,46 @@ closed-trade only and turnover is explicitly a twice-entry-notional proxy. Fully
 per-session storage and complete code/environment manifests remain future work. No new historical
 profitability claim has been made. Execution remains paper-only; public data ingestion may be online.
 
+## Independent candle replay
+
+`ai_trader.backtesting.candle_replay` is a separate research API, not yet wired into walk-forward
+reports or promotion gates. It accepts chronological `CandleSession` objects containing raw `Kline`
+candles and ordered long-signal candle-close timestamps for one asset. It never consumes outcome
+labels. Callers must produce signals causally; matching a timestamp alone does not prove causality.
+
+```python
+from dataclasses import replace
+from pathlib import Path
+from ai_trader.backtesting.candle_replay import ReplayConfig, replay_candles, write_replay_report
+
+# sessions: tuple[CandleSession, ...], explicitly selected research sessions only
+config = ReplayConfig(holding_bars=120)
+next_open = replay_candles(sessions, config)
+delayed = replay_candles(sessions, replace(config, entry_delay_bars=1))
+write_replay_report(Path("data/processed/replay/next_open.json"), next_open)
+write_replay_report(Path("data/processed/replay/delayed.json"), delayed)
+```
+
+Entry uses the next open plus the configured number of full delay bars. There is one pending order
+or long position at a time; overlapping signals are discarded, not queued for later opportunities.
+Sizing includes the entry fee in the cash budget and rounds quantity down to a configurable step.
+Slippage worsens buy/sell prices, and fees apply to each simulated fill's actual notional. Reference
+stop/target geometry matches labeling version 2, but actual fee/slippage arithmetic is not the
+labels' additive-bps approximation. A configured stop is not a guaranteed loss cap.
+
+Opening barrier hits precede high/low tests; ambiguous intrabar touches use the stop. Intrabar/time
+exits are timestamped at candle close. Positions are liquidated at session end and unfillable
+pending signals expire; no position crosses a session boundary. Cash and cooldown carry forward,
+while session trade counts and realized-PnL gates reset. These gates prevent new entries after
+settled gains/losses; they are not unrealized-equity liquidation rules.
+
+Replay reports contain fills, trade PnL, decisions, session balances, every candle-close equity
+mark, actual simulated buy-plus-sell turnover, costs, configuration and an input-content hash.
+Marked equity values holdings at close without reserving hypothetical exit costs; both marked and
+closed-trade drawdowns are reported. Observation time includes all supplied candles and gaps
+between sessions. Reports refuse overwrites. This remains an idealized market-order model: no
+volume/queue model, exchange tick/min-notional filters, intrabar equity path, or guaranteed fills.
+
 ## Offline research council
 
 The [TradingAgents architecture review](TRADINGAGENTS_REVIEW.md) documents what we can reuse

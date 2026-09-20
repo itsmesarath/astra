@@ -202,8 +202,12 @@ Kline labeling version 2 now handles opening stop/target gaps before intrabar to
 opening price and timestamp. Existing datasets have not been regenerated.
 Schema-4 walk-forward economics now carry capital/cooldowns and settle label-based trade PnL at
 exit. Session limits reset against carried session-start equity; aggregate metrics use the same
-settlements. Next build independent candle replay with candle-close marked equity, simulated
-buy/sell turnover and explicit entry-latency stress tests. The label ledger alone is not that engine.
+settlements. A separate candle-replay API now provides independent raw-candle exits, candle-close
+marked equity, fee-inclusive cash sizing, simulated buy/sell turnover and full-bar entry delays.
+Synthetic checks cover execution semantics and accounting; it is not yet integrated with model
+evaluation. Next connect frozen walk-forward predictions to explicitly selected research candle
+sessions and report next-open versus delayed replay alongside legacy label economics. Do not load
+the final reserved block or promote a model as part of that integration.
 Keep physical lockbox isolation and full code/environment manifests on the remaining hardening list.
 After those gates, test the registered slower trend-pullback hypothesis with volatility-scaled
 price barriers and explicit cost stresses. No live connectivity is part of this milestone.
