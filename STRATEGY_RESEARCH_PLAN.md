@@ -185,8 +185,11 @@ the interval part of finding 6. A separate candle-replay API now independently e
 barriers with per-fill fees/adverse slippage, marked-close equity, simulated buy/sell turnover and
 full-bar entry delays. Synthetic fixtures verify zero-cost label parity and hand-calculated costed
 fills; labels' additive-bps PnL is not assumed equal to actual fill accounting. Session-end forced
-liquidation and caller-supplied causal signals are explicit assumptions. Walk-forward replay
-integration, exchange/volume realism and the remaining provenance gates above are still pending.
+liquidation and caller-supplied causal signals are explicit assumptions. Schema-5 walk-forward
+reports now freeze probabilities/timestamps and optionally replay identical signals at next open
+and one bar later. Raw archive loading is restricted to evaluation sessions, before file access;
+no scenario winner is selected. Feature-to-raw-candle provenance, exchange/volume realism and the
+remaining provenance gates above are still pending. Integration tests are synthetic, not alpha evidence.
 
 Bailey, Borwein, Lopez de Prado and Zhu, [The Probability of Backtest Overfitting](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf),
 explain why repeated strategy selection on the same history creates false discoveries. This

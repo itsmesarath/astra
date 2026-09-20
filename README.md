@@ -96,7 +96,7 @@ signals rejected by each control.
 ## Research validity and next milestone
 
 Read the [strategy research reset](STRATEGY_RESEARCH_PLAN.md) before interpreting backtests.
-Walk-forward report schema 4 separates fitting, past-session checkpoint tuning, and next-session
+Walk-forward report schema 5 separates fitting, past-session checkpoint tuning, and next-session
 evaluation. `--minimum-training-sessions` counts fitting sessions only;
 `--tuning-session-count` (default 1) adds a disjoint tuning block. For a 20-session initial prefix,
 use `--minimum-training-sessions 15 --tuning-session-count 5`. Legacy `validation` metric fields
@@ -138,8 +138,8 @@ profitability claim has been made. Execution remains paper-only; public data ing
 
 ## Independent candle replay
 
-`ai_trader.backtesting.candle_replay` is a separate research API, not yet wired into walk-forward
-reports or promotion gates. It accepts chronological `CandleSession` objects containing raw `Kline`
+`ai_trader.backtesting.candle_replay` is a research API with opt-in walk-forward integration, not
+connected to promotion gates. It accepts chronological `CandleSession` objects containing raw `Kline`
 candles and ordered long-signal candle-close timestamps for one asset. It never consumes outcome
 labels. Callers must produce signals causally; matching a timestamp alone does not prove causality.
 
@@ -175,6 +175,34 @@ Marked equity values holdings at close without reserving hypothetical exit costs
 closed-trade drawdowns are reported. Observation time includes all supplied candles and gaps
 between sessions. Reports refuse overwrites. This remains an idealized market-order model: no
 volume/queue model, exchange tick/min-notional filters, intrabar equity path, or guaranteed fills.
+
+### Frozen-prediction walk-forward replay
+
+Schema-5 walk-forward reports save each evaluation fold's feature timestamps and class probabilities
+in `[-1, 0, 1]` order, captured once before scoring. To opt into candle replay, provide both
+`--replay-manifest` (the verified normalized Binance kline manifest) and `--replay-holding-bars`.
+The latter is an explicit bar count, not minutes. Optional `--replay-take-profit-bps`,
+`--replay-stop-loss-bps`, `--replay-taker-fee-bps` and `--replay-slippage-bps` control replay assumptions.
+Capital and session-risk settings are shared with label economics. Short-enabled policies and
+non-kline feature schemas are rejected for this integration.
+
+The loader selects only evaluation session names before opening or hashing candle archives. It
+does not open non-evaluation or held-out candle files, even if they appear in the manifest; manifest dates
+and names remain visible. Selected file hashes are verified before and after parsing. The combined
+labeled CSV still has the metadata/tokenization limitations described above.
+
+`candle_replay` contains `next_open` and `delayed_one_bar` reports driven by identical frozen
+predictions and the same fixed policy. Both scenarios retain their own continuous capital path.
+All prediction timestamps, including flat decisions, must match unique candle closes. Reports
+include the prediction/policy hash and each scenario's candle/signal input hash; timestamp and hash
+checks do not yet prove that the features were derived from those exact raw candles. Neither
+scenario selects a model or promotes a winner. `aggregate_economics` remains the separate legacy
+label-based measure, with different cost and observation definitions.
+
+The `training.replay_evaluation.replay_frozen_predictions` API can replay saved predictions without
+fitting a model again. Walk-forward reports now refuse overwrites; choose a new `--output` path for
+each experiment. Enabling replay writes detailed marks/fills and predictions, so reports are larger.
+No historical experiment or final held-out evaluation has been run to validate this integration.
 
 ## Offline research council
 

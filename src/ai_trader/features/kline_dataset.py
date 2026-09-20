@@ -422,8 +422,15 @@ def _resolve_manifest_path(raw_path: str, manifest_path: Path) -> Path:
 
 def load_verified_sessions(
     manifest_path: Path,
+    *,
+    selected_sessions: tuple[str, ...] | None = None,
 ) -> tuple[str, str, int, list[tuple[str, list[Kline]]]]:
-    """Load normalized daily sessions only after binding them to manifest hashes."""
+    """Load hash-bound daily sessions, selecting names before opening any archive."""
+    if selected_sessions is not None and (
+        not selected_sessions or len(set(selected_sessions)) != len(selected_sessions)
+    ):
+        raise ValueError("Selected source sessions must be nonempty and unique.")
+    manifest_digest = file_sha256(manifest_path)
     with manifest_path.open(encoding="utf-8") as input_file:
         manifest = json.load(input_file)
     if manifest.get("source") != "binance_public_data" or manifest.get("market") != "spot":
@@ -443,28 +450,45 @@ def load_verified_sessions(
 
     sessions = []
     seen_days: set[date] = set()
+    selected_archives = []
     for archive in archives:
         if not isinstance(archive, dict):
             raise ValueError("Manifest archive entry must be an object.")
         try:
             session_day = date.fromisoformat(str(archive["date"]))
-            normalized_path = _resolve_manifest_path(str(archive["normalized_path"]), manifest_path)
-            expected_digest = str(archive["normalized_sha256"])
         except (KeyError, ValueError) as error:
             raise ValueError("Manifest archive entry is incomplete.") from error
         if session_day in seen_days:
             raise ValueError("Manifest contains a duplicate source session date.")
+        seen_days.add(session_day)
+        name = f"binance_spot_{symbol}_{session_day.isoformat()}"
+        if selected_sessions is None or name in selected_sessions:
+            selected_archives.append((name, session_day, archive))
+    if selected_sessions is not None and set(selected_sessions) != {
+        name for name, _, _ in selected_archives
+    }:
+        raise ValueError("Manifest is missing selected source sessions.")
+
+    for name, session_day, archive in selected_archives:
+        try:
+            normalized_path = _resolve_manifest_path(str(archive["normalized_path"]), manifest_path)
+            expected_digest = str(archive["normalized_sha256"])
+        except KeyError as error:
+            raise ValueError("Manifest archive entry is incomplete.") from error
         if file_sha256(normalized_path) != expected_digest:
             raise ValueError(f"Normalized SHA-256 mismatch for {normalized_path.name}.")
-        seen_days.add(session_day)
         sessions.append(
             (
-                f"binance_spot_{symbol}_{session_day.isoformat()}",
+                name,
                 read_kline_session(
                     normalized_path, interval_ms=interval_ms, expected_day=session_day
                 ),
             )
         )
+        if file_sha256(normalized_path) != expected_digest:
+            raise ValueError("Normalized source changed during session loading.")
+    if file_sha256(manifest_path) != manifest_digest:
+        raise ValueError("Manifest changed during session loading.")
     sessions.sort(key=lambda item: item[1][0].open_time_ms)
     return symbol, interval, interval_ms, sessions
 

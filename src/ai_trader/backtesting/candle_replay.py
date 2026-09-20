@@ -384,8 +384,8 @@ def replay_candles(sessions: tuple[CandleSession, ...], config: ReplayConfig) ->
     )
 
 
-def write_replay_report(path: Path, report: ReplayReport) -> None:
-    """Write a new audit artifact; refuse to overwrite an existing report."""
+def replay_report_payload(report: ReplayReport) -> dict[str, object]:
+    """Return JSON-safe audit data with exact Decimal values encoded as strings."""
     payload = {
         "schema_version": 1,
         "execution_mode": "paper",
@@ -398,6 +398,12 @@ def write_replay_report(path: Path, report: ReplayReport) -> None:
         "limitations": ["no_queue_or_volume_model", "no_intrabar_marks", "no_exchange_filters"],
         **asdict(report),
     }
+    return json.loads(json.dumps(payload, default=_json_decimal, allow_nan=False))
+
+
+def write_replay_report(path: Path, report: ReplayReport) -> None:
+    """Write a new audit artifact; refuse to overwrite an existing report."""
+    payload = replay_report_payload(report)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("x", encoding="utf-8") as output_file:
         json.dump(payload, output_file, default=_json_decimal, indent=2, allow_nan=False)

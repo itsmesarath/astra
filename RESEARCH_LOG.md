@@ -256,3 +256,34 @@ signals must be generated causally; timestamp checks cannot prove that. Intrabar
 volume-dependent execution and exchange-specific filters remain unmodeled. Next connect frozen
 walk-forward predictions to explicit research candle sessions and compare next-open/delayed replay,
 without opening reserved sessions or claiming profitability from these engineering tests.
+
+## Frozen-prediction walk-forward replay integration
+
+Schema-5 walk-forward reports now save immutable per-fold probability tuples and their feature
+timestamps, captured once before scoring. An opt-in raw candle manifest and explicit holding-bar
+configuration enable independent next-open and one-full-bar-delayed replay. Both scenarios use
+identical frozen probabilities and the same long/flat decision policy, with no scenario winner
+selection, refitting or promotion. Legacy label economics remain separate. Replay capital/risk
+settings must match the walk-forward economic configuration.
+
+The verified archive loader filters by exact evaluation session names before opening or hashing
+archive files, rejects missing selections before archive loading, and checks selected files and
+manifest hashes across reads. Other archive dates/names remain visible in the manifest. This does
+not change the combined labeled CSV's metadata-only holdout conversion policy or its physical
+tokenization limitations. All replay prediction times, even flat decisions, must align to unique
+candle closes; extra/reordered sessions and holdout overlap fail closed.
+
+Reports embed both replay ledgers/marks/configurations, prediction-policy hashes and candle/signal
+input hashes. Frozen predictions can be replayed through a standalone API without fitting again.
+Schema-5 report writing refuses overwrites, and the CLI checks an existing output before fitting.
+Policy serialization rejects a policy different from the one actually used.
+
+Verification: clean baseline 338 tests; completed suite 359 tests, Ruff lint/format and diff checks
+passing. Synthetic tests cover single prediction calls per fold, two-scenario shared inputs,
+saved-prediction replay equivalence, continuous balances, invalid alignment/scope, poisoned held-out
+CSV values and unopened non-evaluation archives, changed source files and overwrite protection.
+No real historical experiment, reserved-block evaluation, live connectivity or model promotion ran.
+
+Next: bind feature-generation provenance to the exact raw candle inputs, then freeze the research
+protocol/cost stresses before a registered research-only trial. Timestamps and separate data hashes
+do not alone establish feature derivation lineage. Execution realism limitations remain unchanged.

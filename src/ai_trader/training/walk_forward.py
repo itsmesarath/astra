@@ -6,10 +6,12 @@ import argparse
 import json
 from collections import Counter
 from dataclasses import asdict, dataclass
+from decimal import Decimal
 from pathlib import Path
 
 import numpy as np
 
+from ai_trader.backtesting.candle_replay import CandleSession, ReplayConfig
 from ai_trader.backtesting.economic_metrics import (
     EconomicConfig,
     EconomicEvaluation,
@@ -17,6 +19,7 @@ from ai_trader.backtesting.economic_metrics import (
     economic_evaluation_payload,
     evaluate_spot_economics,
 )
+from ai_trader.features.kline_dataset import TripleBarrierConfig, load_verified_sessions
 from ai_trader.trading.decision_policy import DecisionPolicy
 from ai_trader.trading.evaluate_decision_policy import (
     PolicyEvaluation,
@@ -27,7 +30,13 @@ from ai_trader.training.metrics import (
     ClassificationReport,
     evaluate_classification,
 )
-from ai_trader.training.model_data import ModelPartition
+from ai_trader.training.model_data import KLINE_MODEL_FEATURE_NAMES, ModelPartition
+from ai_trader.training.replay_evaluation import (
+    FrozenPredictions,
+    ReplayComparison,
+    replay_comparison_payload,
+    replay_frozen_predictions,
+)
 from ai_trader.training.session_data import (
     SessionMetadata,
     SessionPartition,
@@ -61,6 +70,7 @@ class WalkForwardFold:
     validation: ClassificationReport
     policy: PolicyEvaluation
     economics: EconomicEvaluation | None
+    predictions: FrozenPredictions
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,6 +90,8 @@ class WalkForwardReport:
     aggregate_validation: ClassificationReport
     aggregate_policy: PolicyEvaluation
     aggregate_economics: EconomicEvaluation | None
+    decision_policy: DecisionPolicy
+    candle_replay: ReplayComparison | None
 
 
 def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
@@ -160,6 +172,8 @@ def run_walk_forward(
     embargo_ms: int = 0,
     policy: DecisionPolicy | None = None,
     economic_config: EconomicConfig | None = None,
+    replay_manifest: Path | None = None,
+    replay_config: ReplayConfig | None = None,
 ) -> WalkForwardReport:
     """Fit older sessions, tune on recent past sessions, then score the next session.
 
@@ -172,6 +186,10 @@ def run_walk_forward(
         raise ValueError("Held-out session count must be positive.")
     if type(tuning_session_count) is not int or tuning_session_count <= 0:
         raise ValueError("Tuning session count must be positive.")
+    if (replay_manifest is None) != (replay_config is None):
+        raise ValueError(
+            "Replay requires both an explicit candle manifest and replay configuration."
+        )
 
     dataset = load_session_dataset(
         source_path,
@@ -190,6 +208,20 @@ def run_walk_forward(
         )
 
     validation_stop = len(sessions)
+    replay_inputs = None
+    if replay_config is not None:
+        replay_config.validate()
+        if replay_config.capital != active_economic_config:
+            raise ValueError("Replay and label economics must use identical capital/risk settings.")
+        if active_policy.allow_short or replay_config.entry_delay_bars != 0:
+            raise ValueError("Replay requires long/flat policy and zero-delay base configuration.")
+        if sessions[0].partition.feature_names != KLINE_MODEL_FEATURE_NAMES:
+            raise ValueError("Candle replay integration requires the kline feature schema.")
+        selected_names = tuple(session.name for session in sessions[first_evaluation:])
+        _, _, _, candle_sources = load_verified_sessions(
+            replay_manifest, selected_sessions=selected_names
+        )
+        replay_inputs = tuple(CandleSession(name, tuple(bars)) for name, bars in candle_sources)
     folds = []
     previous_economics = None
 
@@ -210,6 +242,11 @@ def run_walk_forward(
             resolve_device(fit.device),
         )
         probabilities = predict_probabilities(fit.model, validation_features)
+        frozen = FrozenPredictions(
+            source_session=validation_session.name,
+            event_times_ms=validation_session.event_times_ms,
+            probabilities=tuple(tuple(float(value) for value in row) for row in probabilities),
+        )
         evaluation = evaluate_classification(
             validation_session.partition.targets.tolist(),
             [CLASS_LABELS[index] for index in probabilities.argmax(axis=1)],
@@ -246,6 +283,7 @@ def run_walk_forward(
                 validation=evaluation,
                 policy=policy_report,
                 economics=economics,
+                predictions=frozen,
             )
         )
 
@@ -273,6 +311,19 @@ def run_walk_forward(
         aggregate_economics=(
             aggregate_economic_evaluations(fold_economics, active_economic_config)
             if fold_economics
+            else None
+        ),
+        decision_policy=active_policy,
+        candle_replay=(
+            replay_frozen_predictions(
+                tuple(fold.predictions for fold in immutable_folds),
+                replay_inputs,
+                active_policy,
+                replay_config,
+                evaluated_sessions=tuple(fold.validation_session for fold in immutable_folds),
+                held_out_sessions=dataset.held_out_sessions,
+            )
+            if replay_inputs is not None
             else None
         ),
     )
@@ -311,9 +362,12 @@ def write_walk_forward_report(
     policy: DecisionPolicy,
 ) -> None:
     """Write one auditable walk-forward evaluation report."""
+    if policy != report.decision_policy:
+        raise ValueError("Report policy must match the policy used for evaluation.")
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "schema_version": 4,
+        "schema_version": 5,
+        "prediction_class_order": list(CLASS_LABELS),
         "evaluation_protocol": "expanding_fit_past_tune_next_session_evaluate",
         "validation_fields_mean": "evaluation_only",
         "held_out_access": "csv_metadata_scanned_no_feature_or_outcome_conversion",
@@ -337,6 +391,11 @@ def write_walk_forward_report(
             if report.aggregate_economics is not None
             else None
         ),
+        "candle_replay": (
+            replay_comparison_payload(report.candle_replay)
+            if report.candle_replay is not None
+            else None
+        ),
         "folds": [
             {
                 "index": fold.index,
@@ -356,12 +415,13 @@ def write_walk_forward_report(
                     if fold.economics is not None
                     else None
                 ),
+                "predictions": asdict(fold.predictions),
             }
             for fold in report.folds
         ],
     }
 
-    with path.open("w", encoding="utf-8", newline="\n") as output_file:
+    with path.open("x", encoding="utf-8", newline="\n") as output_file:
         json.dump(payload, output_file, indent=2)
         output_file.write("\n")
 
@@ -403,6 +463,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--maximum-trades-per-session", type=int)
     parser.add_argument("--session-profit-target", type=float)
     parser.add_argument("--session-loss-limit", type=float)
+    parser.add_argument("--replay-manifest", type=Path, help="Opt-in verified raw candle manifest.")
+    parser.add_argument("--replay-holding-bars", type=int, help="Explicit replay holding horizon.")
+    parser.add_argument("--replay-take-profit-bps", type=Decimal, default=Decimal("20"))
+    parser.add_argument("--replay-stop-loss-bps", type=Decimal, default=Decimal("40"))
+    parser.add_argument("--replay-taker-fee-bps", type=Decimal, default=Decimal("10"))
+    parser.add_argument("--replay-slippage-bps", type=Decimal, default=Decimal("2"))
     parser.add_argument(
         "--allow-short",
         action="store_true",
@@ -414,12 +480,20 @@ def parse_args() -> argparse.Namespace:
         choices=("auto", "cpu", "cuda"),
         default="auto",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if (args.replay_manifest is None) != (args.replay_holding_bars is None):
+        parser.error("--replay-manifest and --replay-holding-bars must be supplied together")
+    return args
 
 
 def main() -> None:
     """Run and record session-aware expanding-window validation."""
     args = parse_args()
+    output_path = args.output or (
+        DEFAULT_OUTPUT_DIRECTORY / f"{args.path.stem}_linear_walk_forward.json"
+    )
+    if output_path.exists():
+        raise FileExistsError(f"Refusing to overwrite an existing report: {output_path}")
     config = TrainingConfig(
         max_epochs=args.max_epochs,
         patience=args.patience,
@@ -451,9 +525,21 @@ def main() -> None:
         embargo_ms=args.embargo_ms,
         policy=policy,
         economic_config=economic_config,
-    )
-    output_path = args.output or (
-        DEFAULT_OUTPUT_DIRECTORY / f"{args.path.stem}_linear_walk_forward.json"
+        replay_manifest=args.replay_manifest,
+        replay_config=(
+            ReplayConfig(
+                capital=economic_config,
+                holding_bars=args.replay_holding_bars,
+                barriers=TripleBarrierConfig(
+                    take_profit_bps=args.replay_take_profit_bps,
+                    stop_loss_bps=args.replay_stop_loss_bps,
+                    taker_fee_bps=args.replay_taker_fee_bps,
+                    slippage_bps=args.replay_slippage_bps,
+                ),
+            )
+            if args.replay_manifest is not None
+            else None
+        ),
     )
     write_walk_forward_report(output_path, report, config, policy)
 
@@ -495,6 +581,17 @@ def main() -> None:
             f"turnover={economics.turnover_multiple:.4f}x, "
             f"exposure={economics.exposure_ratio:.4f}"
         )
+    if report.candle_replay is not None:
+        for name, replay in (
+            ("next_open", report.candle_replay.next_open),
+            ("delayed_one_bar", report.candle_replay.delayed_one_bar),
+        ):
+            print(
+                f"Candle replay {name}: trades={len(replay.trades)}, "
+                f"net_pnl={replay.net_pnl:.2f}, "
+                f"marked_drawdown={replay.maximum_marked_drawdown_pct:.4f}%, "
+                f"turnover_quote={replay.turnover_quote:.2f}"
+            )
     print(f"Report: {output_path.resolve()}")
 
 

@@ -39,6 +39,7 @@ class SessionPartition:
     name: str
     partition: ModelPartition
     outcomes: tuple[TradeOutcome, ...] | None
+    event_times_ms: tuple[int, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,6 +143,7 @@ def load_session_dataset(
     features: dict[str, list[np.ndarray]] = {item.name: [] for item in selected}
     targets: dict[str, list[int]] = {item.name: [] for item in selected}
     outcomes: dict[str, list[TradeOutcome]] = {item.name: [] for item in selected}
+    event_times: dict[str, list[int]] = {item.name: [] for item in selected}
 
     with path.open(encoding="utf-8", newline="") as source:
         reader = csv.DictReader(source, strict=True)
@@ -178,6 +180,7 @@ def load_session_dataset(
                     outcomes[session].append(outcome)
                 features[session].append(feature_row)
                 targets[session].append(target)
+                event_times[session].append(event_time)
             except (KeyError, TypeError, ValueError) as error:
                 raise ValueError(f"{path.name} line {line_number}: {error}") from error
 
@@ -194,6 +197,7 @@ def load_session_dataset(
                 feature_names=feature_names,
             ),
             tuple(outcomes[item.name]) if has_outcomes else None,
+            tuple(event_times[item.name]),
         )
         for item in selected
     )

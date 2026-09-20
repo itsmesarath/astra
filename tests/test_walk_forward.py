@@ -119,7 +119,10 @@ def test_runs_expanding_validation_and_reserves_final_session(tmp_path: Path) ->
         payload = json.load(input_file)
 
     assert payload["held_out_sessions"] == ["held-out"]
-    assert payload["schema_version"] == 4
+    assert payload["schema_version"] == 5
+    assert payload["prediction_class_order"] == [-1, 0, 1]
+    assert payload["candle_replay"] is None
+    assert len(payload["folds"][0]["predictions"]["probabilities"]) == 12
     assert len(payload["source_sha256"]) == 64
     assert payload["embargo_ms"] == 0
     assert payload["session_metadata"][-1]["name"] == "held-out"
