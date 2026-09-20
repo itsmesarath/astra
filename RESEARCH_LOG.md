@@ -346,3 +346,29 @@ No real historical dataset, held-out evaluation, live connection or promotion wa
 
 Next freeze the research protocol, data selection and cost/latency scenarios before a registered
 research-only trial. Remaining realism/environment/physical-isolation limitations stay explicit.
+
+## Fixed trend-pullback hypothesis and six-scenario paper replay
+
+Implemented a research-only EMA20/EMA60 crossing hypothesis on completed five-minute candles.
+EMA seeds use simple means; ATR14 seeds from true ranges at bars 1-14, then uses Wilder smoothing.
+Indicators reset per session, gaps fail closed, and the six-bar slow-EMA slope delays earliest
+eligibility to index 65. The 2-ATR target must cover three times the fixed 24-bps reference cost,
+using signal-close price because the next entry is not yet known. ATR freezes at signal time.
+
+Paper replay schema 2 adds explicit absolute signal-distance geometry, anchored at the entry
+bar open before execution slippage. Existing label-reference behavior remains the default.
+Distances must match all signals exactly; nonpositive entry stop prices reject without a fill.
+An opt-in full-horizon rule rejects entries without the complete within-session holding window.
+The trend study runs all six cost/delay scenarios with identical frozen signals, 24 holding bars,
+10% fee-inclusive capital allocation, no leverage, and no scenario selection. Costs hold per-side
+fees at 10 bps and stress per-side slippage to 2/8/14 bps. These are assumptions, not measured fees.
+
+Verification: baseline 416 tests; completed suite 449 passed, including causal prefix invariance,
+hand-calculated indicator seeds, gaps, cost-independent barriers, delayed-entry anchoring, complete
+horizons, invalid evidence, and unchanged legacy replay checks. No historical returns or held-out
+archives were inspected. No LLM training, live connectivity, or promotion was introduced.
+
+Next: register immutable data/code/configuration provenance before loading a historical study.
+Cash/buy-and-hold/random controls, uncertainty estimation, numerical evidence gates, and physical
+lockbox separation remain prerequisites to any promotion decision. This API alone does not enforce
+dataset selection or prevent callers from supplying reserved sessions.

@@ -11,7 +11,9 @@ import pytest
 from ai_trader.backtesting.candle_replay import (
     CandleSession,
     ReplayConfig,
+    SignalDistances,
     replay_candles,
+    replay_report_payload,
     write_replay_report,
 )
 from ai_trader.backtesting.economic_metrics import EconomicConfig
@@ -19,6 +21,93 @@ from ai_trader.features import kline_dataset
 from ai_trader.features.kline_dataset import Kline, TripleBarrierConfig
 
 D = Decimal
+
+
+def distance_session(candles, stop="1", target="2"):
+    return replace(session(candles), signal_distances=(SignalDistances(999, D(stop), D(target)),))
+
+
+@pytest.mark.parametrize("cost", ["2", "8", "14"])
+def test_price_distances_do_not_move_with_costs(cost):
+    candles = [bar(0), bar(1), bar(2, high="103", low="100")]
+    config = ReplayConfig(
+        barriers=TripleBarrierConfig(slippage_bps=D(cost)),
+        holding_bars=2,
+        barrier_mode="signal_distances",
+        require_full_horizon=True,
+    )
+    report = replay_candles((distance_session(candles),), config)
+    assert report.trades[0].exit.reference_price == D(102)
+    assert report.trades[0].exit.reason == "target"
+    assert report.trades[0].entry.price == D(100) * (1 + D(cost) / 10000)
+    payload = replay_report_payload(report)
+    assert payload["schema_version"] == 2
+    assert payload["barriers"] == "signal_absolute_distances_from_entry_open_cost_independent"
+
+
+def test_absolute_stop_adverse_gap_and_ambiguous_touch():
+    config = ReplayConfig(barrier_mode="signal_distances", holding_bars=2)
+    for candle, reason, price in (
+        (bar(2, "98", "100", "97"), "gap_stop", D(98)),
+        (bar(2, "100", "103", "98"), "ambiguous_stop", D(99)),
+    ):
+        report = replay_candles((distance_session([bar(0), bar(1), candle]),), config)
+        assert report.trades[0].exit.reason == reason
+        assert report.trades[0].exit.reference_price == price
+
+
+def test_distances_reanchor_at_delayed_open_and_require_full_horizon():
+    candles = [bar(0), bar(1), bar(2, "110"), bar(3, "110", high="113")]
+    config = ReplayConfig(
+        barrier_mode="signal_distances",
+        holding_bars=2,
+        entry_delay_bars=1,
+        require_full_horizon=True,
+    )
+    report = replay_candles((distance_session(candles),), config)
+    assert report.trades[0].entry.reference_price == D(110)
+    assert report.trades[0].exit.reference_price == D(112)
+    short = replay_candles((distance_session(candles[:-1]),), config)
+    assert not short.fills
+    assert short.decisions[0].reason == "insufficient_horizon"
+
+
+def test_nonpositive_stop_rejected_without_spending_cash():
+    report = replay_candles(
+        (distance_session([bar(0), bar(1)], stop="100"),),
+        ReplayConfig(barrier_mode="signal_distances"),
+    )
+    assert not report.fills
+    assert report.decisions[0].reason == "invalid_stop_price"
+    assert report.starting_balance == report.ending_balance
+
+
+@pytest.mark.parametrize(
+    "distances",
+    [
+        (),
+        (SignalDistances(999, D(0), D(2)),),
+        (SignalDistances(999, D(1), D("NaN")),),
+        (SignalDistances(1999, D(1), D(2)),),
+        (SignalDistances(999, D(1), D(2)),) * 2,
+    ],
+)
+def test_distances_fail_closed_on_missing_invalid_or_duplicate_evidence(distances):
+    with pytest.raises(ValueError):
+        replay_candles(
+            (replace(session([bar(0), bar(1)]), signal_distances=distances),),
+            ReplayConfig(barrier_mode="signal_distances"),
+        )
+
+
+def test_distances_require_explicit_mode_and_affect_input_hash():
+    candles = [bar(0), bar(1)]
+    with pytest.raises(ValueError, match="explicit"):
+        replay_candles((distance_session(candles),), ReplayConfig())
+    config = ReplayConfig(barrier_mode="signal_distances")
+    a = replay_candles((distance_session(candles),), config)
+    b = replay_candles((distance_session(candles, target="3"),), config)
+    assert a.input_sha256 != b.input_sha256
 
 
 def bar(index: int, opening="100", high=None, low=None, close=None) -> Kline:

@@ -33,6 +33,13 @@ to be paper. See [execution modes and the live-adapter roadmap](EXECUTION_MODES.
 
 ## Research principles
 
+The fixed trend-pullback research API is implemented in `ai_trader.research.trend_pullback`.
+`ai_trader.research.pullback_replay.replay_pullback_scenarios` takes explicitly selected raw
+five-minute candle sessions and reports every 24/36/48-bps cost scenario at next-open and delayed
+entry, with 10% capital allocation and frozen ATR price distances. It does not load data, enforce
+a research registration, select a winner, or authorize promotion. Tests are synthetic; no economic
+edge has been demonstrated. See [RESEARCH_LOG.md](RESEARCH_LOG.md) for assumptions and remaining gates.
+
 - Use time-based train, validation, and test splits.
 - Prevent future information from leaking into model inputs.
 - Include fees, spread, slippage, and latency.

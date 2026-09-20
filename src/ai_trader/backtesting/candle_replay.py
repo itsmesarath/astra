@@ -30,10 +30,21 @@ class ReplayConfig:
     holding_bars: int = 120
     entry_delay_bars: int = 0
     quantity_step: Decimal = Decimal("0.00000001")
+    barrier_mode: Literal["label_reference", "signal_distances"] = "label_reference"
+    require_full_horizon: bool = False
 
     def validate(self) -> None:
         self.capital.validate()
-        self.barriers.validate()
+        if self.barrier_mode not in ("label_reference", "signal_distances"):
+            raise ValueError("Unknown replay barrier mode.")
+        if type(self.require_full_horizon) is not bool:
+            raise ValueError("Full-horizon requirement must be boolean.")
+        if self.barrier_mode == "label_reference":
+            self.barriers.validate()
+        else:
+            for cost in (self.barriers.taker_fee_bps, self.barriers.slippage_bps):
+                if not isinstance(cost, Decimal) or not cost.is_finite() or cost < 0:
+                    raise ValueError("Per-side costs must be finite nonnegative Decimals.")
         for value, minimum, name in (
             (self.holding_bars, 1, "Holding bars"),
             (self.entry_delay_bars, 0, "Entry delay"),
@@ -44,8 +55,19 @@ class ReplayConfig:
             raise ValueError("Quantity step must be finite and positive.")
         if max(self.barriers.taker_fee_bps, self.barriers.slippage_bps) >= BPS:
             raise ValueError("Each per-side cost must be less than 10000 bps.")
-        if self.barriers.stop_loss_bps - self.barriers.round_trip_cost_bps >= BPS:
+        if self.barrier_mode == "label_reference" and (
+            self.barriers.stop_loss_bps - self.barriers.round_trip_cost_bps >= BPS
+        ):
             raise ValueError("Stop reference price must remain positive.")
+
+
+@dataclass(frozen=True, slots=True)
+class SignalDistances:
+    """Absolute gross-price offsets frozen by the signal producer at close."""
+
+    signal_time_ms: int
+    stop_distance: Decimal
+    target_distance: Decimal
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +75,7 @@ class CandleSession:
     name: str
     candles: tuple[Kline, ...]
     long_signal_times_ms: tuple[int, ...] = ()
+    signal_distances: tuple[SignalDistances, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,6 +244,21 @@ def replay_candles(sessions: tuple[CandleSession, ...], config: ReplayConfig) ->
     """
     config.validate()
     _validate_sessions(sessions)
+    for session in sessions:
+        if config.barrier_mode == "label_reference":
+            if session.signal_distances:
+                raise ValueError("Signal distances require explicit signal_distances mode.")
+            continue
+        if tuple(item.signal_time_ms for item in session.signal_distances) != (
+            session.long_signal_times_ms
+        ):
+            raise ValueError("Signal distances must match every signal in order exactly once.")
+        for item in session.signal_distances:
+            if type(item.signal_time_ms) is not int:
+                raise ValueError("Distance timestamps must be integers.")
+            for distance in (item.stop_distance, item.target_distance):
+                if not isinstance(distance, Decimal) or not distance.is_finite() or distance <= 0:
+                    raise ValueError("Signal distances must be finite positive Decimals.")
     capital, barriers = config.capital, config.barriers
     cash = starting_balance = Decimal(str(capital.starting_balance))
     fee_rate = barriers.taker_fee_bps / BPS
@@ -240,6 +278,7 @@ def replay_candles(sessions: tuple[CandleSession, ...], config: ReplayConfig) ->
         session_start = cash
         session_trades = 0
         signals = set(session.long_signal_times_ms)
+        distances = {item.signal_time_ms: item for item in session.signal_distances}
         pending: tuple[int, int] | None = None  # due bar, signal timestamp
 
         for index, candle in enumerate(session.candles):
@@ -248,6 +287,19 @@ def replay_candles(sessions: tuple[CandleSession, ...], config: ReplayConfig) ->
                 reason = _entry_rejection(
                     capital, cash, session_start, session_trades, last_exit, candle.open_time_ms
                 )
+                if config.barrier_mode == "signal_distances":
+                    geometry = distances[signal_time]
+                    target = candle.open + geometry.target_distance
+                    stop = candle.open - geometry.stop_distance
+                    if stop <= 0 and reason is None:
+                        reason = "invalid_stop_price"
+                else:
+                    target = candle.open * (
+                        ONE + (barriers.take_profit_bps + barriers.round_trip_cost_bps) / BPS
+                    )
+                    stop = candle.open * (
+                        ONE + (barriers.round_trip_cost_bps - barriers.stop_loss_bps) / BPS
+                    )
                 price = candle.open * (ONE + slip_rate)
                 budget = cash * fraction
                 quantity = (
@@ -274,10 +326,8 @@ def replay_candles(sessions: tuple[CandleSession, ...], config: ReplayConfig) ->
                     position = _Position(
                         signal_time,
                         entry,
-                        candle.open
-                        * (ONE + (barriers.take_profit_bps + barriers.round_trip_cost_bps) / BPS),
-                        candle.open
-                        * (ONE + (barriers.round_trip_cost_bps - barriers.stop_loss_bps) / BPS),
+                        target,
+                        stop,
                         index + config.holding_bars - 1,
                     )
                     session_trades += 1
@@ -349,6 +399,9 @@ def replay_candles(sessions: tuple[CandleSession, ...], config: ReplayConfig) ->
                     if pending is not None
                     else "session_end"
                     if due_index >= len(session.candles)
+                    else "insufficient_horizon"
+                    if config.require_full_horizon
+                    and due_index + config.holding_bars > len(session.candles)
                     else None
                 )
                 if reason is not None:
@@ -387,10 +440,19 @@ def replay_candles(sessions: tuple[CandleSession, ...], config: ReplayConfig) ->
 def replay_report_payload(report: ReplayReport) -> dict[str, object]:
     """Return JSON-safe audit data with exact Decimal values encoded as strings."""
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "execution_mode": "paper",
         "fill_policy": "market_open_first_intrabar_stop_first_adverse_slippage",
-        "barriers": "label_v2_reference_geometry_actual_fill_costs",
+        "barriers": (
+            "signal_absolute_distances_from_entry_open_cost_independent"
+            if report.config.barrier_mode == "signal_distances"
+            else "label_v2_reference_geometry_actual_fill_costs"
+        ),
+        "horizon_policy": (
+            "require_complete_session_window"
+            if report.config.require_full_horizon
+            else "allow_session_end_liquidation"
+        ),
         "mark_policy": "candle_close_gross_position_value_no_exit_fee_reserve",
         "turnover_policy": "sum_buy_and_sell_fill_notionals_excluding_fees",
         "session_policy": "force_flat_at_final_close_carry_cash_and_cooldown",
