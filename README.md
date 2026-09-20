@@ -96,7 +96,7 @@ signals rejected by each control.
 ## Research validity and next milestone
 
 Read the [strategy research reset](STRATEGY_RESEARCH_PLAN.md) before interpreting backtests.
-Walk-forward report schema 3 separates fitting, past-session checkpoint tuning, and next-session
+Walk-forward report schema 4 separates fitting, past-session checkpoint tuning, and next-session
 evaluation. `--minimum-training-sessions` counts fitting sessions only;
 `--tuning-session-count` (default 1) adds a disjoint tuning block. For a 20-session initial prefix,
 use `--minimum-training-sessions 15 --tuning-session-count 5`. Legacy `validation` metric fields
@@ -123,7 +123,16 @@ The common CSV row schema stays at 1, with an explicit `labeling_version` column
 is schema 2 and records the fill policy. Older labels are unchanged: regenerate into a new directory
 before relying on these rules, and do not mix labeling versions in an experiment.
 
-The label-based simulator still has capital-accounting and execution-model limitations. Fully isolated
+Schema 4 carries capital and re-entry cooldowns across evaluation sessions. Only session trade
+counters and session-start PnL limits reset. Accepted outcomes enter an in-memory settlement ledger:
+PnL is booked at exit before subsequent decisions, not when the trade is selected. Intervals remain
+inclusive, so a new entry at the exact exit millisecond is rejected. Aggregate metrics use those
+same settlements and reject independently reset session reports. Observation duration spans the
+first entry through the maximum outcome exit, including gaps between sessions. Schema 3 and older
+economic reports used per-session selection capital and must not be treated as equivalent.
+
+This remains label-based accounting, not independent candle execution replay. Drawdown is still
+closed-trade only and turnover is explicitly a twice-entry-notional proxy. Fully isolated
 per-session storage and complete code/environment manifests remain future work. No new historical
 profitability claim has been made. Execution remains paper-only; public data ingestion may be online.
 

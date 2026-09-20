@@ -200,7 +200,10 @@ Fitting, tuning and forward evaluation are now separated. Schema-3 loading also 
 chronology and outcome boundaries, skips held-out value conversion, and records data provenance.
 Kline labeling version 2 now handles opening stop/target gaps before intrabar touches, using the
 opening price and timestamp. Existing datasets have not been regenerated.
-Next implement a causal execution ledger with continuous capital accounting.
+Schema-4 walk-forward economics now carry capital/cooldowns and settle label-based trade PnL at
+exit. Session limits reset against carried session-start equity; aggregate metrics use the same
+settlements. Next build independent candle replay with candle-close marked equity, simulated
+buy/sell turnover and explicit entry-latency stress tests. The label ledger alone is not that engine.
 Keep physical lockbox isolation and full code/environment manifests on the remaining hardening list.
 After those gates, test the registered slower trend-pullback hypothesis with volatility-scaled
 price barriers and explicit cost stresses. No live connectivity is part of this milestone.

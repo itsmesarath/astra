@@ -119,7 +119,7 @@ def test_runs_expanding_validation_and_reserves_final_session(tmp_path: Path) ->
         payload = json.load(input_file)
 
     assert payload["held_out_sessions"] == ["held-out"]
-    assert payload["schema_version"] == 3
+    assert payload["schema_version"] == 4
     assert len(payload["source_sha256"]) == 64
     assert payload["embargo_ms"] == 0
     assert payload["session_metadata"][-1]["name"] == "held-out"
@@ -159,7 +159,7 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
     """The same validation engine must retain the explicit kline feature order."""
     source_path = tmp_path / "kline.csv"
     rows = []
-    for session_index, session in enumerate(("one", "two", "three", "four", "five")):
+    for session_index, session in enumerate(("one", "two", "three", "four", "five", "six")):
         row_index = 0
         for direction in (-1, 0, 1):
             for _ in range(3):
@@ -205,10 +205,17 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
     )
 
     assert report.feature_names == KLINE_MODEL_FEATURE_NAMES
-    assert report.evaluated_sessions == ("four",)
-    assert report.held_out_sessions == ("five",)
+    assert report.evaluated_sessions == ("four", "five")
+    assert report.held_out_sessions == ("six",)
     assert report.aggregate_economics is not None
     assert report.aggregate_economics.net_pnl > 0
+    first = report.folds[0].economics
+    second = report.folds[1].economics
+    assert first.accepted_trades > 0
+    assert second.starting_balance == first.ending_balance
+    assert second.previous_exit_time_ms == first.last_exit_time_ms
+    assert report.aggregate_economics.ending_balance == second.ending_balance
+    assert report.aggregate_economics.trade_ledger == first.trade_ledger + second.trade_ledger
 
 
 @pytest.mark.parametrize("tuning_count", [0, -1])

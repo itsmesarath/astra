@@ -191,6 +191,7 @@ def run_walk_forward(
 
     validation_stop = len(sessions)
     folds = []
+    previous_economics = None
 
     for validation_position in range(first_evaluation, validation_stop):
         tuning_start = validation_position - tuning_session_count
@@ -224,10 +225,12 @@ def run_walk_forward(
                 validation_session.outcomes,
                 active_policy,
                 active_economic_config,
+                previous_evaluation=previous_economics,
             )
             if validation_session.outcomes is not None
             else None
         )
+        previous_economics = economics
         folds.append(
             WalkForwardFold(
                 index=len(folds) + 1,
@@ -310,7 +313,7 @@ def write_walk_forward_report(
     """Write one auditable walk-forward evaluation report."""
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "schema_version": 3,
+        "schema_version": 4,
         "evaluation_protocol": "expanding_fit_past_tune_next_session_evaluate",
         "validation_fields_mean": "evaluation_only",
         "held_out_access": "csv_metadata_scanned_no_feature_or_outcome_conversion",

@@ -177,8 +177,12 @@ by itself establish tradable information in these inputs.
 
 Implementation update: kline labeling version 2 now handles opening stop/target gaps before
 intrabar touches. These are idealized market-triggered exits with fixed-bps costs, not guaranteed
-exchange fills. Existing historical datasets remain unchanged. Continuous portfolio accounting
-and the remaining execution/provenance gates above are still pending.
+exchange fills. Existing historical datasets remain unchanged. Schema-4 walk-forward economics
+now settle label-based PnL at exit, carry capital/cooldowns across sessions, reset session counters
+and PnL references, and summarize the same settlements instead of a second capital path. Observation
+duration now uses the maximum exit and includes inter-session gaps. This addresses finding 5 and
+the interval part of finding 6; independent candle replay, marked equity, actual simulated turnover,
+latency stress tests and the remaining provenance gates above are still pending.
 
 Bailey, Borwein, Lopez de Prado and Zhu, [The Probability of Backtest Overfitting](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf),
 explain why repeated strategy selection on the same history creates false discoveries. This

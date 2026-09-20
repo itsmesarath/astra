@@ -68,6 +68,19 @@ class TradeOutcome:
 
 
 @dataclass(frozen=True, slots=True)
+class SettledTrade:
+    """One label-based settlement; not an exchange fill or marked position."""
+
+    entry_time_ms: int
+    exit_time_ms: int
+    entry_notional: float
+    net_return_bps: float
+    net_pnl: float
+    balance_before: float
+    balance_after: float
+
+
+@dataclass(frozen=True, slots=True)
 class EconomicEvaluation:
     """Closed-trade economics for one or more chronological validation sessions."""
 
@@ -94,10 +107,15 @@ class EconomicEvaluation:
     total_net_return_bps: float
     profit_factor: float | None
     trade_net_returns_bps: tuple[float, ...]
+    trade_ledger: tuple[SettledTrade, ...]
+    observation_start_ms: int
+    observation_end_ms: int
+    last_exit_time_ms: int
+    previous_exit_time_ms: int
 
 
-def _summarize_returns(
-    trade_returns_bps: Sequence[float],
+def _summarize_trades(
+    trades: Sequence[SettledTrade],
     *,
     rows: int,
     long_signals: int,
@@ -106,29 +124,30 @@ def _summarize_returns(
     skipped_trade_limit_signals: int,
     skipped_session_limit_signals: int,
     exposure_ms: int,
-    observation_ms: int,
-    config: EconomicConfig,
+    observation_start_ms: int,
+    observation_end_ms: int,
+    starting_balance: float,
+    last_exit_time_ms: int,
+    previous_exit_time_ms: int,
 ) -> EconomicEvaluation:
-    """Compound chronological trade outcomes and calculate portfolio statistics."""
-    config.validate()
-    balance = config.starting_balance
+    """Summarize actual settlements without recomputing a different capital path."""
+    balance = starting_balance
     peak_balance = balance
     maximum_drawdown = 0.0
     turnover_quote = 0.0
     gains = 0.0
     losses = 0.0
-    normalized_returns = tuple(float(value) for value in trade_returns_bps)
-    for return_bps in normalized_returns:
-        if not math.isfinite(return_bps) or return_bps <= -BASIS_POINTS_PER_UNIT:
-            raise ValueError("Trade returns must be finite and greater than -10000 bps.")
-        position_notional = balance * config.position_fraction
-        turnover_quote += 2 * position_notional
-        pnl = position_notional * return_bps / BASIS_POINTS_PER_UNIT
-        balance += pnl
-        if return_bps > 0:
-            gains += pnl
-        elif return_bps < 0:
-            losses += -pnl
+    normalized_returns = tuple(trade.net_return_bps for trade in trades)
+    for trade in trades:
+        if trade.balance_before != balance:
+            raise ValueError("Trade ledger balances must form a continuous capital path.")
+        # Outcome labels cannot supply actual sell notional: retain the explicit proxy.
+        turnover_quote += 2 * trade.entry_notional
+        balance = trade.balance_after
+        if trade.net_pnl > 0:
+            gains += trade.net_pnl
+        elif trade.net_pnl < 0:
+            losses += -trade.net_pnl
         peak_balance = max(peak_balance, balance)
         drawdown = (peak_balance - balance) / peak_balance
         maximum_drawdown = max(maximum_drawdown, drawdown)
@@ -137,7 +156,8 @@ def _summarize_returns(
     winning_trades = sum(value > 0 for value in normalized_returns)
     losing_trades = sum(value < 0 for value in normalized_returns)
     ending_balance = balance
-    net_pnl = ending_balance - config.starting_balance
+    net_pnl = ending_balance - starting_balance
+    observation_ms = observation_end_ms - observation_start_ms + 1
     return EconomicEvaluation(
         rows=rows,
         long_signals=long_signals,
@@ -149,19 +169,24 @@ def _summarize_returns(
         winning_trades=winning_trades,
         losing_trades=losing_trades,
         breakeven_trades=accepted_trades - winning_trades - losing_trades,
-        starting_balance=config.starting_balance,
+        starting_balance=starting_balance,
         ending_balance=ending_balance,
         net_pnl=net_pnl,
-        return_pct=net_pnl / config.starting_balance * 100,
+        return_pct=net_pnl / starting_balance * 100,
         maximum_closed_trade_drawdown_pct=maximum_drawdown * 100,
         turnover_quote=turnover_quote,
-        turnover_multiple=turnover_quote / config.starting_balance,
+        turnover_multiple=turnover_quote / starting_balance,
         exposure_ms=exposure_ms,
         observation_ms=observation_ms,
         exposure_ratio=exposure_ms / observation_ms if observation_ms > 0 else 0.0,
         total_net_return_bps=sum(normalized_returns),
         profit_factor=gains / losses if losses > 0 else None,
         trade_net_returns_bps=normalized_returns,
+        trade_ledger=tuple(trades),
+        observation_start_ms=observation_start_ms,
+        observation_end_ms=observation_end_ms,
+        last_exit_time_ms=last_exit_time_ms,
+        previous_exit_time_ms=previous_exit_time_ms,
     )
 
 
@@ -170,8 +195,14 @@ def evaluate_spot_economics(
     outcomes: Sequence[TradeOutcome],
     policy: DecisionPolicy,
     config: EconomicConfig,
+    *,
+    previous_evaluation: EconomicEvaluation | None = None,
 ) -> EconomicEvaluation:
-    """Simulate one long position at a time using cost-adjusted realized outcomes."""
+    """Settle label-based trades causally, carrying capital/cooldown between sessions.
+
+    Only session counters and PnL limits reset. Intervals are inclusive: another
+    entry at the exact exit millisecond is rejected. No intra-trade marks exist.
+    """
     config.validate()
     if policy.allow_short:
         raise ValueError("Spot economic evaluation requires short signals to be disabled.")
@@ -187,32 +218,78 @@ def evaluate_spot_economics(
             raise ValueError("Trade outcome entry times must be strictly increasing.")
         previous_entry = outcome.entry_time_ms
 
+    if (
+        previous_evaluation is not None
+        and outcomes[0].entry_time_ms <= previous_evaluation.observation_end_ms
+    ):
+        raise ValueError("Economic sessions must be strictly chronological and non-overlapping.")
+
     long_signals = 0
     skipped_overlapping_signals = 0
     skipped_cooldown_signals = 0
     skipped_trade_limit_signals = 0
     skipped_session_limit_signals = 0
-    available_after_ms = -1
-    accepted_returns = []
+    available_after_ms = (
+        previous_evaluation.last_exit_time_ms if previous_evaluation is not None else -1
+    )
+    trades: list[SettledTrade] = []
+    pending: TradeOutcome | None = None
+    pending_notional = 0.0
+    accepted_count = 0
     exposure_ms = 0
-    selection_balance = config.starting_balance
+    starting_balance = (
+        previous_evaluation.ending_balance
+        if previous_evaluation is not None
+        else config.starting_balance
+    )
+    balance = starting_balance
     session_limit_reached = False
+
+    def settle() -> None:
+        nonlocal pending, balance, available_after_ms, session_limit_reached
+        if pending is None:
+            return
+        pnl = pending_notional * pending.net_return_bps / BASIS_POINTS_PER_UNIT
+        next_balance = balance + pnl
+        if not math.isfinite(next_balance) or next_balance <= 0:
+            raise ValueError("Settlement balance must remain finite and positive.")
+        trades.append(
+            SettledTrade(
+                entry_time_ms=pending.entry_time_ms,
+                exit_time_ms=pending.exit_time_ms,
+                entry_notional=pending_notional,
+                net_return_bps=pending.net_return_bps,
+                net_pnl=pnl,
+                balance_before=balance,
+                balance_after=next_balance,
+            )
+        )
+        balance = next_balance
+        available_after_ms = pending.exit_time_ms
+        pending = None
+        session_pnl = balance - starting_balance
+        session_limit_reached = (
+            config.session_profit_target is not None and session_pnl >= config.session_profit_target
+        ) or (config.session_loss_limit is not None and session_pnl <= -config.session_loss_limit)
+
     for probability_row, outcome in zip(probabilities, outcomes, strict=True):
+        if pending is not None and pending.exit_time_ms <= outcome.entry_time_ms:
+            settle()
         decision = decide_position(probability_row, policy)
         if decision.intent != "LONG":
             continue
         long_signals += 1
+        if pending is not None or outcome.entry_time_ms <= available_after_ms:
+            skipped_overlapping_signals += 1
+            continue
         if session_limit_reached:
             skipped_session_limit_signals += 1
             continue
         if (
             config.maximum_trades_per_session is not None
-            and len(accepted_returns) >= config.maximum_trades_per_session
+            and accepted_count >= config.maximum_trades_per_session
         ):
             skipped_trade_limit_signals += 1
-            continue
-        if outcome.entry_time_ms <= available_after_ms:
-            skipped_overlapping_signals += 1
             continue
         if (
             available_after_ms >= 0
@@ -220,19 +297,15 @@ def evaluate_spot_economics(
         ):
             skipped_cooldown_signals += 1
             continue
-        accepted_returns.append(outcome.net_return_bps)
+        pending = outcome
+        pending_notional = balance * config.position_fraction
+        accepted_count += 1
         exposure_ms += outcome.exit_time_ms - outcome.entry_time_ms + 1
-        available_after_ms = outcome.exit_time_ms
-        position_notional = selection_balance * config.position_fraction
-        selection_balance += position_notional * outcome.net_return_bps / BASIS_POINTS_PER_UNIT
-        session_pnl = selection_balance - config.starting_balance
-        session_limit_reached = (
-            config.session_profit_target is not None and session_pnl >= config.session_profit_target
-        ) or (config.session_loss_limit is not None and session_pnl <= -config.session_loss_limit)
 
-    observation_ms = outcomes[-1].exit_time_ms - outcomes[0].entry_time_ms + 1
-    return _summarize_returns(
-        accepted_returns,
+    # Drain the final accepted trade at its exit, even if no later signal exists.
+    settle()
+    return _summarize_trades(
+        trades,
         rows=len(outcomes),
         long_signals=long_signals,
         skipped_overlapping_signals=skipped_overlapping_signals,
@@ -240,8 +313,13 @@ def evaluate_spot_economics(
         skipped_trade_limit_signals=skipped_trade_limit_signals,
         skipped_session_limit_signals=skipped_session_limit_signals,
         exposure_ms=exposure_ms,
-        observation_ms=observation_ms,
-        config=config,
+        observation_start_ms=outcomes[0].entry_time_ms,
+        observation_end_ms=max(outcome.exit_time_ms for outcome in outcomes),
+        starting_balance=starting_balance,
+        last_exit_time_ms=available_after_ms,
+        previous_exit_time_ms=(
+            previous_evaluation.last_exit_time_ms if previous_evaluation is not None else -1
+        ),
     )
 
 
@@ -249,15 +327,27 @@ def aggregate_economic_evaluations(
     evaluations: Sequence[EconomicEvaluation],
     config: EconomicConfig,
 ) -> EconomicEvaluation:
-    """Compound fold trade returns in chronological validation order."""
+    """Combine a continuous fold ledger; independently reset folds are invalid."""
+    config.validate()
     if not evaluations:
         raise ValueError("At least one economic evaluation is required.")
-    return _summarize_returns(
-        [
-            trade_return
-            for evaluation in evaluations
-            for trade_return in evaluation.trade_net_returns_bps
-        ],
+    expected_balance = config.starting_balance
+    previous_end_ms = -1
+    previous_exit_ms = -1
+    for evaluation in evaluations:
+        if evaluation.starting_balance != expected_balance:
+            raise ValueError("Economic evaluations must use continuous capital across sessions.")
+        if evaluation.observation_start_ms <= previous_end_ms:
+            raise ValueError(
+                "Economic sessions must be strictly chronological and non-overlapping."
+            )
+        if evaluation.previous_exit_time_ms != previous_exit_ms:
+            raise ValueError("Economic evaluations must carry cooldown state across sessions.")
+        expected_balance = evaluation.ending_balance
+        previous_end_ms = evaluation.observation_end_ms
+        previous_exit_ms = evaluation.last_exit_time_ms
+    return _summarize_trades(
+        [trade for evaluation in evaluations for trade in evaluation.trade_ledger],
         rows=sum(evaluation.rows for evaluation in evaluations),
         long_signals=sum(evaluation.long_signals for evaluation in evaluations),
         skipped_overlapping_signals=sum(
@@ -273,14 +363,21 @@ def aggregate_economic_evaluations(
             evaluation.skipped_session_limit_signals for evaluation in evaluations
         ),
         exposure_ms=sum(evaluation.exposure_ms for evaluation in evaluations),
-        observation_ms=sum(evaluation.observation_ms for evaluation in evaluations),
-        config=config,
+        observation_start_ms=evaluations[0].observation_start_ms,
+        observation_end_ms=evaluations[-1].observation_end_ms,
+        starting_balance=config.starting_balance,
+        last_exit_time_ms=evaluations[-1].last_exit_time_ms,
+        previous_exit_time_ms=-1,
     )
 
 
 def economic_evaluation_payload(report: EconomicEvaluation) -> dict[str, object]:
     """Serialize summary metrics without embedding every individual trade return."""
     return {
+        "accounting_policy": "label_settlement_continuous_capital_v2",
+        "turnover_definition": "twice_entry_notional_proxy",
+        "drawdown_definition": "closed_trade_only_no_position_marks",
+        "observation_definition": "inclusive_first_entry_to_maximum_outcome_exit",
         "rows": report.rows,
         "long_signals": report.long_signals,
         "accepted_trades": report.accepted_trades,
@@ -299,6 +396,11 @@ def economic_evaluation_payload(report: EconomicEvaluation) -> dict[str, object]
         "turnover_quote": report.turnover_quote,
         "turnover_multiple": report.turnover_multiple,
         "exposure_ratio": report.exposure_ratio,
+        "exposure_ms": report.exposure_ms,
+        "observation_ms": report.observation_ms,
+        "observation_start_ms": report.observation_start_ms,
+        "observation_end_ms": report.observation_end_ms,
+        "last_exit_time_ms": report.last_exit_time_ms,
         "total_net_return_bps": report.total_net_return_bps,
         "profit_factor": report.profit_factor,
     }

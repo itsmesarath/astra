@@ -200,3 +200,29 @@ precedence when both levels later touch, unchanged intrabar fills, prior-exit pr
 generated-dataset session splitting. Only synthetic fixtures were used; no historical datasets,
 held-out sessions, training runs, or live-order connectivity were touched. Next: a causal execution
 ledger with continuous capital accounting.
+
+## Continuous settlement accounting
+
+Walk-forward report schema 4 carries balance and last-exit cooldown state across evaluation
+sessions. Session trade counts and PnL limits reset against the carried starting balance. An
+accepted outcome remains pending until its exit; subsequent signals cannot use its future PnL.
+Settlement runs before later decisions, including flat rows, and the final pending trade settles
+at its exit. Inclusive holding intervals still prohibit entry at the exact exit millisecond.
+
+An in-memory `SettledTrade` ledger records entry/exit times, entry notional, net return, PnL and
+before/after balances. Summaries use these settlements instead of recompounding an independent
+capital path. Aggregation rejects reset capital/cooldown state and overlapping session intervals.
+The observation interval uses the maximum outcome exit, including unselected rows, and aggregate
+duration includes elapsed gaps between sessions. JSON summaries identify these accounting rules;
+they do not embed individual ledger records.
+
+Verification: 299 tests pass, Ruff lint/format and diff checks pass. Fixtures cover future-PnL
+rejection invariance, final settlement, same-timestamp exits, carried capital under profit/loss
+limits, reset counters, cooldown through flat sessions, nonmonotonic exits, invalid session chains,
+ledger reconciliation and two-fold walk-forward continuity. No real historical dataset, reserved
+block or research training run was used; model fitting occurred only in synthetic unit tests.
+
+This closes the capital-path inconsistency, not the full execution milestone. Inputs are still
+precomputed outcome labels; turnover remains twice entry notional and drawdown is closed-trade
+only. Next: independent candle replay, candle-close marked equity, simulated buy/sell turnover and
+entry-latency stress scenarios. Execution remains paper-only and live adapters remain disabled.
