@@ -198,7 +198,9 @@ Repair experimental validity before replacing the rejected strategy. The
 impossible gap-stop fills, capital-accounting inconsistencies, and holdout provenance limitations.
 Fitting, tuning and forward evaluation are now separated. Schema-3 loading also enforces feature
 chronology and outcome boundaries, skips held-out value conversion, and records data provenance.
-Next fix gap-stop fills and implement a causal execution ledger with continuous capital accounting.
+Kline labeling version 2 now handles opening stop/target gaps before intrabar touches, using the
+opening price and timestamp. Existing datasets have not been regenerated.
+Next implement a causal execution ledger with continuous capital accounting.
 Keep physical lockbox isolation and full code/environment manifests on the remaining hardening list.
 After those gates, test the registered slower trend-pullback hypothesis with volatility-scaled
 price barriers and explicit cost stresses. No live connectivity is part of this milestone.

@@ -116,7 +116,14 @@ rows are still tokenized as text, and their names/feature timestamps are inspect
 targets and returns are not converted or summarized. This is not physical lockbox isolation.
 Schema 2 separated checkpoint tuning but still converted all held-out rows.
 
-The label-based simulator still has gap-fill and capital-accounting limitations. Fully isolated
+Kline labeling version 2 processes opening barrier hits before intrabar high/low touches, using
+the opening price and timestamp for idealized market-triggered exits. Stops can lose more than
+their configured threshold. Unknown intrabar ordering remains stop-first; costs remain fixed bps.
+The common CSV row schema stays at 1, with an explicit `labeling_version` column; the kline manifest
+is schema 2 and records the fill policy. Older labels are unchanged: regenerate into a new directory
+before relying on these rules, and do not mix labeling versions in an experiment.
+
+The label-based simulator still has capital-accounting and execution-model limitations. Fully isolated
 per-session storage and complete code/environment manifests remain future work. No new historical
 profitability claim has been made. Execution remains paper-only; public data ingestion may be online.
 

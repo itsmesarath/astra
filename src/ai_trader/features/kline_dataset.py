@@ -58,6 +58,7 @@ KLINE_FEATURE_COLUMNS = (
 )
 OUTPUT_COLUMNS = (
     "schema_version",
+    "labeling_version",
     "symbol",
     "source_session",
     "depth_event_time_ms",
@@ -84,7 +85,9 @@ OUTPUT_COLUMNS = (
     "take_profit_bps",
     "stop_loss_bps",
 )
-BarrierHit = Literal["target", "stop", "ambiguous_stop", "time"]
+BarrierHit = Literal["target", "stop", "gap_target", "gap_stop", "ambiguous_stop", "time"]
+LABEL_SCHEMA_VERSION = 2
+FILL_POLICY = "market_barriers_open_first_then_intrabar_stop_first_v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,6 +169,8 @@ class HorizonReport:
     up_labels: int
     target_hits: int
     stop_hits: int
+    gap_target_hits: int
+    gap_stop_hits: int
     ambiguous_stop_hits: int
     time_exits: int
 
@@ -321,7 +326,12 @@ def calculate_triple_barrier_outcome(
     horizon_bars: int,
     config: TripleBarrierConfig,
 ) -> BarrierOutcome | None:
-    """Label a next-open long entry without allowing a future session to enter the window."""
+    """Label a next-open long entry using idealized market-triggered barriers.
+
+    Opens beyond a barrier exit at that open before considering the candle's
+    range. Unknown intrabar ordering stays stop-first. Costs are still deducted
+    as fixed bps, not modeled as guaranteed executable prices or queue fills.
+    """
     config.validate()
     if horizon_bars <= 0:
         raise ValueError("Horizon must contain at least one bar.")
@@ -342,6 +352,19 @@ def calculate_triple_barrier_outcome(
     exit_price = klines[final_index].close
     barrier_hit: BarrierHit = "time"
     for index in range(entry_index, final_index + 1):
+        # Opening price is known before high/low touches within this candle.
+        # Both market-triggered exits use the opening reference, including
+        # adverse stop gaps; a stop is not a guaranteed maximum loss.
+        if klines[index].open <= stop_price:
+            future_index = index
+            exit_price = klines[index].open
+            barrier_hit = "gap_stop"
+            break
+        if klines[index].open >= target_price:
+            future_index = index
+            exit_price = klines[index].open
+            barrier_hit = "gap_target"
+            break
         target_hit = klines[index].high >= target_price
         stop_hit = klines[index].low <= stop_price
         if target_hit and stop_hit:
@@ -362,9 +385,9 @@ def calculate_triple_barrier_outcome(
 
     gross_return_bps = _bps_ratio(exit_price, entry_price)
     net_return_bps = gross_return_bps - cost_bps
-    if barrier_hit == "target":
+    if barrier_hit in {"target", "gap_target"}:
         direction = 1
-    elif barrier_hit in {"stop", "ambiguous_stop"}:
+    elif barrier_hit in {"stop", "gap_stop", "ambiguous_stop"}:
         direction = -1
     elif net_return_bps > config.neutral_threshold_bps:
         direction = 1
@@ -375,7 +398,11 @@ def calculate_triple_barrier_outcome(
 
     return BarrierOutcome(
         future_index=future_index,
-        future_event_time_ms=klines[future_index].close_time_ms,
+        future_event_time_ms=(
+            klines[future_index].open_time_ms
+            if barrier_hit in {"gap_stop", "gap_target"}
+            else klines[future_index].close_time_ms
+        ),
         entry_time_ms=entry.open_time_ms,
         entry_price=entry_price,
         exit_price=exit_price,
@@ -456,6 +483,7 @@ def _build_output_row(
     future = klines[outcome.future_index]
     return {
         "schema_version": 1,
+        "labeling_version": LABEL_SCHEMA_VERSION,
         "symbol": symbol,
         "source_session": session_name,
         "depth_event_time_ms": current.close_time_ms,
@@ -511,7 +539,17 @@ def build_historical_kline_datasets(
         output_path = output_directory / f"{symbol}_{interval}_h{horizon_minutes}m_labeled.csv"
         temporary_path = output_path.with_name(f"{output_path.name}.part")
         counts = {-1: 0, 0: 0, 1: 0}
-        hits = {"target": 0, "stop": 0, "ambiguous_stop": 0, "time": 0}
+        hits = {
+            name: 0
+            for name in (
+                "target",
+                "stop",
+                "gap_target",
+                "gap_stop",
+                "ambiguous_stop",
+                "time",
+            )
+        }
         rows_written = 0
         try:
             with temporary_path.open("w", encoding="utf-8", newline="") as output_file:
@@ -557,6 +595,8 @@ def build_historical_kline_datasets(
                 up_labels=counts[1],
                 target_hits=hits["target"],
                 stop_hits=hits["stop"],
+                gap_target_hits=hits["gap_target"],
+                gap_stop_hits=hits["gap_stop"],
                 ambiguous_stop_hits=hits["ambiguous_stop"],
                 time_exits=hits["time"],
             )
@@ -564,7 +604,9 @@ def build_historical_kline_datasets(
 
     output_manifest = output_directory / "manifest.json"
     payload = {
-        "schema_version": 1,
+        "schema_version": LABEL_SCHEMA_VERSION,
+        "fill_policy": FILL_POLICY,
+        "exit_timing": "bar_open_for_opening_barrier_hits_else_bar_close",
         "source_manifest": str(manifest_path.resolve()),
         "source_manifest_sha256": file_sha256(manifest_path),
         "market": "spot",

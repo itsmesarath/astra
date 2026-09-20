@@ -192,6 +192,78 @@ def test_rejects_stop_loss_that_is_consumed_by_round_trip_costs() -> None:
         ).validate()
 
 
+@pytest.mark.parametrize(
+    "opening,high,low,hit,net",
+    [
+        ("99", "99.1", "98.9", "gap_stop", "-124"),
+        ("101", "101.1", "100.9", "gap_target", "76"),
+        ("99", "101", "98.9", "gap_stop", "-124"),
+        ("101", "101.1", "99", "gap_target", "76"),
+        ("99.84", "100.5", "99.8", "gap_stop", "-40"),
+        ("100.44", "100.5", "99.7", "gap_target", "20"),
+    ],
+)
+def test_opening_barrier_precedes_later_intrabar_moves(opening, high, low, hit, net):
+    """Gap reference prices must exist in the candle, even if both levels later touch."""
+    klines = [
+        make_kline(0),
+        make_kline(1),
+        make_kline(2, open_price=opening, high=high, low=low, close=opening),
+    ]
+    outcome = calculate_triple_barrier_outcome(
+        klines,
+        0,
+        horizon_bars=2,
+        config=TripleBarrierConfig(),
+    )
+    assert outcome.barrier_hit == hit
+    assert outcome.exit_price == Decimal(opening)
+    assert outcome.net_return_bps == Decimal(net)
+    assert outcome.future_event_time_ms == klines[2].open_time_ms
+    assert outcome.future_index == 2
+    assert outcome.direction == (-1 if hit == "gap_stop" else 1)
+    assert klines[2].low <= outcome.exit_price <= klines[2].high
+
+
+@pytest.mark.parametrize(
+    "high,low,hit,price,net",
+    [
+        ("100.5", "99.7", "ambiguous_stop", "99.84", "-40"),
+        ("100.01", "99.7", "stop", "99.84", "-40"),
+        ("100.5", "99.99", "target", "100.44", "20"),
+    ],
+)
+def test_intrabar_fills_preserve_conservative_rules(high, low, hit, price, net):
+    klines = [make_kline(0), make_kline(1, high=high, low=low)]
+    outcome = calculate_triple_barrier_outcome(
+        klines,
+        0,
+        horizon_bars=1,
+        config=TripleBarrierConfig(),
+    )
+    assert outcome.barrier_hit == hit
+    assert outcome.exit_price == Decimal(price)
+    assert outcome.net_return_bps == Decimal(net)
+    assert outcome.future_event_time_ms == klines[1].close_time_ms
+
+
+def test_earlier_exit_cannot_be_replaced_by_later_gap():
+    klines = [
+        make_kline(0),
+        make_kline(1, high="100.5"),
+        make_kline(2, open_price="99", high="99.1", low="98.9", close="99"),
+    ]
+    outcome = calculate_triple_barrier_outcome(
+        klines,
+        0,
+        horizon_bars=2,
+        config=TripleBarrierConfig(),
+    )
+    assert outcome.barrier_hit == "target"
+    assert outcome.future_index == 1
+    assert outcome.net_return_bps == Decimal("20")
+
+
 def test_rejects_kline_gaps_within_a_source_session(tmp_path: Path) -> None:
     """Rolling windows cannot silently span missing source bars."""
     day = date(2025, 1, 2)
@@ -246,6 +318,27 @@ def test_builds_each_horizon_without_crossing_daily_sessions(tmp_path: Path) -> 
     with report.output_manifest.open(encoding="utf-8") as input_file:
         output_manifest = json.load(input_file)
     assert output_manifest["direction"] == "long_only"
+    assert output_manifest["schema_version"] == 2
+    assert (
+        output_manifest["fill_policy"] == "market_barriers_open_first_then_intrabar_stop_first_v2"
+    )
+    for horizon in report.horizons:
+        rows = read_rows(horizon.output_path)
+        assert all(row["schema_version"] == "1" for row in rows)
+        assert all(row["labeling_version"] == "2" for row in rows)
+        assert (
+            sum(
+                (
+                    horizon.target_hits,
+                    horizon.stop_hits,
+                    horizon.gap_target_hits,
+                    horizon.gap_stop_hits,
+                    horizon.ambiguous_stop_hits,
+                    horizon.time_exits,
+                )
+            )
+            == horizon.rows
+        )
     assert output_manifest["source_sessions"] == [
         "binance_spot_BTCUSDT_2025-01-02",
         "binance_spot_BTCUSDT_2025-01-03",

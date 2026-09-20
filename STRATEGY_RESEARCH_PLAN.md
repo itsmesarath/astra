@@ -175,6 +175,11 @@ by itself establish tradable information in these inputs.
 
 ## Research reference
 
+Implementation update: kline labeling version 2 now handles opening stop/target gaps before
+intrabar touches. These are idealized market-triggered exits with fixed-bps costs, not guaranteed
+exchange fills. Existing historical datasets remain unchanged. Continuous portfolio accounting
+and the remaining execution/provenance gates above are still pending.
+
 Bailey, Borwein, Lopez de Prado and Zhu, [The Probability of Backtest Overfitting](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf),
 explain why repeated strategy selection on the same history creates false discoveries. This
 motivates recording trials and using fresh confirmation; it does not validate our proposed rule

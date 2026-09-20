@@ -179,3 +179,24 @@ the raw file is hashed. This is value-conversion exclusion, not zero-byte access
 sealed lockbox. Input timestamps are trusted provenance, not proof that upstream features were
 causal. Historical holdout exposure remains recorded. No real historical dataset was loaded or
 evaluated during this change; only synthetic fixtures were used. Next: gap fills and capital ledger.
+
+## Gap-aware kline labels
+
+Kline labeling version 2 checks each candle's opening price before its high/low. Opening at or
+beyond a stop/target exits at that open and records the open timestamp, with distinct `gap_stop`
+and `gap_target` counts. Unknown intrabar ordering remains conservative stop-first, timestamped
+at bar close. A prior exit cannot be replaced by a later gap. This models idealized market-triggered
+barriers and fixed-bps costs, not limit-order execution or guaranteed slippage. An adverse gap can
+lose more than the configured stop amount.
+
+The common CSV row schema remains 1 for splitter compatibility; `labeling_version=2` identifies
+the changed semantics. The kline manifest is schema 2 and records fill/timing policies. Legacy
+datasets are unchanged and must be regenerated into a new directory before using the new rules;
+do not mix old and new labels in an experiment.
+
+Verification: baseline 278 tests passed; completed suite 288 passed, with Ruff lint and format
+checks passing. Regression coverage includes adverse/favorable gaps, exact barrier opens, opening
+precedence when both levels later touch, unchanged intrabar fills, prior-exit precedence, and
+generated-dataset session splitting. Only synthetic fixtures were used; no historical datasets,
+held-out sessions, training runs, or live-order connectivity were touched. Next: a causal execution
+ledger with continuous capital accounting.
