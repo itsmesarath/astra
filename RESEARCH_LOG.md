@@ -372,3 +372,28 @@ Next: register immutable data/code/configuration provenance before loading a his
 Cash/buy-and-hold/random controls, uncertainty estimation, numerical evidence gates, and physical
 lockbox separation remain prerequisites to any promotion decision. This API alone does not enforce
 dataset selection or prevent callers from supplying reserved sessions.
+
+## Metadata-only registration and registered study runner
+
+Added write-once registration for the fixed five-minute BTCUSDT pullback rule. The record freezes
+explicit chronological research/reserved lists, all excluded names, source-manifest bytes, declared
+research archive hashes, all project Python source hashes, Python/dependency versions, and all six
+cost/delay configurations. Reserved sessions must follow research sessions; duplicate/overlapping
+or missing selections fail. Registration never opens normalized archives, including research ones.
+
+The registered runner checks the record before candle loading, supplies only research names to
+the existing verified archive loader, requires exact returned coverage, and rechecks provenance
+after replay. It saves indicator/signal evidence and all six complete paper ledgers without winner
+selection or promotion. Output paths are write-once. Failures after initial verification leave a
+failure record; interrupted disk writes can still leave partial files. Users can create new paths
+and registrations, so this is not a globally enforced trial counter or append-only trusted ledger.
+
+Verification: 470 tests pass (416 baseline before this development batch), including metadata-only
+registration with nonexistent research and poisoned reserved paths, drift/overwrite rejection,
+exact loader allowlisting, all-scenario persistence, failure retention and mid-run registration
+changes. No actual historical trial, reserved-data inspection, model training or promotion ran.
+
+Next: add cash, declared allocation buy-and-hold, and seeded matched random-entry controls; quantify
+session-level uncertainty and freeze numerical evidence gates. Only then run an explicitly selected
+research trial. Physical lockbox isolation, cross-machine environment reproducibility, execution
+volume/queue constraints, exchange filters and independent external timestamping remain open.

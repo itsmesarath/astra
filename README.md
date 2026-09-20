@@ -40,6 +40,24 @@ entry, with 10% capital allocation and frozen ATR price distances. It does not l
 a research registration, select a winner, or authorize promotion. Tests are synthetic; no economic
 edge has been demonstrated. See [RESEARCH_LOG.md](RESEARCH_LOG.md) for assumptions and remaining gates.
 
+For an auditable research run, first use `ai_trader.research.registration` to write a new local
+registration from a **five-minute BTCUSDT** archive manifest and explicit ordered research/reserved
+session names. Registration reads metadata, not candle files. Then
+`ai_trader.research.registered_pullback` verifies the source/environment/manifest record and loads
+only the research selection. Do not use reserved or previously inspected confirmation data to
+rescue a rejected hypothesis. These commands provide research evidence only, not promotion.
+
+```sh
+python -m ai_trader.research.registration --help
+python -m ai_trader.research.registered_pullback --help
+```
+
+Store registrations and outputs under `data/processed/` (ignored by Git). Both commands refuse
+existing output files. A post-validation failed trial retains a failure artifact; do not erase
+failed trials. Source or dependency changes require a new registration. A local hash is not trusted
+timestamping, and the record does not prove an archive was never previously inspected. Formal
+controls and uncertainty estimation remain unfinished; no historical run of this rule is claimed.
+
 - Use time-based train, validation, and test splits.
 - Prevent future information from leaking into model inputs.
 - Include fees, spread, slippage, and latency.
