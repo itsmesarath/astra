@@ -26,6 +26,7 @@ from ai_trader.trading.evaluate_decision_policy import (
     evaluate_probability_rows,
 )
 from ai_trader.training.feature_provenance import ReplayFeatureProvenance, verify_replay_features
+from ai_trader.training.label_provenance import ResearchLabelProvenance, verify_research_labels
 from ai_trader.training.metrics import (
     CLASS_LABELS,
     ClassificationReport,
@@ -94,6 +95,7 @@ class WalkForwardReport:
     decision_policy: DecisionPolicy
     candle_replay: ReplayComparison | None
     replay_feature_provenance: ReplayFeatureProvenance | None
+    research_label_provenance: ResearchLabelProvenance | None
 
 
 def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
@@ -197,6 +199,7 @@ def run_walk_forward(
         source_path,
         held_out_session_count=held_out_session_count,
         embargo_ms=embargo_ms,
+        include_label_records=replay_config is not None,
     )
     sessions = dataset.sessions
     active_policy = policy or DecisionPolicy(allow_short=False)
@@ -212,6 +215,7 @@ def run_walk_forward(
     validation_stop = len(sessions)
     replay_inputs = None
     replay_feature_provenance = None
+    research_label_provenance = None
     if replay_config is not None:
         replay_config.validate()
         if replay_config.capital != active_economic_config:
@@ -220,14 +224,19 @@ def run_walk_forward(
             raise ValueError("Replay requires long/flat policy and zero-delay base configuration.")
         if sessions[0].partition.feature_names != KLINE_MODEL_FEATURE_NAMES:
             raise ValueError("Candle replay integration requires the kline feature schema.")
-        selected_names = tuple(session.name for session in sessions[first_evaluation:])
+        selected_names = tuple(session.name for session in sessions)
         _, _, _, candle_sources = load_verified_sessions(
             replay_manifest, selected_sessions=selected_names
         )
-        replay_inputs = tuple(CandleSession(name, tuple(bars)) for name, bars in candle_sources)
+        research_candles = tuple(CandleSession(name, tuple(bars)) for name, bars in candle_sources)
         replay_feature_provenance = verify_replay_features(
-            sessions[first_evaluation:], replay_inputs
+            sessions, research_candles, scope="research"
         )
+        research_label_provenance = verify_research_labels(
+            sessions,
+            research_candles,
+        )
+        replay_inputs = research_candles[first_evaluation:]
     folds = []
     previous_economics = None
 
@@ -321,6 +330,7 @@ def run_walk_forward(
         ),
         decision_policy=active_policy,
         replay_feature_provenance=replay_feature_provenance,
+        research_label_provenance=research_label_provenance,
         candle_replay=(
             replay_frozen_predictions(
                 tuple(fold.predictions for fold in immutable_folds),
@@ -373,7 +383,7 @@ def write_walk_forward_report(
         raise ValueError("Report policy must match the policy used for evaluation.")
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "schema_version": 6,
+        "schema_version": 7,
         "prediction_class_order": list(CLASS_LABELS),
         "evaluation_protocol": "expanding_fit_past_tune_next_session_evaluate",
         "validation_fields_mean": "evaluation_only",
@@ -406,6 +416,11 @@ def write_walk_forward_report(
         "replay_feature_provenance": (
             asdict(report.replay_feature_provenance)
             if report.replay_feature_provenance is not None
+            else None
+        ),
+        "research_label_provenance": (
+            asdict(report.research_label_provenance)
+            if report.research_label_provenance is not None
             else None
         ),
         "folds": [

@@ -1,4 +1,4 @@
-"""Bind replay evaluation features to the actual candle inputs before fitting."""
+"""Bind selected research features to the actual candle inputs before fitting."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import json
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 
@@ -50,20 +51,22 @@ def _content_hash(payload: object) -> str:
 def verify_replay_features(
     partitions: tuple[SessionPartition, ...],
     candles: tuple[CandleSession, ...],
+    *,
+    scope: Literal["evaluation", "research"] = "evaluation",
 ) -> ReplayFeatureProvenance:
-    """Recompute every evaluation row using only its causal in-session window.
+    """Recompute every supplied row using only its causal in-session window.
 
     Compare float64 values after the generator's existing 12-significant-digit
     serialization. There is no tolerance or silent repair. This proves numeric
     consistency under the current calculation, not historical authenticity,
-    outcome correctness, or provenance of other model fitting/tuning sessions.
+    outcome correctness, or provenance of sessions outside the supplied scope.
     Candle sessions must come from the validated raw-archive loader.
     """
+    if scope not in {"evaluation", "research"}:
+        raise ValueError("Feature provenance scope must be evaluation or research.")
     names = tuple(partition.name for partition in partitions)
     if not names or len(set(names)) != len(names) or names != tuple(item.name for item in candles):
-        raise ValueError(
-            "Feature provenance requires exactly matching ordered evaluation sessions."
-        )
+        raise ValueError("Feature provenance requires exactly matching ordered source sessions.")
     warmup = max(FEATURE_WINDOWS)
     verified = []
     for partition, source in zip(partitions, candles, strict=True):
@@ -124,7 +127,11 @@ def verify_replay_features(
         )
     return ReplayFeatureProvenance(
         policy="causal_kline_12sig_float64_exact_v1",
-        scope="evaluation_features_only_not_fit_tune_or_outcomes",
+        scope=(
+            "all_nonheldout_research_features_not_outcomes"
+            if scope == "research"
+            else "evaluation_features_only_not_fit_tune_or_outcomes"
+        ),
         feature_names=KLINE_FEATURE_COLUMNS,
         warmup_bars=warmup,
         calculation_module_sha256=kline_dataset.file_sha256(Path(kline_dataset.__file__)),

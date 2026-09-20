@@ -314,3 +314,35 @@ model fitting occurred only inside synthetic tests. Execution remains paper-only
 Next: verify the remaining research-session features and label-generation settings, then freeze
 the protocol and cost scenarios before a registered research-only experiment. No profitability
 or promotion inference follows from these consistency checks.
+
+## All-research feature and label consistency
+
+Schema-7 replay-enabled walk-forward runs extend pre-fit verification to every non-held-out
+research session, including fit and tuning inputs. The raw archive allowlist now includes those
+sessions, but still excludes held-out/unrelated archives; only evaluation candles enter replay.
+Feature verification retains the same exact causal-window rules and records its expanded scope.
+
+Selected CSV rows additionally retain immutable label evidence when replay verification is
+requested. Held-out rows are skipped before evidence collection/conversion. Complete labeling-v2
+columns are required, with one consistent declared horizon, neutral threshold, barriers, fees and
+slippage across research rows. The checker regenerates outcomes using the existing label generator
+and checks every non-feature output field: targets, prices, timestamps, durations, gross/net returns,
+barrier outcomes, identity and configuration. Parsed training targets and economic outcomes must
+also agree with that evidence. Labels whose full horizon exceeds a session fail closed.
+
+Label provenance records declared settings, per-session label-evidence/candle hashes and the
+calculation-module hash. Base label settings are separate from replay stress assumptions; neither
+is silently rewritten. This establishes consistency with the current generator, not independent
+algorithm correctness, historical authenticity, original-generation proof or economic edge.
+Legacy/incomplete labels require explicit regeneration into new artifacts. Without replay enabled,
+the existing loading path remains compatible and provenance fields remain null.
+
+Verification: clean baseline 371 tests; completed suite 415 tests, Ruff lint/format and diff checks
+pass. Synthetic tests cover changed features across fit/tune/evaluate roles, corrupt labels/costs/
+identity/version across those roles, mixed declared settings, parsed-target/outcome disagreement,
+invalid timing/nonfinite values, insufficient label horizon, deterministic evidence hashes and
+poisoned held-out label metadata. All fail-before-fitting and reserved-archive exclusion tests pass.
+No real historical dataset, held-out evaluation, live connection or promotion was used.
+
+Next freeze the research protocol, data selection and cost/latency scenarios before a registered
+research-only trial. Remaining realism/environment/physical-isolation limitations stay explicit.

@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 
 from ai_trader.backtesting.economic_metrics import TradeOutcome
+from ai_trader.features.kline_dataset import KLINE_FEATURE_COLUMNS, OUTPUT_COLUMNS
 from ai_trader.training.metrics import CLASS_LABELS
 from ai_trader.training.model_data import (
     ModelPartition,
@@ -20,6 +21,7 @@ from ai_trader.training.model_data import (
 TIME_COLUMN = "depth_event_time_ms"
 FUTURE_COLUMN = "future_event_time_ms"
 SESSION_COLUMN = "source_session"
+KLINE_LABEL_COLUMNS = tuple(name for name in OUTPUT_COLUMNS if name not in KLINE_FEATURE_COLUMNS)
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +42,7 @@ class SessionPartition:
     partition: ModelPartition
     outcomes: tuple[TradeOutcome, ...] | None
     event_times_ms: tuple[int, ...]
+    label_records: tuple[tuple[str, ...], ...] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +122,7 @@ def load_session_dataset(
     *,
     held_out_session_count: int = 0,
     embargo_ms: int = 0,
+    include_label_records: bool = False,
 ) -> SessionDataset:
     """Reserve final sessions before converting any feature, target or outcome.
 
@@ -144,10 +148,13 @@ def load_session_dataset(
     targets: dict[str, list[int]] = {item.name: [] for item in selected}
     outcomes: dict[str, list[TradeOutcome]] = {item.name: [] for item in selected}
     event_times: dict[str, list[int]] = {item.name: [] for item in selected}
+    label_records: dict[str, list[tuple[str, ...]]] = {item.name: [] for item in selected}
 
     with path.open(encoding="utf-8", newline="") as source:
         reader = csv.DictReader(source, strict=True)
         feature_names = infer_model_feature_names(reader.fieldnames)
+        if include_label_records and not set(KLINE_LABEL_COLUMNS) <= set(reader.fieldnames):
+            raise ValueError("Label verification requires complete versioned kline label columns.")
         # future_event_time_ms is also used by depth labels without economic columns.
         economic_columns = {"entry_time_ms", "net_return_bps"}
         present = economic_columns & set(reader.fieldnames)
@@ -181,6 +188,8 @@ def load_session_dataset(
                 features[session].append(feature_row)
                 targets[session].append(target)
                 event_times[session].append(event_time)
+                if include_label_records:
+                    label_records[session].append(tuple(row[name] for name in KLINE_LABEL_COLUMNS))
             except (KeyError, TypeError, ValueError) as error:
                 raise ValueError(f"{path.name} line {line_number}: {error}") from error
 
@@ -198,6 +207,7 @@ def load_session_dataset(
             ),
             tuple(outcomes[item.name]) if has_outcomes else None,
             tuple(event_times[item.name]),
+            tuple(label_records[item.name]) if include_label_records else None,
         )
         for item in selected
     )

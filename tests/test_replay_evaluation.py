@@ -24,8 +24,9 @@ from ai_trader.features.kline_dataset import (
 from ai_trader.trading.decision_policy import DecisionPolicy
 from ai_trader.training import walk_forward
 from ai_trader.training.feature_provenance import verify_replay_features
+from ai_trader.training.label_provenance import verify_research_labels
 from ai_trader.training.replay_evaluation import FrozenPredictions, replay_frozen_predictions
-from ai_trader.training.session_data import load_session_dataset
+from ai_trader.training.session_data import KLINE_LABEL_COLUMNS, load_session_dataset
 from ai_trader.training.train_linear import TrainingConfig
 
 D = Decimal
@@ -142,7 +143,7 @@ def test_rejects_short_policy_nonstandard_delay_and_holdout_overlap(policy, conf
 
 
 def research_fixture(tmp_path):
-    """Only evaluation candle files exist; every other manifest entry is poisoned."""
+    """Only research candle files exist; the held-out manifest entry is poisoned."""
     rows, archives, names = [], [], []
     first_day = datetime(2025, 1, 1, tzinfo=UTC)
     for day_index in range(6):
@@ -151,26 +152,38 @@ def research_fixture(tmp_path):
         name = f"binance_spot_BTCUSDT_{day.date().isoformat()}"
         names.append(name)
         candles = [bar(index, str(100 + index), start) for index in range(66)]
-        for index, direction in enumerate((-1, 0, 1)):
-            event = candles[index + 60].close_time_ms
-            row = kline_dataset.calculate_kline_features(candles, index + 60)
-            row.update(
-                taker_buy_ratio="0.5",
-                close_location="0.5",
-                source_session=name,
-                depth_event_time_ms=str(event),
-                future_event_time_ms=str(event + 60000),
-                entry_time_ms=str(event + 1),
-                net_return_bps=str(direction * 10),
-                target_direction=str(direction),
+        # One-bar outcomes span loss, neutral after 24 bps costs, and a target hit.
+        candles[62] = replace(candles[62], high=D("162.3888"), close=D("162.3888"))
+        candles[63] = replace(candles[63], high=D("164"), close=D("164"))
+        for index in range(3):
+            label_config = TripleBarrierConfig()
+            outcome = kline_dataset.calculate_triple_barrier_outcome(
+                candles,
+                index + 60,
+                horizon_bars=1,
+                config=label_config,
+            )
+            row = kline_dataset._build_output_row(
+                symbol="BTCUSDT",
+                session_name=name,
+                klines=candles,
+                feature_index=index + 60,
+                horizon_ms=60000,
+                config=label_config,
+                outcome=outcome,
             )
             if day_index == 5:
                 row.update(
-                    net_return_bps="poison", target_direction="poison", return_3_bps="poison"
+                    net_return_bps="poison",
+                    target_direction="poison",
+                    return_3_bps="poison",
+                    label_horizon_ms="poison",
+                    taker_fee_bps="poison",
+                    labeling_version="poison",
                 )
             rows.append(row)
         archive = {"date": day.date().isoformat()}
-        if day_index in (3, 4):
+        if day_index < 5:
             path = tmp_path / f"{day.date()}.csv"
             with path.open("w", encoding="utf-8", newline="") as output:
                 writer = csv.DictWriter(output, fieldnames=KLINE_SOURCE_COLUMNS)
@@ -259,7 +272,7 @@ def test_walk_forward_freezes_once_replays_both_and_never_opens_reserved_archive
         replay_config=replay_config,
     )
     assert predictions_called == [3, 3]  # No fitting/predicting again per replay scenario.
-    assert loaded == ["2025-01-04.csv", "2025-01-05.csv"]
+    assert loaded == [f"2025-01-0{index}.csv" for index in range(1, 6)]
     assert report.evaluated_sessions == names[3:5]
     assert report.held_out_sessions == names[5:]
     replay = report.candle_replay
@@ -271,13 +284,21 @@ def test_walk_forward_freezes_once_replays_both_and_never_opens_reserved_archive
     output = tmp_path / "walk_forward.json"
     walk_forward.write_walk_forward_report(output, report, training, POLICY)
     payload = json.loads(output.read_text(encoding="utf-8"))
-    assert payload["schema_version"] == 6
+    assert payload["schema_version"] == 7
     provenance = payload["replay_feature_provenance"]
-    assert provenance["scope"] == "evaluation_features_only_not_fit_tune_or_outcomes"
+    assert provenance["scope"] == "all_nonheldout_research_features_not_outcomes"
     assert provenance["warmup_bars"] == 60
-    assert [item["source_session"] for item in provenance["sessions"]] == list(names[3:5])
+    assert [item["source_session"] for item in provenance["sessions"]] == list(names[:5])
     assert all(item["rows"] == 3 for item in provenance["sessions"])
     assert len(provenance["calculation_module_sha256"]) == 64
+    label_proof = payload["research_label_provenance"]
+    assert label_proof["scope"] == "all_nonheldout_research_labels"
+    assert label_proof["settings"]["label_horizon_ms"] == 60000
+    assert label_proof["settings"]["taker_fee_bps"] == "10"
+    assert [item["source_session"] for item in label_proof["sessions"]] == list(names[:5])
+    assert [item["candles_sha256"] for item in label_proof["sessions"]] == [
+        item["candles_sha256"] for item in provenance["sessions"]
+    ]
     assert payload["candle_replay"]["predictions_sha256"] == replay.predictions_sha256
     assert payload["candle_replay"]["next_open"]["config"]["entry_delay_bars"] == 0
     assert payload["candle_replay"]["delayed_one_bar"]["config"]["entry_delay_bars"] == 1
@@ -435,14 +456,15 @@ def test_invalid_feature_provenance_inputs_fail_closed(tmp_path, failure):
         verify_replay_features((first, partitions[1]), candles)
 
 
-def test_feature_mismatch_prevents_any_model_fit(tmp_path, monkeypatch):
+@pytest.mark.parametrize("session_index", [0, 2, 3])
+def test_feature_mismatch_prevents_any_model_fit(tmp_path, monkeypatch, session_index):
     dataset, manifest, names = research_fixture(tmp_path)
     with dataset.open(encoding="utf-8", newline="") as source:
         reader = csv.DictReader(source)
         fieldnames = reader.fieldnames
         rows = list(reader)
     for row in rows:
-        if row["source_session"] == names[3]:
+        if row["source_session"] == names[session_index]:
             row["return_3_bps"] = "12345"
             break
     with dataset.open("w", encoding="utf-8", newline="") as output:
@@ -461,3 +483,125 @@ def test_feature_mismatch_prevents_any_model_fit(tmp_path, monkeypatch):
             replay_manifest=manifest,
             replay_config=ReplayConfig(holding_bars=1),
         )
+
+
+@pytest.mark.parametrize("session_index", [0, 2, 3])
+@pytest.mark.parametrize(
+    "column,value",
+    [
+        ("target_direction", "1"),
+        ("net_return_bps", "-23.9"),
+        ("entry_price", "999"),
+        ("exit_price", "999"),
+        ("barrier_hit", "target"),
+        ("round_trip_cost_bps", "0"),
+        ("labeling_version", "1"),
+        ("label_horizon_ms", "60001"),
+        ("neutral_threshold_bps", "6"),
+        ("symbol", "ETHUSDT"),
+    ],
+)
+def test_corrupt_research_labels_fail_before_training(
+    tmp_path, monkeypatch, session_index, column, value
+):
+    dataset, manifest, names = research_fixture(tmp_path)
+    with dataset.open(encoding="utf-8", newline="") as source:
+        reader = csv.DictReader(source)
+        fieldnames, rows = reader.fieldnames, list(reader)
+    for row in rows:
+        if row["source_session"] == names[session_index]:
+            row[column] = value
+            break
+    with dataset.open("w", encoding="utf-8", newline="") as output:
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Corrupted research labels must fail before any model fit")
+
+    monkeypatch.setattr(walk_forward, "fit_linear_baseline", forbidden)
+    with pytest.raises(ValueError, match="label|Label"):
+        walk_forward.run_walk_forward(
+            dataset,
+            TrainingConfig(device="cpu"),
+            replay_manifest=manifest,
+            replay_config=ReplayConfig(holding_bars=1),
+        )
+
+
+def label_verification_inputs(tmp_path):
+    dataset, manifest, names = research_fixture(tmp_path)
+    partitions = load_session_dataset(
+        dataset,
+        held_out_session_count=1,
+        include_label_records=True,
+    ).sessions
+    _, _, _, sources = load_verified_sessions(manifest, selected_sessions=names[:5])
+    candles = tuple(CandleSession(name, tuple(bars)) for name, bars in sources)
+    return partitions, candles
+
+
+@pytest.mark.parametrize("change", ["target", "return", "entry", "exit"])
+def test_parsed_training_inputs_must_match_raw_label_evidence(tmp_path, change):
+    partitions, candles = label_verification_inputs(tmp_path)
+    first = partitions[0]
+    if change == "target":
+        targets = first.partition.targets.copy()
+        targets[0] = 1
+        first = replace(first, partition=replace(first.partition, targets=targets))
+    else:
+        outcome = first.outcomes[0]
+        field = {"return": "net_return_bps", "entry": "entry_time_ms", "exit": "exit_time_ms"}[
+            change
+        ]
+        outcome = replace(outcome, **{field: getattr(outcome, field) + 1})
+        first = replace(first, outcomes=(outcome, *first.outcomes[1:]))
+    with pytest.raises(ValueError, match="parsed model targets/outcomes"):
+        verify_research_labels((first, *partitions[1:]), candles)
+
+
+@pytest.mark.parametrize(
+    "column,value",
+    [
+        ("future_event_time_ms", "123"),
+        ("entry_time_ms", "123"),
+        ("holding_period_ms", "123"),
+        ("future_return_bps", "NaN"),
+        ("slippage_bps", "Infinity"),
+        ("label_horizon_ms", "600000"),
+    ],
+)
+def test_label_verification_checks_exact_times_finite_values_and_session_horizon(
+    tmp_path, column, value
+):
+    partitions, candles = label_verification_inputs(tmp_path)
+    first = partitions[0]
+    evidence = list(first.label_records[0])
+    evidence[KLINE_LABEL_COLUMNS.index(column)] = value
+    changed = replace(first, label_records=(tuple(evidence), *first.label_records[1:]))
+    with pytest.raises(ValueError):
+        verify_research_labels((changed, *partitions[1:]), candles)
+
+
+def test_label_gate_rejects_missing_evidence_and_reports_consistent_hashes(tmp_path):
+    partitions, candles = label_verification_inputs(tmp_path)
+    first = verify_research_labels(partitions, candles)
+    assert verify_research_labels(partitions, candles) == first
+    assert first.settings["labeling_version"] == 2
+    assert all(len(item.label_records_sha256) == 64 for item in first.sessions)
+    assert sum(item.rows for item in first.sessions) == 15
+    with pytest.raises(ValueError, match="complete label evidence"):
+        verify_research_labels(
+            (replace(partitions[0], label_records=None), *partitions[1:]), candles
+        )
+
+
+def test_label_evidence_is_opt_in_and_does_not_convert_heldout_values(tmp_path):
+    dataset, _, names = research_fixture(tmp_path)
+    ordinary = load_session_dataset(dataset, held_out_session_count=1)
+    verified = load_session_dataset(dataset, held_out_session_count=1, include_label_records=True)
+    assert all(part.label_records is None for part in ordinary.sessions)
+    assert tuple(part.name for part in verified.sessions) == names[:5]
+    assert verified.held_out_sessions == names[5:]
+    assert all(len(part.label_records) == 3 for part in verified.sessions)

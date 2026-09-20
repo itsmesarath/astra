@@ -96,7 +96,7 @@ signals rejected by each control.
 ## Research validity and next milestone
 
 Read the [strategy research reset](STRATEGY_RESEARCH_PLAN.md) before interpreting backtests.
-Walk-forward report schema 6 separates fitting, past-session checkpoint tuning, and next-session
+Walk-forward report schema 7 separates fitting, past-session checkpoint tuning, and next-session
 evaluation. `--minimum-training-sessions` counts fitting sessions only;
 `--tuning-session-count` (default 1) adds a disjoint tuning block. For a 20-session initial prefix,
 use `--minimum-training-sessions 15 --tuning-session-count 5`. Legacy `validation` metric fields
@@ -178,7 +178,7 @@ volume/queue model, exchange tick/min-notional filters, intrabar equity path, or
 
 ### Frozen-prediction walk-forward replay
 
-Schema-6 walk-forward reports save each evaluation fold's feature timestamps and class probabilities
+Schema-7 walk-forward reports save each evaluation fold's feature timestamps and class probabilities
 in `[-1, 0, 1]` order, captured once before scoring. To opt into candle replay, provide both
 `--replay-manifest` (the verified normalized Binance kline manifest) and `--replay-holding-bars`.
 The latter is an explicit bar count, not minutes. Optional `--replay-take-profit-bps`,
@@ -186,9 +186,10 @@ The latter is an explicit bar count, not minutes. Optional `--replay-take-profit
 Capital and session-risk settings are shared with label economics. Short-enabled policies and
 non-kline feature schemas are rejected for this integration.
 
-The loader selects only evaluation session names before opening or hashing candle archives. It
-does not open non-evaluation or held-out candle files, even if they appear in the manifest; manifest dates
-and names remain visible. Selected file hashes are verified before and after parsing. The combined
+The loader selects all non-held-out research session names before opening or hashing candle
+archives, covering fitting, tuning and evaluation inputs. Only evaluation candles reach trading
+replay. Held-out and unrelated archive files are not opened; manifest dates and names remain
+visible. Selected file hashes are verified before and after parsing. The combined
 labeled CSV still has the metadata/tokenization limitations described above.
 
 `candle_replay` contains `next_open` and `delayed_one_bar` reports driven by identical frozen
@@ -198,7 +199,7 @@ include the prediction/policy hash and each scenario's candle/signal input hash.
 scenario selects a model or promotes a winner. `aggregate_economics` remains the separate legacy
 label-based measure, with different cost and observation definitions.
 
-With replay enabled, schema 6 also recomputes every evaluation feature from the selected raw
+With replay enabled, schema 7 recomputes every fit/tuning/evaluation feature from the selected raw
 candles before any model fitting. Each calculation receives only its 60 preceding in-session
 bars plus its current completed bar. After the generator's existing 12-significant-digit formatting,
 the resulting float64 values must match the model inputs exactly: no tolerance, repair or override.
@@ -206,11 +207,23 @@ Missing warmup, changed features, mismatched timestamps and inconsistent raw can
 Older features generated under different rules may need regeneration into a new directory.
 
 `replay_feature_provenance` records the verification policy, feature names, warmup, calculation-module
-SHA-256 and per-session candle/feature content hashes and row counts. Its explicit scope is
-evaluation features only: it does not verify fit/tuning features, outcome labels, or historical
-source authenticity. It establishes numeric consistency with the current feature calculator, not
-proof of the original generation process. Standalone frozen-prediction replay has no feature matrix
-and does not perform this check; walk-forward runs without replay record null provenance.
+SHA-256 and per-session candle/feature content hashes and row counts. Its scope is all non-held-out
+research features. `research_label_provenance` separately records exact label recomputation against
+those same candles, the current calculation-module hash, label-record hashes and declared settings.
+Replay-enabled runs require complete labeling-v2 columns; legacy/incomplete rows must be regenerated
+into a new directory, not silently accepted.
+
+Labels must use one consistent declared horizon, neutral threshold, profit/stop barriers, fee and
+slippage configuration across research rows. The checker verifies targets, net/gross returns,
+entry/exit prices and times, barrier outcomes, durations, symbol/session identity and cost metadata,
+and confirms that the parsed model targets/economic outcomes match the evidence. Horizons must
+fit wholly within their source session. Label settings are independent of replay stress settings;
+both are recorded, allowing cost stresses without rewriting the training labels.
+
+These checks establish consistency with the current generator, not historical authenticity or
+independent correctness of the labeling algorithm. They neither validate held-out rows nor prove
+the original generation process. Standalone frozen-prediction replay has no feature/label matrix
+and does not perform these checks; walk-forward runs without replay record null provenance.
 
 The `training.replay_evaluation.replay_frozen_predictions` API can replay saved predictions without
 fitting a model again. Walk-forward reports now refuse overwrites; choose a new `--output` path for

@@ -192,8 +192,14 @@ no scenario winner is selected. Schema 6 additionally recomputes evaluation feat
 from causal in-session windows and requires exact agreement under current generator rounding.
 Reports bind the verification to feature/candle content hashes and the calculation-module hash.
 This establishes evaluation-input numeric consistency, not original-generation authenticity.
-Fit/tuning features and outcome-label provenance, exchange/volume realism and remaining provenance
-gates above are still pending. Integration tests are synthetic, not alpha evidence.
+Schema 7 extends the consistency gate to all non-held-out research features and labels before any
+fit. The archive allowlist now includes fit/tuning sessions but still excludes held-out archives;
+only evaluation candles enter replay. Labeling-v2 records are recomputed under one consistent
+declared horizon/barrier/cost specification, independently of replay stress settings. This verifies
+agreement with the current generator, not independent correctness or historical authenticity.
+Exchange/volume realism, full environment provenance and physical lockbox isolation remain open.
+Next freeze the research protocol and cost scenarios before the registered trial. Integration tests
+are synthetic, not alpha evidence.
 
 Bailey, Borwein, Lopez de Prado and Zhu, [The Probability of Backtest Overfitting](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf),
 explain why repeated strategy selection on the same history creates false discoveries. This
