@@ -25,6 +25,7 @@ from ai_trader.trading.evaluate_decision_policy import (
     PolicyEvaluation,
     evaluate_probability_rows,
 )
+from ai_trader.training.feature_provenance import ReplayFeatureProvenance, verify_replay_features
 from ai_trader.training.metrics import (
     CLASS_LABELS,
     ClassificationReport,
@@ -92,6 +93,7 @@ class WalkForwardReport:
     aggregate_economics: EconomicEvaluation | None
     decision_policy: DecisionPolicy
     candle_replay: ReplayComparison | None
+    replay_feature_provenance: ReplayFeatureProvenance | None
 
 
 def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
@@ -209,6 +211,7 @@ def run_walk_forward(
 
     validation_stop = len(sessions)
     replay_inputs = None
+    replay_feature_provenance = None
     if replay_config is not None:
         replay_config.validate()
         if replay_config.capital != active_economic_config:
@@ -222,6 +225,9 @@ def run_walk_forward(
             replay_manifest, selected_sessions=selected_names
         )
         replay_inputs = tuple(CandleSession(name, tuple(bars)) for name, bars in candle_sources)
+        replay_feature_provenance = verify_replay_features(
+            sessions[first_evaluation:], replay_inputs
+        )
     folds = []
     previous_economics = None
 
@@ -314,6 +320,7 @@ def run_walk_forward(
             else None
         ),
         decision_policy=active_policy,
+        replay_feature_provenance=replay_feature_provenance,
         candle_replay=(
             replay_frozen_predictions(
                 tuple(fold.predictions for fold in immutable_folds),
@@ -366,7 +373,7 @@ def write_walk_forward_report(
         raise ValueError("Report policy must match the policy used for evaluation.")
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "schema_version": 5,
+        "schema_version": 6,
         "prediction_class_order": list(CLASS_LABELS),
         "evaluation_protocol": "expanding_fit_past_tune_next_session_evaluate",
         "validation_fields_mean": "evaluation_only",
@@ -394,6 +401,11 @@ def write_walk_forward_report(
         "candle_replay": (
             replay_comparison_payload(report.candle_replay)
             if report.candle_replay is not None
+            else None
+        ),
+        "replay_feature_provenance": (
+            asdict(report.replay_feature_provenance)
+            if report.replay_feature_provenance is not None
             else None
         ),
         "folds": [

@@ -204,11 +204,13 @@ Schema-4 walk-forward economics now carry capital/cooldowns and settle label-bas
 exit. Session limits reset against carried session-start equity; aggregate metrics use the same
 settlements. A separate candle-replay API now provides independent raw-candle exits, candle-close
 marked equity, fee-inclusive cash sizing, simulated buy/sell turnover and full-bar entry delays.
-Schema-5 walk-forward integration now records frozen evaluation probabilities/timestamps and can
+Schema-6 walk-forward integration now records frozen evaluation probabilities/timestamps and can
 opt into next-open/one-bar-delayed replay alongside separate label economics. Only evaluation
 candle archives are opened; no held-out archive or real historical experiment was used to verify
-the integration. Next bind feature-generation provenance to the selected raw candle hashes and
-freeze the research protocol/cost scenarios before running the registered research-only trial.
+the integration. Replay now recomputes evaluation features from causal in-session candle windows
+before fitting, requires exact agreement and records feature/candle/calculation-module hashes.
+Fit/tuning feature and label provenance remain unverified. Next extend consistency checks to the
+remaining research inputs and freeze the protocol/cost scenarios before the registered research-only trial.
 Do not load the final reserved block or automatically promote a model.
 Keep physical lockbox isolation and full code/environment manifests on the remaining hardening list.
 After those gates, test the registered slower trend-pullback hypothesis with volatility-scaled

@@ -287,3 +287,30 @@ No real historical experiment, reserved-block evaluation, live connectivity or m
 Next: bind feature-generation provenance to the exact raw candle inputs, then freeze the research
 protocol/cost stresses before a registered research-only trial. Timestamps and separate data hashes
 do not alone establish feature derivation lineage. Execution realism limitations remain unchanged.
+
+## Evaluation feature-to-candle consistency gate
+
+Schema-6 replay-enabled walk-forward runs now recompute every evaluation feature before any model
+fit. Verification uses the already selected/validated raw candle sessions, requires exact session
+and candle-close timestamp alignment, and rejects missing in-session warmup. Each calculator call
+receives exactly the 60 preceding bars plus the current completed bar: no future bars and no
+cross-session warmup. Values are compared exactly after the existing generator's 12-significant-digit
+serialization and float64 conversion. Mismatches are errors, not repairs or tolerated drift.
+
+The report records verification scope/policy, feature names, warmup size, calculation-module hash,
+and each evaluation session's row count, timestamp boundaries, raw-candle content hash and model
+feature content hash. This binds tested numeric consistency to the actual inputs used by the run.
+It is not historical authenticity proof or a record of the original generation process. Fit/tuning
+features and outcome labels are not checked by this gate. Standalone frozen-prediction replay has
+no feature matrix and does not gain this guarantee; non-replay walk-forward reports record null.
+
+Verification: baseline 359 tests; completed suite 371 tests, Ruff lint/format and diff checks pass.
+Synthetic tests cover exact agreement, one-float-step mismatches across different feature types,
+changed warmup activity, insufficient warmup, invalid shape/schema/timestamps, finite inputs,
+causal calculator windows, future-suffix independence and rejection before any fitting. Existing
+poisoned holdout/unopened archive tests still pass. No actual historical or held-out data was used;
+model fitting occurred only inside synthetic tests. Execution remains paper-only.
+
+Next: verify the remaining research-session features and label-generation settings, then freeze
+the protocol and cost scenarios before a registered research-only experiment. No profitability
+or promotion inference follows from these consistency checks.

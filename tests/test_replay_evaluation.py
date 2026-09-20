@@ -16,7 +16,6 @@ from ai_trader.backtesting.candle_replay import CandleSession, ReplayConfig
 from ai_trader.backtesting.economic_metrics import EconomicConfig
 from ai_trader.features import kline_dataset
 from ai_trader.features.kline_dataset import (
-    KLINE_FEATURE_COLUMNS,
     KLINE_SOURCE_COLUMNS,
     Kline,
     TripleBarrierConfig,
@@ -24,7 +23,9 @@ from ai_trader.features.kline_dataset import (
 )
 from ai_trader.trading.decision_policy import DecisionPolicy
 from ai_trader.training import walk_forward
+from ai_trader.training.feature_provenance import verify_replay_features
 from ai_trader.training.replay_evaluation import FrozenPredictions, replay_frozen_predictions
+from ai_trader.training.session_data import load_session_dataset
 from ai_trader.training.train_linear import TrainingConfig
 
 D = Decimal
@@ -149,9 +150,10 @@ def research_fixture(tmp_path):
         start = int(day.timestamp() * 1000)
         name = f"binance_spot_BTCUSDT_{day.date().isoformat()}"
         names.append(name)
+        candles = [bar(index, str(100 + index), start) for index in range(66)]
         for index, direction in enumerate((-1, 0, 1)):
-            event = start + (index + 1) * 60000 - 1
-            row = {feature: str(direction * 0.1) for feature in KLINE_FEATURE_COLUMNS}
+            event = candles[index + 60].close_time_ms
+            row = kline_dataset.calculate_kline_features(candles, index + 60)
             row.update(
                 taker_buy_ratio="0.5",
                 close_location="0.5",
@@ -173,8 +175,7 @@ def research_fixture(tmp_path):
             with path.open("w", encoding="utf-8", newline="") as output:
                 writer = csv.DictWriter(output, fieldnames=KLINE_SOURCE_COLUMNS)
                 writer.writeheader()
-                for index in range(6):
-                    candle = bar(index, str(100 + index), start)
+                for candle in candles:
                     writer.writerow(
                         {
                             "open_time_ms": candle.open_time_ms,
@@ -270,7 +271,13 @@ def test_walk_forward_freezes_once_replays_both_and_never_opens_reserved_archive
     output = tmp_path / "walk_forward.json"
     walk_forward.write_walk_forward_report(output, report, training, POLICY)
     payload = json.loads(output.read_text(encoding="utf-8"))
-    assert payload["schema_version"] == 5
+    assert payload["schema_version"] == 6
+    provenance = payload["replay_feature_provenance"]
+    assert provenance["scope"] == "evaluation_features_only_not_fit_tune_or_outcomes"
+    assert provenance["warmup_bars"] == 60
+    assert [item["source_session"] for item in provenance["sessions"]] == list(names[3:5])
+    assert all(item["rows"] == 3 for item in provenance["sessions"])
+    assert len(provenance["calculation_module_sha256"]) == 64
     assert payload["candle_replay"]["predictions_sha256"] == replay.predictions_sha256
     assert payload["candle_replay"]["next_open"]["config"]["entry_delay_bars"] == 0
     assert payload["candle_replay"]["delayed_one_bar"]["config"]["entry_delay_bars"] == 1
@@ -344,3 +351,113 @@ def test_selected_loader_rejects_archive_changed_during_read(tmp_path, monkeypat
     monkeypatch.setattr(kline_dataset, "read_kline_session", changing_read)
     with pytest.raises(ValueError, match="changed during session loading"):
         load_verified_sessions(manifest, selected_sessions=names[3:5])
+
+
+def provenance_inputs(tmp_path):
+    dataset, manifest, names = research_fixture(tmp_path)
+    partitions = load_session_dataset(dataset, held_out_session_count=1).sessions[3:]
+    _, _, _, sources = load_verified_sessions(manifest, selected_sessions=names[3:5])
+    candles = tuple(CandleSession(name, tuple(bars)) for name, bars in sources)
+    return partitions, candles
+
+
+def test_feature_verification_is_causal_and_hashes_exact_inputs(tmp_path, monkeypatch):
+    partitions, candles = provenance_inputs(tmp_path)
+    original = kline_dataset.calculate_kline_features
+    visited = []
+
+    def checked_calculate(window, index):
+        assert len(window) == 61
+        assert index == 60
+        visited.append(window[-1].close_time_ms)
+        return original(window, index)
+
+    monkeypatch.setattr(kline_dataset, "calculate_kline_features", checked_calculate)
+    proof = verify_replay_features(partitions, candles)
+    assert visited == [time for part in partitions for time in part.event_times_ms]
+    assert proof == verify_replay_features(partitions, candles)
+    assert all(
+        len(item.features_sha256) == len(item.candles_sha256) == 64 for item in proof.sessions
+    )
+    # Future candles are hashed, but never used to recompute earlier features.
+    future = replace(candles[0].candles[-1], volume=D("20"))
+    changed = (replace(candles[0], candles=(*candles[0].candles[:-1], future)), candles[1])
+    later = verify_replay_features(partitions, changed)
+    assert later.sessions[0].candles_sha256 != proof.sessions[0].candles_sha256
+    assert later.sessions[0].features_sha256 == proof.sessions[0].features_sha256
+
+
+@pytest.mark.parametrize("column", ["return_3_bps", "taker_buy_ratio", "base_volume_ratio_5"])
+def test_single_float_step_feature_mismatch_is_not_silently_tolerated(tmp_path, column):
+    partitions, candles = provenance_inputs(tmp_path)
+    features = partitions[0].partition.features.copy()
+    index = partitions[0].partition.feature_names.index(column)
+    features[0, index] = np.nextafter(features[0, index], np.inf)
+    changed = replace(partitions[0], partition=replace(partitions[0].partition, features=features))
+    with pytest.raises(ValueError, match=f"provenance mismatch in {column}"):
+        verify_replay_features((changed, partitions[1]), candles)
+
+
+def test_raw_warmup_activity_change_rejects_unchanged_features(tmp_path):
+    partitions, candles = provenance_inputs(tmp_path)
+    bars = list(candles[0].candles)
+    bars[59] = replace(bars[59], volume=D("20"))
+    with pytest.raises(ValueError, match="base_volume_ratio"):
+        verify_replay_features(partitions, (replace(candles[0], candles=tuple(bars)), candles[1]))
+
+
+def test_missing_warmup_is_not_borrowed_from_previous_session(tmp_path):
+    partitions, candles = provenance_inputs(tmp_path)
+    shortened = replace(candles[0], candles=candles[0].candles[1:])
+    with pytest.raises(ValueError, match="insufficient in-session feature warmup"):
+        verify_replay_features(partitions, (shortened, candles[1]))
+
+
+@pytest.mark.parametrize("failure", ["scope", "timestamps", "shape", "schema", "nonfinite"])
+def test_invalid_feature_provenance_inputs_fail_closed(tmp_path, failure):
+    partitions, candles = provenance_inputs(tmp_path)
+    first = partitions[0]
+    if failure == "scope":
+        first = replace(first, name="held-out")
+    elif failure == "timestamps":
+        first = replace(first, event_times_ms=(first.event_times_ms[0],) * 3)
+    elif failure == "shape":
+        first = replace(
+            first, partition=replace(first.partition, features=first.partition.features[:1])
+        )
+    elif failure == "schema":
+        first = replace(first, partition=replace(first.partition, feature_names=("wrong",)))
+    else:
+        features = first.partition.features.copy()
+        features[0, 0] = np.nan
+        first = replace(first, partition=replace(first.partition, features=features))
+    with pytest.raises(ValueError):
+        verify_replay_features((first, partitions[1]), candles)
+
+
+def test_feature_mismatch_prevents_any_model_fit(tmp_path, monkeypatch):
+    dataset, manifest, names = research_fixture(tmp_path)
+    with dataset.open(encoding="utf-8", newline="") as source:
+        reader = csv.DictReader(source)
+        fieldnames = reader.fieldnames
+        rows = list(reader)
+    for row in rows:
+        if row["source_session"] == names[3]:
+            row["return_3_bps"] = "12345"
+            break
+    with dataset.open("w", encoding="utf-8", newline="") as output:
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Mismatched evaluation features must fail before fitting")
+
+    monkeypatch.setattr(walk_forward, "fit_linear_baseline", forbidden)
+    with pytest.raises(ValueError, match="feature provenance mismatch"):
+        walk_forward.run_walk_forward(
+            dataset,
+            TrainingConfig(device="cpu"),
+            replay_manifest=manifest,
+            replay_config=ReplayConfig(holding_bars=1),
+        )

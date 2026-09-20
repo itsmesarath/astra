@@ -188,8 +188,12 @@ fills; labels' additive-bps PnL is not assumed equal to actual fill accounting. 
 liquidation and caller-supplied causal signals are explicit assumptions. Schema-5 walk-forward
 reports now freeze probabilities/timestamps and optionally replay identical signals at next open
 and one bar later. Raw archive loading is restricted to evaluation sessions, before file access;
-no scenario winner is selected. Feature-to-raw-candle provenance, exchange/volume realism and the
-remaining provenance gates above are still pending. Integration tests are synthetic, not alpha evidence.
+no scenario winner is selected. Schema 6 additionally recomputes evaluation features before fitting
+from causal in-session windows and requires exact agreement under current generator rounding.
+Reports bind the verification to feature/candle content hashes and the calculation-module hash.
+This establishes evaluation-input numeric consistency, not original-generation authenticity.
+Fit/tuning features and outcome-label provenance, exchange/volume realism and remaining provenance
+gates above are still pending. Integration tests are synthetic, not alpha evidence.
 
 Bailey, Borwein, Lopez de Prado and Zhu, [The Probability of Backtest Overfitting](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf),
 explain why repeated strategy selection on the same history creates false discoveries. This

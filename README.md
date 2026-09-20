@@ -96,7 +96,7 @@ signals rejected by each control.
 ## Research validity and next milestone
 
 Read the [strategy research reset](STRATEGY_RESEARCH_PLAN.md) before interpreting backtests.
-Walk-forward report schema 5 separates fitting, past-session checkpoint tuning, and next-session
+Walk-forward report schema 6 separates fitting, past-session checkpoint tuning, and next-session
 evaluation. `--minimum-training-sessions` counts fitting sessions only;
 `--tuning-session-count` (default 1) adds a disjoint tuning block. For a 20-session initial prefix,
 use `--minimum-training-sessions 15 --tuning-session-count 5`. Legacy `validation` metric fields
@@ -178,7 +178,7 @@ volume/queue model, exchange tick/min-notional filters, intrabar equity path, or
 
 ### Frozen-prediction walk-forward replay
 
-Schema-5 walk-forward reports save each evaluation fold's feature timestamps and class probabilities
+Schema-6 walk-forward reports save each evaluation fold's feature timestamps and class probabilities
 in `[-1, 0, 1]` order, captured once before scoring. To opt into candle replay, provide both
 `--replay-manifest` (the verified normalized Binance kline manifest) and `--replay-holding-bars`.
 The latter is an explicit bar count, not minutes. Optional `--replay-take-profit-bps`,
@@ -194,10 +194,23 @@ labeled CSV still has the metadata/tokenization limitations described above.
 `candle_replay` contains `next_open` and `delayed_one_bar` reports driven by identical frozen
 predictions and the same fixed policy. Both scenarios retain their own continuous capital path.
 All prediction timestamps, including flat decisions, must match unique candle closes. Reports
-include the prediction/policy hash and each scenario's candle/signal input hash; timestamp and hash
-checks do not yet prove that the features were derived from those exact raw candles. Neither
+include the prediction/policy hash and each scenario's candle/signal input hash. Neither
 scenario selects a model or promotes a winner. `aggregate_economics` remains the separate legacy
 label-based measure, with different cost and observation definitions.
+
+With replay enabled, schema 6 also recomputes every evaluation feature from the selected raw
+candles before any model fitting. Each calculation receives only its 60 preceding in-session
+bars plus its current completed bar. After the generator's existing 12-significant-digit formatting,
+the resulting float64 values must match the model inputs exactly: no tolerance, repair or override.
+Missing warmup, changed features, mismatched timestamps and inconsistent raw candles reject the run.
+Older features generated under different rules may need regeneration into a new directory.
+
+`replay_feature_provenance` records the verification policy, feature names, warmup, calculation-module
+SHA-256 and per-session candle/feature content hashes and row counts. Its explicit scope is
+evaluation features only: it does not verify fit/tuning features, outcome labels, or historical
+source authenticity. It establishes numeric consistency with the current feature calculator, not
+proof of the original generation process. Standalone frozen-prediction replay has no feature matrix
+and does not perform this check; walk-forward runs without replay record null provenance.
 
 The `training.replay_evaluation.replay_frozen_predictions` API can replay saved predictions without
 fitting a model again. Walk-forward reports now refuse overwrites; choose a new `--output` path for
