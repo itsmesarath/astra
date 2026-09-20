@@ -397,3 +397,12 @@ Next: add cash, declared allocation buy-and-hold, and seeded matched random-entr
 session-level uncertainty and freeze numerical evidence gates. Only then run an explicitly selected
 research trial. Physical lockbox isolation, cross-machine environment reproducibility, execution
 volume/queue constraints, exchange filters and independent external timestamping remain open.
+
+## Reproducibility review follow-up
+
+A regression test changing the ambient Decimal rounding mode reproduced differing indicator
+values despite fixed precision. Signal generation and the complete six-scenario study now use an
+explicit 28-digit ROUND_HALF_EVEN context; registration records that arithmetic policy. Tests
+compare entire studies under changed caller precision/rounding. Added rejection tests for invalid
+distance-mode configuration and corrupt archive declarations. Final suite: 478 passing tests,
+Ruff lint/format clean. Changes are local commits; no historical trial has been launched.

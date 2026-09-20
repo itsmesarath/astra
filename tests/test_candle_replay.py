@@ -110,6 +110,22 @@ def test_distances_require_explicit_mode_and_affect_input_hash():
     assert a.input_sha256 != b.input_sha256
 
 
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"barrier_mode": "unknown"},
+        {"require_full_horizon": 1},
+        {"barriers": TripleBarrierConfig(taker_fee_bps=D("NaN"))},
+        {"barriers": TripleBarrierConfig(slippage_bps=D("-1"))},
+        {"barriers": TripleBarrierConfig(slippage_bps=D("10000"))},
+    ],
+)
+def test_distance_mode_invalid_configuration_rejected(changes):
+    config = replace(ReplayConfig(barrier_mode="signal_distances"), **changes)
+    with pytest.raises(ValueError):
+        replay_candles((distance_session([bar(0), bar(1)]),), config)
+
+
 def bar(index: int, opening="100", high=None, low=None, close=None) -> Kline:
     opening, close = D(opening), D(close if close is not None else opening)
     return Kline(

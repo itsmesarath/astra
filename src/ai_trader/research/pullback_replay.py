@@ -1,7 +1,7 @@
 """Run all six declared paper scenarios, without selecting a winning scenario."""
 
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Context, Decimal, localcontext
 
 from ai_trader.backtesting.candle_replay import (
     CandleSession,
@@ -41,6 +41,11 @@ def replay_pullback_scenarios(sessions: tuple[CandleSession, ...]) -> PullbackSt
     ATR stays frozen under both entry delays and all cost scenarios. Price levels
     anchor at the actual entry bar's open, before adverse execution slippage.
     """
+    with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)):
+        return _replay_scenarios(sessions)
+
+
+def _replay_scenarios(sessions: tuple[CandleSession, ...]) -> PullbackStudy:
     if not sessions:
         raise ValueError("Research sessions are required.")
     if any(s.long_signal_times_ms or s.signal_distances for s in sessions):

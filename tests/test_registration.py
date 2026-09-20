@@ -130,3 +130,20 @@ def test_wrong_manifest_rejected(tmp_path, change):
     source.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError):
         register(source, tmp_path / "registration.json")
+
+
+@pytest.mark.parametrize("corruption", ["duplicate", "bad_hash", "missing_path"])
+def test_bad_archive_metadata_rejected_without_registration(tmp_path, corruption):
+    source = manifest(tmp_path)
+    payload = json.loads(source.read_text())
+    if corruption == "duplicate":
+        payload["archives"].append(payload["archives"][0])
+    elif corruption == "bad_hash":
+        payload["archives"][0]["normalized_sha256"] = "not-a-digest"
+    else:
+        del payload["archives"][0]["normalized_path"]
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "registration.json"
+    with pytest.raises(ValueError):
+        register(source, output)
+    assert not output.exists()

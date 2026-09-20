@@ -8,7 +8,7 @@ whose previous close is known. Signals do not promise an executable trade.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal, localcontext
+from decimal import ROUND_HALF_EVEN, Context, Decimal, localcontext
 
 from ai_trader.features.kline_dataset import Kline
 
@@ -83,8 +83,7 @@ def generate_pullback_signals(source_session: str, candles: tuple[Kline, ...]) -
     _validate(candles)
     points: list[PullbackPoint] = []
     signals: list[PullbackSignal] = []
-    with localcontext() as context:
-        context.prec = 28
+    with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)):
         closes: list[Decimal] = []
         ranges: list[Decimal] = []
         fast = slow = atr = None

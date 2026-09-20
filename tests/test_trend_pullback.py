@@ -1,7 +1,7 @@
 """Synthetic causal fixtures only; no historical outcomes or reserved data."""
 
 from dataclasses import replace
-from decimal import Decimal, localcontext
+from decimal import ROUND_UP, Decimal, localcontext
 
 import pytest
 
@@ -101,6 +101,7 @@ def test_decimal_precision_does_not_change_results():
     expected = generate_pullback_signals("one", candles)
     with localcontext() as ctx:
         ctx.prec = 9
+        ctx.rounding = ROUND_UP
         assert generate_pullback_signals("one", candles) == expected
 
 
@@ -145,6 +146,10 @@ def test_fixed_cost_screen_rejects_tiny_amplitude_crossing():
 def test_all_six_scenarios_share_frozen_signals_and_capital_limit():
     candles = bars([100 + i for i in range(70)] + [155, 172] + [173] * 26)
     study = replay_pullback_scenarios((CandleSession("one", candles),))
+    with localcontext() as context:
+        context.prec = 9
+        context.rounding = ROUND_UP
+        assert replay_pullback_scenarios((CandleSession("one", candles),)) == study
     assert len(study.signals[0].signals) == 1
     assert [(s.round_trip_cost_bps, s.entry_delay_bars) for s in study.scenarios] == [
         (24, 0),

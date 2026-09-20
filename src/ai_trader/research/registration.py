@@ -123,6 +123,8 @@ def register_pullback(
         "implementation_sha256": implementation_fingerprint(),
         "environment": environment_fingerprint(),
         "protocol": {
+            "decimal_precision": 28,
+            "decimal_rounding": "ROUND_HALF_EVEN",
             "ema_periods": [20, 60],
             "slow_slope_bars": 6,
             "atr_period": 14,
