@@ -8,6 +8,13 @@ the selected model through paper, Spot Testnet, or explicitly armed Spot live ex
 
 ## Safety boundary
 
+Implementation status (2026-09-20): the [execution-mode foundation](EXECUTION_MODES.md) now
+provides explicit environment selection, a shared intent/receipt interface and a Spot paper
+adapter. Testnet/live configuration is recognized but unconditionally blocked; authenticated
+adapters and arming are not implemented. Public data ingestion may use internet access while
+agents/inference remain local. A future live adapter should use this boundary without replacing
+the strategy, but still requires the operational work in Phase D.
+
 - Paper mode remains the default and requires no credentials.
 - Execution modes are explicit: `paper`, `spot_testnet`, and `spot_live`.
 - Spot intentions are long or flat only; the system cannot create short exposure.

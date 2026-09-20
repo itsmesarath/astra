@@ -13,6 +13,15 @@ An experimental cryptocurrency market-microstructure research system.
 
 Live trading is disabled during development. Model decisions will never directly control an exchange account. A separate deterministic risk and execution layer must validate every proposed action.
 
+Agents and model inference run locally; public market data may use internet access. Execution
+configuration now recognizes `paper`, `spot_testnet`, and `spot_live`, with paper as the default.
+Only paper is implemented; testnet/live selections fail closed rather than place orders or pretend
+to be paper. See [execution modes and the live-adapter roadmap](EXECUTION_MODES.md).
+
+```powershell
+.venv\Scripts\python.exe -m ai_trader.trading.runtime --mode paper --check
+```
+
 ## Research principles
 
 - Use time-based train, validation, and test splits.
@@ -97,7 +106,7 @@ reports reused the scored session for checkpoint selection and remain explorator
 This is not yet a complete evaluation hardening: the loader still parses reserved rows, timestamp
 and label-boundary checks need strengthening, and the label-based simulator still has gap-fill and
 capital-accounting limitations. No new historical profitability claim has been made. Execution
-remains offline/paper-only.
+remains paper-only; public data ingestion may be online.
 
 ## Offline research council
 

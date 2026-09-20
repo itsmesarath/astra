@@ -142,3 +142,16 @@ integration, live connection, credentials, cloud calls, model download or depend
 Synthetic tests and a demonstration exercise the safety contract. No historical strategy trial,
 held-out dataset evaluation, Qwen inference or performance improvement is claimed. Existing
 timestamp/split and simulator repairs remain prerequisites for economic comparisons.
+
+### Execution-mode foundation
+
+Added explicit `paper`, `spot_testnet` and `spot_live` startup configuration and a common Spot
+request/receipt interface. The working paper adapter wraps existing risk/fill/accounting code,
+rejects short intentions and insufficient cash, serializes duplicate submissions, and preserves
+kill-switch flattening. Receipt states accommodate future asynchronous exchange outcomes.
+
+Testnet and live modes fail before any connection, credentials lookup or paper fallback. No live
+adapter or real-money arming is implemented. Deduplication remains process-local and mode
+namespaces are preparation for persistence, not durable ledgers. See [details](EXECUTION_MODES.md).
+Local agents can consume online public Binance data; offline is not a bot-wide networking ban.
+Paper outcomes can feed versioned training, but no profitability gate automatically enables live.
