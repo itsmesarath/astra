@@ -99,6 +99,20 @@ and label-boundary checks need strengthening, and the label-based simulator stil
 capital-accounting limitations. No new historical profitability claim has been made. Execution
 remains offline/paper-only.
 
+## Offline research council
+
+The [TradingAgents architecture review](TRADINGAGENTS_REVIEW.md) documents what we can reuse
+locally without paid model keys. An opt-in research council now supports bounded analyst/critic
+reviews, timestamped evidence, strict JSON citations, and deterministic risk vetoes. It cannot
+place orders and is not connected to the paper champion. The supplied reviewer is deterministic;
+a local LLM backend has not yet been installed or integrated.
+
+Run a synthetic, entirely offline safety demonstration:
+
+```powershell
+.venv\Scripts\python.exe -m ai_trader.research.council --demo
+```
+
 ## Local development setup
 
 Open Command Prompt in the project directory, then run:

@@ -126,3 +126,19 @@ Next session: enforce chronological timestamps and label boundaries, exclude loc
 before parsing, and finish provenance manifests. Then fix gap fills and continuous portfolio
 accounting before any strategy comparison. Existing economic results remain unsuitable for
 promotion; this checkpoint addresses selection leakage only.
+
+## 2026-09-20 TradingAgents architecture review
+
+Reviewed upstream commit `2d17df8da1536c121e4d7395ac5a5dcec9e96d6f`; see
+[findings and adoption plan](TRADINGAGENTS_REVIEW.md). Local keyless model inference is supported
+upstream, but its default data vendors are online. Its reflection is prompt memory, not model
+training, and its recommendation backtest is not our cash-and-fills economic simulation.
+
+Implemented a small independent offline research council with typed timestamped evidence,
+bounded structured analyst/critic reports, provenance citations, input fingerprints and existing
+hard-risk vetoes. The included cost-stress reviewer is deterministic, not an LLM. No broker
+integration, live connection, credentials, cloud calls, model download or dependency additions.
+
+Synthetic tests and a demonstration exercise the safety contract. No historical strategy trial,
+held-out dataset evaluation, Qwen inference or performance improvement is claimed. Existing
+timestamp/split and simulator repairs remain prerequisites for economic comparisons.
