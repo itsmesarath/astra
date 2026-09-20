@@ -14,6 +14,15 @@ checkpoint-selection leak in finding 1, not every task in step 1 below. Strict t
 boundary enforcement, pre-parse lockbox exclusion and reproducibility manifests remain pending.
 No new historical strategy trial was run. The other audit findings still apply.
 
+Implementation update (2026-09-20): schema-3 walk-forward reports now inventory sessions before
+loading model data, exclude reserved features/outcomes from conversion, enforce chronological
+feature timestamps and strict research outcome/embargo boundaries, and record source SHA-256
+plus session metadata. Dataset changes between passes are rejected. Nonmonotonic outcome times
+are supported. This narrows finding 7 for new runs but cannot undo prior holdout exposure.
+Combined-CSV tokenization still reads reserved cells as strings; this is not physical file-level
+isolation. Separate sealed files, complete code/environment manifests and simulator repairs remain
+pending. No historical dataset or final-block evaluation was run in this update.
+
 ## Findings that change the next milestone
 
 1. **Checkpoint selection and reported evaluation share the same session.** In

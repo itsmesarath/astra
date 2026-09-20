@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 from collections import Counter
 from dataclasses import asdict, dataclass
@@ -14,7 +13,6 @@ import numpy as np
 from ai_trader.backtesting.economic_metrics import (
     EconomicConfig,
     EconomicEvaluation,
-    TradeOutcome,
     aggregate_economic_evaluations,
     economic_evaluation_payload,
     evaluate_spot_economics,
@@ -29,10 +27,11 @@ from ai_trader.training.metrics import (
     ClassificationReport,
     evaluate_classification,
 )
-from ai_trader.training.model_data import (
-    ModelPartition,
-    infer_model_feature_names,
-    row_to_schema_features,
+from ai_trader.training.model_data import ModelPartition
+from ai_trader.training.session_data import (
+    SessionMetadata,
+    SessionPartition,
+    load_session_dataset,
 )
 from ai_trader.training.train_linear import (
     TrainingConfig,
@@ -42,18 +41,7 @@ from ai_trader.training.train_linear import (
     to_feature_tensor,
 )
 
-SOURCE_SESSION_COLUMN = "source_session"
 DEFAULT_OUTPUT_DIRECTORY = Path("data/processed/walk_forward")
-ECONOMIC_COLUMNS = {"entry_time_ms", "future_event_time_ms", "net_return_bps"}
-
-
-@dataclass(frozen=True, slots=True)
-class SessionPartition:
-    """One chronological source session converted to model inputs."""
-
-    name: str
-    partition: ModelPartition
-    outcomes: tuple[TradeOutcome, ...] | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,9 +65,12 @@ class WalkForwardFold:
 
 @dataclass(frozen=True, slots=True)
 class WalkForwardReport:
-    """Forward evidence; held-out rows are still parsed but never fitted or scored."""
+    """Forward evidence with metadata-only access to reserved sessions."""
 
     source_path: Path
+    source_sha256: str
+    session_metadata: tuple[SessionMetadata, ...]
+    embargo_ms: int
     feature_names: tuple[str, ...]
     economic_config: EconomicConfig
     total_sessions: int
@@ -92,99 +83,8 @@ class WalkForwardReport:
 
 
 def load_session_partitions(path: Path) -> tuple[SessionPartition, ...]:
-    """Load contiguous source sessions from one combined labeled dataset."""
-    with path.open(encoding="utf-8", newline="") as input_file:
-        reader = csv.DictReader(input_file)
-        if reader.fieldnames is None:
-            raise ValueError(f"{path.name} does not contain a header.")
-
-        required_columns = {"target_direction", SOURCE_SESSION_COLUMN}
-        missing_columns = required_columns - set(reader.fieldnames)
-        if missing_columns:
-            missing_text = ", ".join(sorted(missing_columns))
-            raise ValueError(f"{path.name} is missing columns: {missing_text}.")
-        try:
-            feature_names = infer_model_feature_names(reader.fieldnames)
-        except ValueError as error:
-            raise ValueError(f"{path.name}: {error}") from error
-        economic_columns = ECONOMIC_COLUMNS & set(reader.fieldnames)
-        if economic_columns and economic_columns != ECONOMIC_COLUMNS:
-            missing_text = ", ".join(sorted(ECONOMIC_COLUMNS - economic_columns))
-            raise ValueError(f"{path.name} has incomplete economic columns: {missing_text}.")
-        has_economic_outcomes = economic_columns == ECONOMIC_COLUMNS
-
-        session_names: list[str] = []
-        session_features: list[list[np.ndarray]] = []
-        session_targets: list[list[int]] = []
-        session_outcomes: list[list[TradeOutcome]] = []
-        completed_sessions: set[str] = set()
-        current_session: str | None = None
-
-        for line_number, row in enumerate(reader, start=2):
-            session = row[SOURCE_SESSION_COLUMN]
-            if not session.strip():
-                raise ValueError(f"{path.name} line {line_number}: source_session is empty.")
-
-            if session != current_session:
-                if current_session is not None:
-                    completed_sessions.add(current_session)
-                if session in completed_sessions:
-                    raise ValueError(
-                        f"{path.name} line {line_number}: source_session {session!r} "
-                        "is not contiguous."
-                    )
-                session_names.append(session)
-                session_features.append([])
-                session_targets.append([])
-                session_outcomes.append([])
-                current_session = session
-
-            try:
-                features = row_to_schema_features(row, feature_names)
-                target = int(row["target_direction"])
-            except ValueError as error:
-                raise ValueError(f"{path.name} line {line_number}: {error}") from error
-
-            if target not in CLASS_LABELS:
-                raise ValueError(
-                    f"{path.name} line {line_number}: target_direction must be -1, 0, or 1."
-                )
-
-            session_features[-1].append(features)
-            session_targets[-1].append(target)
-            if has_economic_outcomes:
-                try:
-                    outcome = TradeOutcome(
-                        entry_time_ms=int(row["entry_time_ms"]),
-                        exit_time_ms=int(row["future_event_time_ms"]),
-                        net_return_bps=float(row["net_return_bps"]),
-                    )
-                    outcome.validate()
-                except ValueError as error:
-                    raise ValueError(f"{path.name} line {line_number}: {error}") from error
-                session_outcomes[-1].append(outcome)
-
-    if not session_names:
-        raise ValueError(f"{path.name} contains no data rows.")
-
-    return tuple(
-        SessionPartition(
-            name=name,
-            partition=ModelPartition(
-                features=np.vstack(features).astype(np.float64, copy=False),
-                targets=np.asarray(targets, dtype=np.int64),
-                feature_names=feature_names,
-            ),
-            outcomes=tuple(outcomes) if has_economic_outcomes else None,
-        )
-        for name, features, targets, outcomes in zip(
-            session_names,
-            session_features,
-            session_targets,
-            session_outcomes,
-            strict=True,
-        )
-    )
+    """Load all sessions with boundary checks; walk-forward reserves holdouts separately."""
+    return load_session_dataset(path).sessions
 
 
 def combine_partitions(sessions: tuple[SessionPartition, ...]) -> ModelPartition:
@@ -257,6 +157,7 @@ def run_walk_forward(
     minimum_training_sessions: int = 2,
     tuning_session_count: int = 1,
     held_out_session_count: int = 1,
+    embargo_ms: int = 0,
     policy: DecisionPolicy | None = None,
     economic_config: EconomicConfig | None = None,
 ) -> WalkForwardReport:
@@ -265,25 +166,30 @@ def run_walk_forward(
     minimum_training_sessions counts fitting sessions only, excluding tuning.
     The legacy validation report fields now describe evaluation-only results.
     """
-    if minimum_training_sessions <= 0:
+    if type(minimum_training_sessions) is not int or minimum_training_sessions <= 0:
         raise ValueError("Minimum training sessions must be positive.")
-    if held_out_session_count <= 0:
+    if type(held_out_session_count) is not int or held_out_session_count <= 0:
         raise ValueError("Held-out session count must be positive.")
-    if tuning_session_count <= 0:
+    if type(tuning_session_count) is not int or tuning_session_count <= 0:
         raise ValueError("Tuning session count must be positive.")
 
-    sessions = load_session_partitions(source_path)
+    dataset = load_session_dataset(
+        source_path,
+        held_out_session_count=held_out_session_count,
+        embargo_ms=embargo_ms,
+    )
+    sessions = dataset.sessions
     active_policy = policy or DecisionPolicy(allow_short=False)
     active_economic_config = economic_config or EconomicConfig()
     first_evaluation = minimum_training_sessions + tuning_session_count
     required_sessions = first_evaluation + held_out_session_count + 1
-    if len(sessions) < required_sessions:
+    if len(dataset.metadata) < required_sessions:
         raise ValueError(
             "Walk-forward evaluation requires at least "
             f"{required_sessions} source sessions for this configuration."
         )
 
-    validation_stop = len(sessions) - held_out_session_count
+    validation_stop = len(sessions)
     folds = []
 
     for validation_position in range(first_evaluation, validation_stop):
@@ -346,11 +252,14 @@ def run_walk_forward(
         raise ValueError("Economic outcome availability must be consistent across sessions.")
     return WalkForwardReport(
         source_path=source_path,
+        source_sha256=dataset.source_sha256,
+        session_metadata=dataset.metadata,
+        embargo_ms=embargo_ms,
         feature_names=sessions[0].partition.feature_names,
         economic_config=active_economic_config,
-        total_sessions=len(sessions),
+        total_sessions=len(dataset.metadata),
         evaluated_sessions=tuple(fold.validation_session for fold in immutable_folds),
-        held_out_sessions=tuple(session.name for session in sessions[validation_stop:]),
+        held_out_sessions=dataset.held_out_sessions,
         folds=immutable_folds,
         aggregate_validation=aggregate_reports(
             tuple(fold.validation for fold in immutable_folds),
@@ -401,10 +310,14 @@ def write_walk_forward_report(
     """Write one auditable walk-forward evaluation report."""
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "schema_version": 2,
+        "schema_version": 3,
         "evaluation_protocol": "expanding_fit_past_tune_next_session_evaluate",
         "validation_fields_mean": "evaluation_only",
-        "held_out_access": "parsed_but_not_fitted_selected_or_scored",
+        "held_out_access": "csv_metadata_scanned_no_feature_or_outcome_conversion",
+        "source_sha256": report.source_sha256,
+        "session_metadata": [asdict(item) for item in report.session_metadata],
+        "embargo_ms": report.embargo_ms,
+        "boundary_policy": "reject_outcomes_at_or_after_next_session_start_minus_embargo",
         "model_type": "linear_direction_classifier",
         "source_dataset": str(report.source_path.resolve()),
         "feature_names": list(report.feature_names),
@@ -468,6 +381,12 @@ def parse_args() -> argparse.Namespace:
         help="Recent past sessions reserved for checkpoint selection, not fitting.",
     )
     parser.add_argument("--held-out-session-count", type=int, default=1)
+    parser.add_argument(
+        "--embargo-ms",
+        type=int,
+        default=0,
+        help="Required gap after outcomes before the next session; rejects crossings.",
+    )
     parser.add_argument("--max-epochs", type=int, default=500)
     parser.add_argument("--patience", type=int, default=50)
     parser.add_argument("--learning-rate", type=float, default=0.01)
@@ -526,6 +445,7 @@ def main() -> None:
         minimum_training_sessions=args.minimum_training_sessions,
         tuning_session_count=args.tuning_session_count,
         held_out_session_count=args.held_out_session_count,
+        embargo_ms=args.embargo_ms,
         policy=policy,
         economic_config=economic_config,
     )

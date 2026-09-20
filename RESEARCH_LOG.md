@@ -155,3 +155,27 @@ adapter or real-money arming is implemented. Deduplication remains process-local
 namespaces are preparation for persistence, not durable ledgers. See [details](EXECUTION_MODES.md).
 Local agents can consume online public Binance data; offline is not a bot-wide networking ban.
 Paper outcomes can feed versioned training, but no profitability gate automatically enables live.
+
+### Walk-forward timestamp boundaries and reserved-data loading
+
+Schema 3 adds a metadata-first loader. Session names, row counts and first/last feature timestamps
+are inventoried before choosing the research/held-out boundary. Only research rows reach feature,
+target and economic-outcome conversion. A poisoned-holdout regression verifies that malformed
+reserved features/labels do not reach the trainer, including through `run_walk_forward`.
+
+Research outcomes must follow their features and end strictly before the next session's first
+feature timestamp, including the first held-out session. `--embargo-ms` adds a configurable gap.
+Crossing rows are rejected, not purged silently. Every outcome is checked, so an early entry with
+a late exit cannot evade the boundary check; valid nonmonotonic exits are accepted. Entry timestamps
+for economic rows must follow features and increase strictly. Feature times may tie within one
+session but sessions must be strictly ordered and nonoverlapping.
+
+Reports retain the input SHA-256, metadata inventory, configuration and boundary policy. Changes
+between loading passes abort before fitting. Depth-label datasets containing future timestamps but
+no entry/return columns are accepted again; those timestamps no longer imply incomplete economics.
+
+Limitations: the combined CSV is still read/tokenized, held-out session metadata is inspected and
+the raw file is hashed. This is value-conversion exclusion, not zero-byte access or a physically
+sealed lockbox. Input timestamps are trusted provenance, not proof that upstream features were
+causal. Historical holdout exposure remains recorded. No real historical dataset was loaded or
+evaluated during this change; only synthetic fixtures were used. Next: gap fills and capital ledger.

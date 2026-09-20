@@ -96,17 +96,29 @@ signals rejected by each control.
 ## Research validity and next milestone
 
 Read the [strategy research reset](STRATEGY_RESEARCH_PLAN.md) before interpreting backtests.
-Walk-forward report schema 2 separates fitting, past-session checkpoint tuning, and next-session
+Walk-forward report schema 3 separates fitting, past-session checkpoint tuning, and next-session
 evaluation. `--minimum-training-sessions` counts fitting sessions only;
 `--tuning-session-count` (default 1) adds a disjoint tuning block. For a 20-session initial prefix,
 use `--minimum-training-sessions 15 --tuning-session-count 5`. Legacy `validation` metric fields
 now mean evaluation-only; tuning metrics and session names are recorded separately. Schema 1
 reports reused the scored session for checkpoint selection and remain exploratory.
 
-This is not yet a complete evaluation hardening: the loader still parses reserved rows, timestamp
-and label-boundary checks need strengthening, and the label-based simulator still has gap-fill and
-capital-accounting limitations. No new historical profitability claim has been made. Execution
-remains paper-only; public data ingestion may be online.
+The loader first inventories source-session names and feature timestamps, then reserves the final
+sessions before converting features, labels or economic outcomes. It rejects unordered/overlapping
+sessions and any research outcome reaching the next session's first feature timestamp. Optional
+`--embargo-ms` adds a required gap: `outcome_time + embargo_ms < next_session_start` must hold for
+every research row. Crossing rows cause an error, not silent trimming. Nonmonotonic exit times are
+allowed; the check does not assume the last row is the longest trade. Both feature and outcome
+timestamp columns are now mandatory, including for legacy depth datasets.
+
+Schema 3 records the source SHA-256, session inventory, embargo and boundary policy. Reserved CSV
+rows are still tokenized as text, and their names/feature timestamps are inspected; their features,
+targets and returns are not converted or summarized. This is not physical lockbox isolation.
+Schema 2 separated checkpoint tuning but still converted all held-out rows.
+
+The label-based simulator still has gap-fill and capital-accounting limitations. Fully isolated
+per-session storage and complete code/environment manifests remain future work. No new historical
+profitability claim has been made. Execution remains paper-only; public data ingestion may be online.
 
 ## Offline research council
 

@@ -33,15 +33,18 @@ FIELDNAMES = (
     "underlying_trade_count",
     "target_direction",
     "source_session",
+    "depth_event_time_ms",
+    "future_event_time_ms",
 )
 
 
 def make_rows(session_names: tuple[str, ...]) -> list[dict[str, str]]:
     """Create balanced, linearly separable rows for each session."""
     rows = []
-    for session in session_names:
+    for session_index, session in enumerate(session_names):
         for _ in range(4):
             for direction in (-1, 0, 1):
+                event_time = session_index * 100_000 + (len(rows) % 12) * 2000
                 rows.append(
                     {
                         "spread": "0.01",
@@ -56,6 +59,8 @@ def make_rows(session_names: tuple[str, ...]) -> list[dict[str, str]]:
                         "underlying_trade_count": "3",
                         "target_direction": str(direction),
                         "source_session": session,
+                        "depth_event_time_ms": str(event_time),
+                        "future_event_time_ms": str(event_time + 999),
                     }
                 )
     return rows
@@ -114,7 +119,11 @@ def test_runs_expanding_validation_and_reserves_final_session(tmp_path: Path) ->
         payload = json.load(input_file)
 
     assert payload["held_out_sessions"] == ["held-out"]
-    assert payload["schema_version"] == 2
+    assert payload["schema_version"] == 3
+    assert len(payload["source_sha256"]) == 64
+    assert payload["embargo_ms"] == 0
+    assert payload["session_metadata"][-1]["name"] == "held-out"
+    assert payload["held_out_access"] == "csv_metadata_scanned_no_feature_or_outcome_conversion"
     assert payload["validation_fields_mean"] == "evaluation_only"
     assert payload["folds"][0]["tuning_sessions"] == ["three"]
     assert payload["folds"][0]["tuning"]["total"] == 12
@@ -150,7 +159,7 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
     """The same validation engine must retain the explicit kline feature order."""
     source_path = tmp_path / "kline.csv"
     rows = []
-    for session in ("one", "two", "three", "four", "five"):
+    for session_index, session in enumerate(("one", "two", "three", "four", "five")):
         row_index = 0
         for direction in (-1, 0, 1):
             for _ in range(3):
@@ -159,8 +168,10 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
                 row["close_location"] = "0.5"
                 row["target_direction"] = str(direction)
                 row["source_session"] = session
-                row["entry_time_ms"] = str(row_index * 2000)
-                row["future_event_time_ms"] = str(row_index * 2000 + 999)
+                event_time = session_index * 100_000 + row_index * 2000
+                row["depth_event_time_ms"] = str(event_time)
+                row["entry_time_ms"] = str(event_time + 1)
+                row["future_event_time_ms"] = str(event_time + 999)
                 row["net_return_bps"] = str(direction * 10)
                 rows.append(row)
                 row_index += 1
@@ -172,6 +183,7 @@ def test_walk_forward_accepts_historical_kline_schema(tmp_path: Path) -> None:
                 "target_direction",
                 "source_session",
                 "entry_time_ms",
+                "depth_event_time_ms",
                 "future_event_time_ms",
                 "net_return_bps",
             ),
@@ -276,3 +288,34 @@ def test_future_targets_cannot_select_current_checkpoint(
         assert original.folds[0].validation != changed.folds[0].validation
     else:
         assert original.folds[0] == changed.folds[0]
+
+
+def test_walk_forward_skips_poisoned_holdout_values(tmp_path: Path) -> None:
+    """Exercise the real training entry point, not just the standalone loader."""
+    source = tmp_path / "combined.csv"
+    rows = make_rows(("fit-one", "fit-two", "tune", "evaluate", "held-out"))
+    for row in rows:
+        if row["source_session"] == "held-out":
+            row.update(
+                book_imbalance="not a feature",
+                target_direction="not a label",
+                future_event_time_ms="not an outcome",
+            )
+    write_rows(source, rows)
+    report = run_walk_forward(source, TrainingConfig(max_epochs=2, patience=1, device="cpu"))
+    assert report.held_out_sessions == ("held-out",)
+    assert report.evaluated_sessions == ("evaluate",)
+
+
+def test_boundary_failure_happens_before_any_fit(tmp_path: Path, monkeypatch) -> None:
+    source = tmp_path / "combined.csv"
+    rows = make_rows(("fit-one", "fit-two", "tune", "evaluate", "held-out"))
+    rows[0]["future_event_time_ms"] = rows[12]["depth_event_time_ms"]
+    write_rows(source, rows)
+
+    def forbidden_fit(*args, **kwargs):
+        raise AssertionError("No model may be fitted on invalid chronology")
+
+    monkeypatch.setattr(walk_forward, "fit_linear_baseline", forbidden_fit)
+    with pytest.raises(ValueError, match="crosses the next session boundary"):
+        run_walk_forward(source, TrainingConfig(device="cpu"))

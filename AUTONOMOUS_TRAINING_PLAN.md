@@ -196,7 +196,10 @@ reserve final sessions so discovered patterns can be falsified out of sample.
 Repair experimental validity before replacing the rejected strategy. The
 [strategy research reset](STRATEGY_RESEARCH_PLAN.md) documents checkpoint-selection leakage,
 impossible gap-stop fills, capital-accounting inconsistencies, and holdout provenance limitations.
-First separate fitting, tuning, and forward evaluation; then implement a causal execution ledger.
+Fitting, tuning and forward evaluation are now separated. Schema-3 loading also enforces feature
+chronology and outcome boundaries, skips held-out value conversion, and records data provenance.
+Next fix gap-stop fills and implement a causal execution ledger with continuous capital accounting.
+Keep physical lockbox isolation and full code/environment manifests on the remaining hardening list.
 After those gates, test the registered slower trend-pullback hypothesis with volatility-scaled
 price barriers and explicit cost stresses. No live connectivity is part of this milestone.
 
