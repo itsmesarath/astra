@@ -1,6 +1,15 @@
-# AI Trader
+# Auto-Trader
 
 An experimental cryptocurrency market-microstructure research system.
+
+Research software, not a profitable trading product or financial advice. No profitable strategy
+has been established. Execution is paper-only; Qwen integration and fine-tuning are planned,
+not implemented. The Python package remains named `ai-trader` (import: `ai_trader`).
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Project code is available
+under the [MIT license](LICENSE); third-party dependencies and downloaded data retain their
+own licenses and terms. See [the TradingAgents review](TRADINGAGENTS_REVIEW.md) for architectural
+inspiration and attribution.
 
 ## Initial scope
 
@@ -246,15 +255,19 @@ Run a synthetic, entirely offline safety demonstration:
 
 ## Local development setup
 
-Open Command Prompt in the project directory, then run:
+Use Python 3.12. Open Command Prompt in the project directory, then run:
 
 ```cmd
 python -m venv .venv
 .venv\Scripts\activate
 python -m pip install --upgrade pip setuptools wheel
 python -m pip install -e ".[dev]"
-python -m pip install -r requirements\gpu-cu132.txt
+python -m pip install -r requirements\cpu.txt
 ```
+
+On Linux/macOS, activate with `source .venv/bin/activate` and use
+`requirements/cpu.txt`. A GPU is optional for the test suite. For the NVIDIA development
+environment, install `requirements/gpu-cu132.txt` instead of the CPU requirements.
 
 Verify the installation:
 
@@ -264,3 +277,6 @@ python -m ruff check .
 python -m ruff format --check .
 python -m pytest -v
 ```
+
+The CUDA smoke test is skipped on machines without CUDA; CPU tests still run. GitHub Actions
+runs lint, formatting checks, and the suite on Python 3.12 with CPU PyTorch.
