@@ -1,5 +1,10 @@
 # Strategy research reset
 
+Direction update (2026-09-21): the maintainer has specified order-book/CVD/liquidity and
+absorption/replenishment as the primary strategy inputs. [MICROSTRUCTURE_PLAN.md](MICROSTRUCTURE_PLAN.md)
+now governs the next research milestone. The candle pullback study below remains a comparison
+baseline; do not proceed with it as a substitute for order-book strategy research.
+
 Audit date: 2026-09-19. Code reviewed: `3f22d8f`.
 
 Status: research plan, not an implemented strategy or a promotion decision. The existing linear

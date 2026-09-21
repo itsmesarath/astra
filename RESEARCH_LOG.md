@@ -406,3 +406,39 @@ explicit 28-digit ROUND_HALF_EVEN context; registration records that arithmetic 
 compare entire studies under changed caller precision/rounding. Added rejection tests for invalid
 distance-mode configuration and corrupt archive declarations. Final suite: 478 passing tests,
 Ruff lint/format clean. Changes are local commits; no historical trial has been launched.
+
+## Order-book-first direction and receipt-causal microstructure features
+
+The maintainer clarified the primary strategy direction: order-book state, CVD, liquidity,
+iceberg/replenishment evidence and absorption. The candle pullback study is now explicitly a
+comparison baseline. MICROSTRUCTURE_PLAN.md governs the next implementation sequence.
+
+Added a separate stateful microstructure engine and explicit-capture JSONL builder. Features
+include session base/quote CVD, receipt-window buy/sell volume and CVD, observed liquidity bands,
+top-N/band coverage, best-queue OFI and per-side exact-best-price replenishment/absorption proxies.
+No hidden-order identity or size is claimed. Defaults use a ten-second rolling window, ten-bps
+liquidity bands, one-second maximum attribution interval, 80% retained displayed depth and three
+consecutive replenishment intervals. These are research settings, not validated trading thresholds.
+
+The first applied depth establishes the evidence baseline. Event-time eligibility and receipt
+availability are distinct: late trades affect current CVD but never revise previous attribution;
+future-time trades wait in a bounded buffer. Gaps, malformed events, duplicate trade IDs, reverse
+receipt times and buffer overflow invalidate the engine. Equal-time/long depth intervals suppress
+attribution. Snapshot boundaries remain fixed; sparse updates cannot claim deeper complete coverage.
+Best quotes outside known coverage require resynchronization. Decimal calculations use explicit
+28-digit half-even arithmetic. New session instances reset CVD and all evidence state.
+
+The builder validates the capture, binds unchanged input bytes and project source hashes, and
+publishes only complete versioned output using no-overwrite hard-link creation. Temporary files
+are cleaned on failure; racing existing destinations are preserved. A completed artifact requires
+its end footer. Existing model schemas and CSV datasets remain unchanged. No account connection,
+live order, historical strategy evaluation, LLM training or promotion was performed.
+
+Verification: clean baseline 478 tests; 52 new synthetic tests cover signed/rolling CVD, precise
+window endpoints, OFI quote changes, both-side evidence, depleted/add-only books, stale/late/future
+events, prefix invariance, snapshot coverage, failures, immutable prior rows, arithmetic context,
+source drift and exclusive artifact publication. Full suite: 530 passed. CPU-only suite: 529 passed,
+one CUDA smoke test skipped. Ruff lint/format and diff checks passed. Next validate selected capture
+quality, then preregister a microstructure event hypothesis
+and build L2/trade execution evaluation rather than using candle fills as proof of microstructure
+profitability.

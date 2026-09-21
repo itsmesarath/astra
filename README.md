@@ -33,6 +33,21 @@ to be paper. See [execution modes and the live-adapter roadmap](EXECUTION_MODES.
 
 ## Research principles
 
+Our primary direction is **order-book and trade-flow research**: CVD, liquidity, replenishment,
+absorption and other microstructure features. See [MICROSTRUCTURE_PLAN.md](MICROSTRUCTURE_PLAN.md)
+for implemented evidence, uncertainty and the next research stages. Candle strategies below are
+comparison baselines, not the main trading approach.
+
+Build receipt-causal microstructure evidence from an explicitly selected combined capture:
+
+```sh
+python -m ai_trader.features.build_microstructure data/raw/YOUR_CAPTURE.jsonl data/processed/microstructure.jsonl --source-session YOUR_SESSION --levels 5
+```
+
+Use a new output path for each build. This offline command emits a separate JSONL research artifact,
+not trading instructions or training-ready labels. Replenishment/absorption flags are heuristic
+evidence, not confirmed iceberg orders. It does not modify existing datasets or contact an exchange.
+
 The fixed trend-pullback research API is implemented in `ai_trader.research.trend_pullback`.
 `ai_trader.research.pullback_replay.replay_pullback_scenarios` takes explicitly selected raw
 five-minute candle sessions and reports every 24/36/48-bps cost scenario at next-open and delayed
