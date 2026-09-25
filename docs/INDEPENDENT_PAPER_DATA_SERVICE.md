@@ -65,6 +65,18 @@ handoff with restart, lag and fault tests remains a separate milestone. The
 example's `abstain` rule intentionally records no entry orders; any candidate
 entry policy needs its own versioned settings and paper evidence.
 
+The replay engine now also has an in-memory `IncrementalCaptureFrames` path.
+It accepts the snapshot and one staged event at a time, and emits the same
+receipt-causal paper frames as complete offline replay. Tests cover buffered
+pre-snapshot events, restart by rebuilding a prefix, market faults, and invalid
+footers. This is an internal contract, **not an enabled real-time paper mode**:
+the recorder currently stages event bytes and assembles/publishes the complete
+capture at the end. Before connecting a paper journal to incremental frames,
+the recorder must durably flush each consumed event (or a bounded batch), bind
+its exact offset/hash to the journal, and fail closed on queue lag or crash.
+Restart must verify that the journal is an exact prefix of durable staged
+records; it must never silently continue from an uncertain partial session.
+
 An operational one-session check on 2026-09-25 ran the 30-second service with
 this abstain plan. It completed with 211 aggregate trades, 299 depth events,
 290 causal feature observations and 491 durable paper ticks/cases. The journal
