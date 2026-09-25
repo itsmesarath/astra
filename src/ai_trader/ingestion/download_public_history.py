@@ -19,6 +19,7 @@ import urllib.request
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
@@ -27,6 +28,9 @@ DataType = Literal["candles", "trades"]
 MAX_RESPONSE_BYTES = 8 * 1024 * 1024
 MAX_PAGES = 1_000
 MAX_ROWS = 1_000_000
+BINANCE_PAGE_SIZE = 1_000
+OKX_PAGE_SIZE = 300
+COINBASE_WINDOW_CANDLES = 299
 
 
 class ReadableResponse(Protocol):
@@ -68,6 +72,8 @@ class PublicHistoryRequest:
             raise ValueError("Require 0 <= start_ms < end_ms.")
         if self.interval_seconds not in (60, 300, 900, 1_800, 3_600, 21_600, 86_400):
             raise ValueError("Unsupported candle interval in seconds.")
+        if self.provider == "coinbase" and self.interval_seconds == 1_800:
+            raise ValueError("Coinbase Exchange does not support 30-minute candles.")
         if type(self.max_pages) is not int or not 1 <= self.max_pages <= MAX_PAGES:
             raise ValueError(f"max_pages must be an integer in [1, {MAX_PAGES}].")
         if self.provider in ("okx", "coinbase") and self.data_type == "trades":
@@ -94,8 +100,27 @@ def _sha256(path: Path) -> str:
         return hashlib.file_digest(source, "sha256").hexdigest()
 
 
-def _interval_name(seconds: int) -> str:
-    names = {60: "1m", 300: "5m", 900: "15m", 1_800: "30m", 3_600: "1H", 21_600: "6H", 86_400: "1D"}
+def _interval_name(seconds: int, provider: Provider) -> str:
+    if provider == "binance":
+        names = {
+            60: "1m",
+            300: "5m",
+            900: "15m",
+            1_800: "30m",
+            3_600: "1h",
+            21_600: "6h",
+            86_400: "1d",
+        }
+    else:
+        names = {
+            60: "1m",
+            300: "5m",
+            900: "15m",
+            1_800: "30m",
+            3_600: "1H",
+            21_600: "6Hutc",
+            86_400: "1Dutc",
+        }
     return names[seconds]
 
 
@@ -109,29 +134,35 @@ def _iso8601(milliseconds: int) -> str:
 
 def build_page_url(request: PublicHistoryRequest, *, cursor_ms: int | None = None) -> str:
     """Build the next public request without credentials or authorization headers."""
-    interval = _interval_name(request.interval_seconds)
+    interval = _interval_name(request.interval_seconds, request.provider)
     if request.provider == "binance":
         endpoint = (
-            "https://api.binance.com/api/v3/klines"
+            "https://data-api.binance.vision/api/v3/klines"
             if request.data_type == "candles"
-            else "https://api.binance.com/api/v3/aggTrades"
+            else "https://data-api.binance.vision/api/v3/aggTrades"
         )
         params: dict[str, str | int] = {
             "symbol": request.product.upper(),
-            "startTime": request.start_ms if cursor_ms is None else cursor_ms,
-            "endTime": request.end_ms,
-            "limit": 1_000,
+            "limit": BINANCE_PAGE_SIZE,
         }
         if request.data_type == "candles":
+            params["startTime"] = request.start_ms if cursor_ms is None else cursor_ms
+            params["endTime"] = request.end_ms - 1
             params["interval"] = interval
+        elif cursor_ms is None:
+            params["startTime"] = request.start_ms
+            params["endTime"] = request.end_ms - 1
+        else:
+            # Trade IDs, rather than milliseconds, preserve all trades sharing a timestamp.
+            params["fromId"] = cursor_ms
     elif request.provider == "okx":
         endpoint = "https://www.okx.com/api/v5/market/history-candles"
         params = {
             "instId": request.product.upper(),
             "bar": interval,
             "after": request.end_ms if cursor_ms is None else cursor_ms,
-            "before": request.start_ms,
-            "limit": 100,
+            "before": max(0, request.start_ms - 1),
+            "limit": OKX_PAGE_SIZE,
         }
     else:
         endpoint = f"https://api.exchange.coinbase.com/products/{request.product.upper()}/candles"
@@ -139,7 +170,12 @@ def build_page_url(request: PublicHistoryRequest, *, cursor_ms: int | None = Non
         params = {
             "granularity": request.interval_seconds,
             "start": _iso8601(start),
-            "end": _iso8601(request.end_ms),
+            "end": _iso8601(
+                min(
+                    start + COINBASE_WINDOW_CANDLES * request.interval_seconds * 1_000,
+                    request.end_ms,
+                )
+            ),
         }
     return endpoint + "?" + urllib.parse.urlencode(params)
 
@@ -166,8 +202,21 @@ def _number(value: object) -> str:
     if isinstance(value, float) and not math.isfinite(value):
         raise ValueError("Expected a finite numeric public-data field.")
     if isinstance(value, (str, int, float)) and not isinstance(value, bool):
-        return str(value)
+        try:
+            parsed = Decimal(str(value))
+        except InvalidOperation as error:
+            raise ValueError("Expected a finite numeric public-data field.") from error
+        if parsed.is_finite():
+            return str(value)
     raise ValueError("Expected a finite numeric public-data field.")
+
+
+def _integer(value: object) -> int:
+    if type(value) is int and value >= 0:
+        return value
+    if isinstance(value, str) and value.isascii() and value.isdigit():
+        return int(value)
+    raise ValueError("Expected a nonnegative integer public-data field.")
 
 
 def _candle_rows(request: PublicHistoryRequest, payload: Any) -> list[dict[str, Any]]:
@@ -183,7 +232,7 @@ def _candle_rows(request: PublicHistoryRequest, payload: Any) -> list[dict[str, 
         for raw in raw_rows:
             if not isinstance(raw, list) or len(raw) < 6:
                 raise ValueError("Malformed OKX candle row.")
-            rows.append((int(raw[0]), raw[1], raw[2], raw[3], raw[4], raw[5]))
+            rows.append((_integer(raw[0]), raw[1], raw[2], raw[3], raw[4], raw[5]))
     elif request.provider == "coinbase":
         if not isinstance(payload, list):
             raise ValueError("Coinbase returned an unsuccessful candle response.")
@@ -191,7 +240,7 @@ def _candle_rows(request: PublicHistoryRequest, payload: Any) -> list[dict[str, 
         for raw in payload:
             if not isinstance(raw, list) or len(raw) < 6:
                 raise ValueError("Malformed Coinbase candle row.")
-            rows.append((int(raw[0]) * 1_000, raw[3], raw[2], raw[1], raw[4], raw[5]))
+            rows.append((_integer(raw[0]) * 1_000, raw[3], raw[2], raw[1], raw[4], raw[5]))
     else:
         if not isinstance(payload, list):
             raise ValueError("Binance returned an unsuccessful candle response.")
@@ -199,7 +248,7 @@ def _candle_rows(request: PublicHistoryRequest, payload: Any) -> list[dict[str, 
         for raw in payload:
             if not isinstance(raw, list) or len(raw) < 6:
                 raise ValueError("Malformed Binance candle row.")
-            rows.append((int(raw[0]), raw[1], raw[2], raw[3], raw[4], raw[5]))
+            rows.append((_integer(raw[0]), raw[1], raw[2], raw[3], raw[4], raw[5]))
     normalized = []
     for timestamp, opening, high, low, close, volume in rows:
         if not request.start_ms <= timestamp < request.end_ms:
@@ -227,41 +276,57 @@ def _trade_rows(request: PublicHistoryRequest, payload: Any) -> list[dict[str, A
     for raw in payload:
         if not isinstance(raw, dict) or not {"a", "p", "q", "T", "m"}.issubset(raw):
             raise ValueError("Malformed Binance aggregate-trade row.")
-        timestamp = int(raw["T"])
-        if request.start_ms <= timestamp < request.end_ms:
-            normalized.append(
-                {
-                    "venue": "binance",
-                    "product": request.product,
-                    "data_type": "trades",
-                    "trade_id": int(raw["a"]),
-                    "timestamp_ms": timestamp,
-                    "price": _number(raw["p"]),
-                    "quantity": _number(raw["q"]),
-                    "buyer_is_maker": bool(raw["m"]),
-                }
-            )
+        timestamp = _integer(raw["T"])
+        if type(raw["m"]) is not bool:
+            raise ValueError("Malformed Binance maker-side flag.")
+        normalized.append(
+            {
+                "venue": "binance",
+                "product": request.product,
+                "data_type": "trades",
+                "trade_id": _integer(raw["a"]),
+                "timestamp_ms": timestamp,
+                "price": _number(raw["p"]),
+                "quantity": _number(raw["q"]),
+                "buyer_is_maker": raw["m"],
+            }
+        )
     return normalized
 
 
 def _next_cursor(
-    request: PublicHistoryRequest, rows: list[dict[str, Any]], cursor_ms: int | None
+    request: PublicHistoryRequest, rows: list[dict[str, Any]], cursor: int | None
 ) -> int | None:
+    if request.provider == "coinbase":
+        start = request.start_ms if cursor is None else cursor
+        next_start = min(
+            start + COINBASE_WINDOW_CANDLES * request.interval_seconds * 1_000,
+            request.end_ms,
+        )
+        return next_start if next_start < request.end_ms else None
     if not rows:
         return None
-    timestamps = [int(row["timestamp_ms"]) for row in rows]
     if request.provider == "okx":
-        candidate = min(timestamps) - 1
-    elif request.data_type == "candles":
-        candidate = max(timestamps) + request.interval_seconds * 1_000
+        if len(rows) < OKX_PAGE_SIZE:
+            return None
+        candidate = min(row["timestamp_ms"] for row in rows) - 1
+        if candidate < request.start_ms:
+            return None
+        if cursor is not None and candidate >= cursor:
+            raise ValueError("OKX candle pagination did not move backward.")
+        return candidate
+    if request.data_type == "trades":
+        if rows[-1]["timestamp_ms"] >= request.end_ms or len(rows) < BINANCE_PAGE_SIZE:
+            return None
+        candidate = rows[-1]["trade_id"] + 1
     else:
-        candidate = max(timestamps) + 1
-    if cursor_ms is not None and candidate == cursor_ms:
-        return None
-    if request.provider == "okx" and candidate < request.start_ms:
-        return None
-    if request.provider != "okx" and candidate >= request.end_ms:
-        return None
+        if len(rows) < BINANCE_PAGE_SIZE:
+            return None
+        candidate = max(row["timestamp_ms"] for row in rows) + request.interval_seconds * 1_000
+        if candidate >= request.end_ms:
+            return None
+    if cursor is not None and candidate <= cursor:
+        raise ValueError("Binance history pagination did not advance.")
     return candidate
 
 
@@ -279,6 +344,9 @@ def download_public_history(
         raise ValueError("output_path must end in .jsonl.")
     if output_path.exists():
         raise FileExistsError(output_path)
+    manifest_path = output_path.with_suffix(".manifest.json")
+    if manifest_path.exists():
+        raise FileExistsError(manifest_path)
     pages = 0
     cursor = None
     rows_by_key: dict[int, dict[str, Any]] = {}
@@ -291,13 +359,19 @@ def download_public_history(
         )
         pages += 1
         for row in page:
+            if not request.start_ms <= row["timestamp_ms"] < request.end_ms:
+                continue
             key = int(row.get("trade_id", row["timestamp_ms"]))
+            if key in rows_by_key and rows_by_key[key] != row:
+                raise ValueError("Conflicting public history row at the same source key.")
             rows_by_key[key] = row
             if len(rows_by_key) > MAX_ROWS:
                 raise ValueError("Public history exceeds the bounded row budget.")
         next_cursor = _next_cursor(request, page, cursor)
-        if next_cursor is None or next_cursor == cursor:
+        if next_cursor is None:
             break
+        if pages >= request.max_pages:
+            raise ValueError("Page budget reached before the public range was exhausted.")
         cursor = next_cursor
     rows = sorted(
         rows_by_key.values(), key=lambda row: (row["timestamp_ms"], row.get("trade_id", 0))
@@ -325,7 +399,6 @@ def download_public_history(
         if temporary_path is not None:
             temporary_path.unlink(missing_ok=True)
     digest = _sha256(output_path)
-    manifest_path = output_path.with_suffix(".manifest.json")
     manifest = {
         "schema_version": 1,
         "source": "public_rest",
@@ -336,9 +409,24 @@ def download_public_history(
         "output_path": str(output_path),
         "sha256": digest,
     }
-    manifest_path.write_text(
-        json.dumps(manifest, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8"
-    )
+    temporary_manifest: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=manifest_path.parent,
+            prefix=".history-manifest-",
+            suffix=".tmp",
+            delete=False,
+        ) as output:
+            temporary_manifest = Path(output.name)
+            output.write(json.dumps(manifest, indent=2, sort_keys=True, default=str) + "\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.link(temporary_manifest, manifest_path)
+    finally:
+        if temporary_manifest is not None:
+            temporary_manifest.unlink(missing_ok=True)
     return PublicHistoryResult(
         request.provider,
         request.product,

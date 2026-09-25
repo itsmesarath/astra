@@ -24,6 +24,12 @@ from typing import Any
 
 from ai_trader.features.build_microstructure import build_microstructure_dataset
 from ai_trader.ingestion.collect_combined import CaptureLimits, collect
+from ai_trader.trading.prospective_paper import (
+    MAX_FRAMES,
+    PaperSource,
+    load_paper_plan,
+    simulate_paper_prefix,
+)
 
 MAX_SESSIONS = 1_000
 MAX_PAUSE_SECONDS = 24 * 60 * 60
@@ -53,6 +59,10 @@ class PaperDataServiceConfig:
     build_features: bool = True
     capture_limits: CaptureLimits = CaptureLimits()
     service_id: str | None = None
+    paper_plan_path: Path | None = None
+    paper_journal_path: Path | None = None
+    max_paper_frames: int = MAX_FRAMES
+    enable_paper_simulation: bool = False
 
     def __post_init__(self) -> None:
         _positive_integer(self.sessions, "sessions", MAX_SESSIONS)
@@ -73,6 +83,17 @@ class PaperDataServiceConfig:
                 for character in self.service_id
             ):
                 raise ValueError("service_id may contain only letters, digits, '-' and '_'.")
+        if (self.paper_plan_path is None) != (self.paper_journal_path is None):
+            raise ValueError("Paper plan and journal paths must be supplied together.")
+        if self.paper_plan_path is not None and (
+            not self.enable_paper_simulation or self.service_id is None
+        ):
+            raise ValueError("Paper replay requires explicit activation and a fixed service_id.")
+        if self.enable_paper_simulation and self.paper_plan_path is None:
+            raise ValueError("Paper replay requires a predeclared paper plan.")
+        if self.paper_plan_path is not None and self.sessions > 32:
+            raise ValueError("A paper service supports at most 32 sessions per plan.")
+        _positive_integer(self.max_paper_frames, "max_paper_frames", MAX_FRAMES)
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,6 +144,7 @@ async def run_paper_data_service(
     collector: Collector = collect,
     feature_builder: FeatureBuilder = build_microstructure_dataset,
     sleeper: Sleeper = asyncio.sleep,
+    paper_simulator: Callable[..., dict[str, Any]] = simulate_paper_prefix,
 ) -> PaperDataServiceResult:
     """Capture and optionally feature-build exactly ``config.sessions`` sessions.
 
@@ -133,6 +155,9 @@ async def run_paper_data_service(
     if type(config) is not PaperDataServiceConfig:
         raise TypeError("PaperDataServiceConfig is required.")
     output_directory = config.output_directory
+    paper_plan = load_paper_plan(config.paper_plan_path) if config.paper_plan_path else None
+    if paper_plan is not None and paper_plan.service_id != config.service_id:
+        raise ValueError("Paper plan service_id differs from the capture service_id.")
     output_directory.mkdir(parents=True, exist_ok=True)
     service_id = config.service_id or _default_service_id()
     manifest_path = config.manifest_path or output_directory / f"{service_id}.jsonl"
@@ -148,7 +173,9 @@ async def run_paper_data_service(
     started_at_ns = time.time_ns()
     try:
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        manifest_path.touch()
+        with manifest_path.open("xb") as output:
+            output.flush()
+            os.fsync(output.fileno())
         _append_record(
             manifest_path,
             {
@@ -191,12 +218,33 @@ async def run_paper_data_service(
                     )
                 built_observations = None
                 if config.build_features:
+                    feature_options: dict[str, Any] = {"source_session": source_session}
+                    if paper_plan is not None:
+                        feature_options["config"] = paper_plan.replay.features
                     built_observations = feature_builder(
                         capture_path,
                         feature_path,
-                        source_session=source_session,
+                        **feature_options,
                     )
                     feature_paths.append(feature_path)
+                paper_report = None
+                if paper_plan is not None:
+                    paper_sources = tuple(
+                        PaperSource(f"{service_id}-s{number:04d}", path)
+                        for number, path in enumerate((*capture_paths, capture_path), start=1)
+                    )
+                    paper_report = paper_simulator(
+                        plan_path=config.paper_plan_path,
+                        sources=paper_sources,
+                        journal_path=config.paper_journal_path,
+                        max_frames=config.max_paper_frames,
+                        enable_paper_simulation=True,
+                        resume=index > 0,
+                    )
+                    if not paper_report["session_consumed"] or paper_report["market_fault_frames"]:
+                        raise ValueError(
+                            "Paper replay stopped on incomplete or unhealthy market data."
+                        )
                 capture_paths.append(capture_path)
                 completed += 1
                 _append_record(
@@ -213,6 +261,15 @@ async def run_paper_data_service(
                         if built_observations is not None
                         else None,
                         "feature_observations": built_observations,
+                        "paper_journal_path": (
+                            str(config.paper_journal_path) if paper_report is not None else None
+                        ),
+                        "paper_plan_sha256": paper_plan.sha256
+                        if paper_report is not None
+                        else None,
+                        "paper_ledger_order_count": (
+                            paper_report["ledger_order_count"] if paper_report is not None else None
+                        ),
                         "completed_at_ns": time.time_ns(),
                     },
                 )
@@ -266,6 +323,10 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--skip-features", action="store_true")
     parser.add_argument("--service-id")
+    parser.add_argument("--paper-plan", type=Path)
+    parser.add_argument("--paper-journal", type=Path)
+    parser.add_argument("--max-paper-frames", type=int, default=MAX_FRAMES)
+    parser.add_argument("--enable-paper-simulation", action="store_true")
     args = parser.parse_args()
     try:
         PaperDataServiceConfig(
@@ -277,6 +338,10 @@ def _parse_args() -> argparse.Namespace:
             enable_public_data=args.enable_public_data,
             build_features=not args.skip_features,
             service_id=args.service_id,
+            paper_plan_path=args.paper_plan,
+            paper_journal_path=args.paper_journal,
+            max_paper_frames=args.max_paper_frames,
+            enable_paper_simulation=args.enable_paper_simulation,
         )
     except ValueError as error:
         parser.error(str(error))
@@ -294,6 +359,10 @@ def main() -> None:
         enable_public_data=True,
         build_features=not args.skip_features,
         service_id=args.service_id,
+        paper_plan_path=args.paper_plan,
+        paper_journal_path=args.paper_journal,
+        max_paper_frames=args.max_paper_frames,
+        enable_paper_simulation=args.enable_paper_simulation,
     )
     result = asyncio.run(run_paper_data_service(config))
     print(
