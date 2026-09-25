@@ -1,0 +1,53 @@
+{
+  "plan_id": "realtime-paper-abstain-example-v1",
+  "source_session": "realtime-paper-abstain-example-s0001",
+  "initial_cash_usdt": "1000",
+  "max_decision_delay_ns": 2000000000,
+  "max_action_event_lag_ns": 2000000000,
+  "policy": {
+    "rule": "abstain",
+    "minimum_cvd_btc": "1",
+    "minimum_ofi_btc": "1",
+    "minimum_book_imbalance": "0.2",
+    "minimum_bid_ask_liquidity_ratio": "1.5",
+    "minimum_replenishment_intervals": 3,
+    "maximum_spread_bps": "5",
+    "maximum_trade_age_ns": 2000000000,
+    "entry_budget_usdt": "50",
+    "maximum_planned_loss_usdt": "2",
+    "quantity_step_btc": "0.00001",
+    "stop_distance_bps": "30",
+    "target_distance_bps": "120",
+    "minimum_net_reward_risk": "1",
+    "maximum_hold_ns": 600000000000,
+    "entry_ttl_ns": 5000000000
+  },
+  "replay": {
+    "features": {
+      "levels": 5,
+      "rolling_window_ms": 10000,
+      "liquidity_band_bps": "10",
+      "maximum_evidence_interval_ms": 1000,
+      "retained_depth_fraction": "0.8",
+      "repeated_intervals": 3,
+      "maximum_buffered_trades": 100000
+    },
+    "max_event_lag_ns": 5000000000,
+    "max_future_skew_ns": 100000000
+  },
+  "gateway": {
+    "limits": {
+      "max_position_btc": "0.01",
+      "max_order_btc": "0.005",
+      "max_order_notional_usdt": "100",
+      "max_position_notional_usdt": "1000",
+      "max_daily_loss_usdt": "20",
+      "max_drawdown_usdt": "50"
+    },
+    "costs": {
+      "taker_fee_bps": "10",
+      "slippage_bps": "5"
+    },
+    "max_quote_age_ns": 2000000000
+  }
+}

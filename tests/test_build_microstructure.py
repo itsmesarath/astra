@@ -14,11 +14,14 @@ def capture_records():
     return [
         {
             "record_type": "session_start",
+            "started_at_ns": 900000000,
             "symbol": "BTCUSDT",
             "streams": ["btcusdt@aggTrade", "btcusdt@depth@100ms"],
         },
         {
             "record_type": "depth_snapshot",
+            "requested_at_ns": 910000000,
+            "received_at_ns": 950000000,
             "event": {
                 "lastUpdateId": 100,
                 "bids": [["100", "2"], ["99", "3"]],

@@ -29,6 +29,22 @@ from ai_trader.ingestion.validate_combined import (
 from ai_trader.orderbook.depth_update import DepthUpdate
 from ai_trader.orderbook.local_book import LocalOrderBook
 
+SNAPSHOT_POLICY = "strictly_after_snapshot_receipt_v1"
+
+
+def snapshot_available_at_ns(start: dict, snapshot: dict) -> int:
+    """Require recorded availability, never guess it from the first buffered event."""
+    values = (
+        start.get("started_at_ns"),
+        snapshot.get("requested_at_ns"),
+        snapshot.get("received_at_ns"),
+    )
+    if any(type(value) is not int or value < 0 for value in values):
+        raise ValueError("Explicit integer session/snapshot availability timestamps required.")
+    if not values[0] <= values[1] <= values[2]:
+        raise ValueError("Snapshot availability timestamps are out of order.")
+    return values[2]
+
 
 def _sha256(path: Path) -> str:
     with path.open("rb") as source:
@@ -74,6 +90,9 @@ def build_microstructure_dataset(
     validate_capture(capture_path)
     if _sha256(capture_path) != checksum:
         raise ValueError("Capture changed during validation.")
+    with capture_path.open(encoding="utf-8") as source:
+        start, snapshot = read_record(next(source), 1), read_record(next(source), 2)
+        available = snapshot_available_at_ns(start, snapshot)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path: Path | None = None
     count = 0
@@ -92,8 +111,10 @@ def build_microstructure_dataset(
                 _line(
                     {
                         "record_type": "artifact_start",
-                        "schema_version": 1,
+                        "schema_version": 2,
                         "feature_schema": "receipt_causal_microstructure_v1",
+                        "snapshot_policy": SNAPSHOT_POLICY,
+                        "snapshot_received_at_ns": available,
                         "source_session": source_session,
                         "source_sha256": checksum,
                         "implementation_sha256": implementation,
@@ -105,7 +126,7 @@ def build_microstructure_dataset(
                         "matching_policy": (
                             "previous_depth_event_time_lt_trade_time_le_current_depth"
                         ),
-                        "cvd_policy": "observed_aggregate_taker_buy_minus_sell_session_reset",
+                        "cvd_policy": "post_snapshot_aggregate_taker_buy_minus_sell_session_reset",
                         "evidence_policy": "best_price_net_addition_and_retained_depth_proxies",
                         "limitations": [
                             "not_confirmed_icebergs",
@@ -120,9 +141,14 @@ def build_microstructure_dataset(
             with capture_path.open(encoding="utf-8") as source:
                 read_record(next(source), 1)
                 snapshot = read_record(next(source), 2)
-                subject = MicrostructureEngine(
+                book = LocalOrderBook.from_snapshot(SYMBOL, snapshot["event"])
+                # Preserve full-stream numeric, chronology, coverage and buffer validation.
+                # Its pre-availability state/rows are validation-only, never exported or reused
+                # as causal CVD/warmup. The post-snapshot engine starts independently below.
+                validation_engine = MicrostructureEngine(
                     source_session, LocalOrderBook.from_snapshot(SYMBOL, snapshot["event"]), config
                 )
+                subject = None
                 for number, raw in enumerate(source, start=3):
                     record = read_record(raw, number)
                     if record.get("record_type") == "session_end":
@@ -130,14 +156,24 @@ def build_microstructure_dataset(
                     if record.get("record_type") != "stream_event":
                         raise ValueError("Unexpected capture record type.")
                     received = record["received_at_ns"]
+                    if type(received) is not int or received < start["started_at_ns"]:
+                        raise ValueError("Invalid stream receipt time.")
+                    if subject is None and received > available:
+                        subject = MicrostructureEngine(source_session, book, config)
                     if record["stream"] == TRADE_STREAM:
-                        subject.add_trade(
-                            AggTrade.from_event(record["event"]), received_at_ns=received
-                        )
+                        trade = AggTrade.from_event(record["event"])
+                        validation_engine.add_trade(trade, received_at_ns=received)
+                        # Buffered trades must not seed CVD, warmup or attribution before the
+                        # snapshot exists. Match CaptureReplay's equal-time exclusion as well.
+                        if received > available:
+                            subject.add_trade(trade, received_at_ns=received)
                     elif record["stream"] == DEPTH_STREAM:
-                        row = subject.apply_depth(
-                            DepthUpdate.from_event(record["event"]), received_at_ns=received
-                        )
+                        update = DepthUpdate.from_event(record["event"])
+                        validation_engine.apply_depth(update, received_at_ns=received)
+                        if received <= available:
+                            book.apply(update)  # Bridge the book only; never emit a feature.
+                            continue
+                        row = subject.apply_depth(update, received_at_ns=received)
                         if row is not None:
                             output.write(_line({"record_type": "observation", **asdict(row)}))
                             count += 1
