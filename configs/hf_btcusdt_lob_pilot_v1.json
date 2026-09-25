@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "dataset": "Goooddy/crypto-lob-stream",
+  "revision": "2b8c544ae5b46dd57c6f8807a51965d61ea4b20c",
+  "exchange": "binance",
+  "market": "spot",
+  "symbol": "BTCUSDT",
+  "month": "2026-06",
+  "purpose": "research_intake_only",
+  "maximum_total_bytes": 536870912,
+  "files": [
+    {
+      "kind": "snapshots",
+      "path": "snapshots/binance/BTCUSDT/2026-06.parquet",
+      "size": 299002,
+      "sha256": "6b4579b4fb8a06fe46c6f11a824c42490fb4b7833ecb8e1beb53b014969e6cdb"
+    },
+    {
+      "kind": "trades",
+      "path": "trades/binance/BTCUSDT/2026-06.parquet",
+      "size": 59876309,
+      "sha256": "b7a6cff63c4ae242a792fa42ae4dd32bbf5026de59a33a9bbb9b2f1e95af9339"
+    },
+    {
+      "kind": "depth",
+      "path": "depth/binance/BTCUSDT/2026-06.parquet",
+      "size": 385932069,
+      "sha256": "e6339adc0edfae9b62bc49f2056c8596bb431f58e99c516cba9916063a15470d"
+    }
+  ],
+  "known_limitations": [
+    "Publisher reports irreversible June-August depth/trade loss from overwritten flushes.",
+    "June-wide publisher estimate is approximately 93 percent retained, not a per-file guarantee.",
+    "Schema, event/receipt time provenance, sequence continuity and snapshot alignment are unverified.",
+    "No external data is designated pristine holdout by downloading this pilot."
+  ],
+  "training_started": false,
+  "promotion_allowed": false,
+  "live_trading_available": false
+}
