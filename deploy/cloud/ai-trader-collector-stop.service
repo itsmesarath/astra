@@ -1,0 +1,6 @@
+[Unit]
+Description=Stop BTCUSDT collector VM at the predeclared end of its 30-day trial
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/shutdown -h now

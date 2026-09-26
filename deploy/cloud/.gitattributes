@@ -1,0 +1,4 @@
+# These files are copied directly onto the Linux collector VM.
+*.sh text eol=lf
+*.service text eol=lf
+*.timer.in text eol=lf

@@ -1,0 +1,10 @@
+[Unit]
+Description=Fixed end of the BTCUSDT cloud-capture trial
+
+[Timer]
+OnCalendar=__STOP_CALENDAR__
+Persistent=yes
+Unit=ai-trader-collector-stop.service
+
+[Install]
+WantedBy=timers.target

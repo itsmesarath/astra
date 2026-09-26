@@ -16,6 +16,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+cloud = [
+    "google-cloud-storage==3.15.0",
+]
 dev = [
     "pytest>=9,<10",
     "ruff>=0.16,<0.17",
