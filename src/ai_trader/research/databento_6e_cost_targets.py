@@ -165,11 +165,19 @@ class CostTargetBuilder(events.EventScalp):
         return rows, quality
 
 
-def build_targets(config: dict, project_root: Path) -> tuple[list[dict], dict]:
+def build_targets(
+    config: dict,
+    project_root: Path,
+    *,
+    builder: CostTargetBuilder | None = None,
+    source_days: tuple[str, ...] = SOURCE_DAYS,
+) -> tuple[list[dict], dict]:
     _, sources, intake_sha = selected_sources(config, project_root)
-    if tuple(s["day"].isoformat() for s in sources) != SOURCE_DAYS:
+    if tuple(s["day"].isoformat() for s in sources) != source_days:
         raise ValueError("Unexpected cost-target source cohort")
-    builder = CostTargetBuilder()
+    builder = CostTargetBuilder() if builder is None else builder
+    if tuple(config.get("source_sessions", ())) != builder.sessions:
+        raise ValueError("Builder sessions differ from the registered source sessions")
     archives, stamps, mappings = {}, {}, []
     try:
         for source in sources:

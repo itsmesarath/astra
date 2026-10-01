@@ -78,3 +78,5 @@ Both output paths must be new. This reproduces a single fixed experiment and ref
 Keep this baseline as a cost-aware reference, not a trading strategy. The next proposed experiment should add a small, explicitly causal set of temporal depth, replenishment and absorption features and compare a suitably bounded nonlinear model against these controls on newly reserved whole sessions. Freeze that protocol before inspecting its new outcomes. Do not lower the threshold merely to force this model to trade or repeatedly optimize the now-exposed test dates.
 
 Before eventual cTrader EUR/USD paper execution, synchronized broker quotes and broker-specific cost/latency evidence are still required. CME 6E prices do not demonstrate executable spot/CFD fills. More training or a larger language model alone cannot establish a trading edge.
+
+The proposed feature expansion and bounded nonlinear experiment is now complete. See [the depth and queue reload tree audit](EURUSD_6E_MICRODEPTH_TREE_20261001.md) for the fresh session split, training results and unchanged deployment block.

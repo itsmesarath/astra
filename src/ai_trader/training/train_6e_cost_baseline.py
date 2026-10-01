@@ -22,10 +22,10 @@ RIDGE = 1.0
 CLIP = 10.0
 
 
-def feature_matrix(rows: list[dict]) -> np.ndarray:
-    if any(set(r["features"]) != set(data.FEATURES) for r in rows):
+def feature_matrix(rows: list[dict], feature_names: tuple[str, ...] = data.FEATURES) -> np.ndarray:
+    if any(set(r["features"]) != set(feature_names) for r in rows):
         raise ValueError("Feature allowlist mismatch; targets and metadata are not model inputs")
-    return validate_feature_matrix([[r["features"][key] for key in data.FEATURES] for r in rows])
+    return validate_feature_matrix([[r["features"][key] for key in feature_names] for r in rows])
 
 
 @dataclass(frozen=True)
@@ -136,8 +136,13 @@ def policy(rows: list[dict], predictions: np.ndarray) -> dict:
     }
 
 
-def validate_rows(rows: list[dict]) -> None:
-    if tuple(dict.fromkeys(r["source_session"] for r in rows)) != data.SESSIONS:
+def validate_rows(
+    rows: list[dict],
+    *,
+    sessions: tuple[str, ...] = data.SESSIONS,
+    feature_names: tuple[str, ...] = data.FEATURES,
+) -> None:
+    if tuple(dict.fromkeys(r["source_session"] for r in rows)) != sessions:
         raise ValueError("Source sessions must be exact, complete and chronological")
     if any(
         a["decision_ts_ns"] >= b["decision_ts_ns"] for a, b in zip(rows, rows[1:], strict=False)
@@ -174,11 +179,16 @@ def validate_rows(rows: list[dict]) -> None:
                 or outcome["entry_ask_nano"] - outcome["entry_bid_nano"] != data.clock.TICK
             ):
                 raise ValueError("Target leaks through latency or session boundary")
-    feature_matrix(rows)
+    feature_matrix(rows, feature_names)
 
 
-def evaluate(model: CostModel, rows: list[dict], train_mean: np.ndarray) -> dict:
-    predictions = model.predict(feature_matrix(rows))
+def evaluate(
+    model: CostModel,
+    rows: list[dict],
+    train_mean: np.ndarray,
+    feature_names: tuple[str, ...] = data.FEATURES,
+) -> dict:
+    predictions = model.predict(feature_matrix(rows, feature_names))
     resolved = np.array([r["outcome"]["status"] == "resolved" for r in rows])
     y = np.array(
         [r["net_targets_long_short_ticks"] for r in rows if r["outcome"]["status"] == "resolved"]
