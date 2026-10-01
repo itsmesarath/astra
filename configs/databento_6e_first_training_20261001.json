@@ -1,0 +1,49 @@
+{
+  "experiment_id": "databento_6e_6em5_initial_20261001",
+  "purpose": "offline_research_training_smoke",
+  "dataset": "GLBX.MDP3",
+  "schema": "mbo",
+  "contract": "6EM5",
+  "source_intake_report": "data/processed/databento_6e_18_month_intake_20261001_2.json",
+  "source_intake_sha256": "de12f9833b951781f27b5ea46d2c6dc2302c422e1080bfc48914b2dc8a82b27a",
+  "cohort_rule": "The first 14 complete weekday CME trading sessions beginning 2025-03-27, fixed before inspecting labels or model outcomes.",
+  "source_sessions": [
+    "2025-03-27", "2025-03-28", "2025-03-31", "2025-04-01",
+    "2025-04-02", "2025-04-03", "2025-04-04", "2025-04-07",
+    "2025-04-08", "2025-04-09", "2025-04-10", "2025-04-11",
+    "2025-04-14", "2025-04-15"
+  ],
+  "train_sessions": [
+    "2025-03-27", "2025-03-28", "2025-03-31", "2025-04-01",
+    "2025-04-02", "2025-04-03", "2025-04-04", "2025-04-07"
+  ],
+  "validation_sessions": ["2025-04-08", "2025-04-09", "2025-04-10"],
+  "test_sessions": ["2025-04-11", "2025-04-14", "2025-04-15"],
+  "decision_window_utc": "12:00:00 inclusive through 16:00:00 exclusive",
+  "sampling": "First clean target-contract F_LAST event in each UTC minute",
+  "rolling_flow_window_seconds": 300,
+  "label_horizon_seconds": 60,
+  "label_rule": "At/after decision+60s, first clean two-sided target-contract mid strictly before 16:00 UTC and within the same CME session; up at >=+1 tick, down at <=-1 tick, otherwise neutral.",
+  "tick_size": "0.00005",
+  "feature_names": [
+    "spread_ticks", "top_bid_qty", "top_ask_qty", "imbalance",
+    "cvd_rolling", "trade_count_rolling", "cancel_imbalance_rolling", "replenishment_proxy"
+  ],
+  "quality_rule": "Reject the entire cohort on a missing/degraded source day, invalid dated 6EM5 mapping, incomplete DBN/Zstd, source hash mismatch, target book reconstruction or timestamp error, or locked/crossed eligible decision/label book. No successful-subset training.",
+  "trainer": {
+    "kind": "three_class_softmax_baseline",
+    "preprocessing": "train-only mean/population standard deviation; clip standardized channels to +/-10",
+    "initialization": "zero",
+    "optimizer": "full_batch_gradient_descent",
+    "epochs": 100,
+    "learning_rate": 0.05,
+    "l2": 0.01,
+    "epoch_selection": "fixed_without_validation_tuning",
+    "controls": ["train_majority", "train_laplace_prior"],
+    "metrics": ["accuracy", "balanced_accuracy", "macro_f1", "confusion_matrix", "log_loss", "brier_score"],
+    "test_use": "One evaluation after weights and preprocessing are frozen"
+  },
+  "broker_execution_validation": false,
+  "paper_or_live_trading": false,
+  "model_promotion": false
+}
