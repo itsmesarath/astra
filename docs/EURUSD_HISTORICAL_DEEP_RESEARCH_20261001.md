@@ -109,8 +109,8 @@ This is a map of distinct mechanisms, not a claim to have exhausted every parame
 | Possibility | Historical test needed | Current evidence or missing piece |
 | --- | --- | --- |
 | Movement potential plus separate direction | Estimate movement magnitude, conditional direction and payoff separately; compare with a single joint model | Current classifier mostly learns opportunity frequency; no validated two-stage policy |
-| Multiple scalp horizons | Paired entry times with 1, 5, 15, 30 and 60-second outcomes; add event-count horizons as a separate clock | Current July table tests one nominal 15-second hold; shorter or longer horizons are unresolved |
-| Adaptive stop and target exits | Replay first executable barrier crossings, time stops and explicit fallback exits; report MFE and MAE | Entry/exit-only rows cannot reconstruct path, barrier order or pathwise drawdown |
+| Multiple scalp horizons | Paired entry times with 1, 5, 15, 30 and 60-second outcomes; add event-count horizons as a separate clock | A subsequent three-day exposed pilot now compares these time horizons; event-count clocks and broader replication remain untested |
+| Adaptive stop and target exits | Replay barrier crossings, latency-aware exits and explicit timeout exits; report favorable and adverse excursions | The subsequent pilot reconstructs observed extrema and barrier order, but does not simulate stop/target fills |
 | Execution-linked absorption | Measure executed volume against persistent displayed liquidity, then a separately timed confirmation | Net-CVD and generic reload proxies are insufficient |
 | Native refresh and synthetic replenishment | Separate same-OrderID refresh after fills from new-ID clusters; retain uncertain cases | Raw MBO permits richer investigation, but current saved rows omit order lifecycle detail |
 | Queue depletion and continuation | Study event sequences and deeper-level flow before price changes; compare with imbalance-only controls | Simple sign continuation is negative at 15 seconds |
@@ -127,7 +127,7 @@ The literature supports asking narrower questions. Cont, Kukanov and Stoikov stu
 
 ## Recommended historical sequence
 
-First, add a paired multi-horizon and path-label replay on already-exposed development sessions. Keep the original 15-second outcomes unchanged for regression checks. This answers whether the main limitation is timing and whether proposed stops/targets have any causal basis. Use identical entry attempts across horizons, retain all unavailable and unresolved outcomes, and never compare latency variants on different successful subsets.
+The first step is now completed as a bounded [paired historical path study](EURUSD_HISTORICAL_PATH_STUDY_20261001.md) on 7–9 July. All original 15-second rows and features matched exactly. On identical entries, spread plus one extra cost tick left only 0.14% of one-second outcomes and 1.68% of five-second outcomes positive in either hindsight-selected direction. Longer horizons increased movement opportunities without establishing directional edge. Observed barrier order is now available, but execution-aware stop/target returns remain untested.
 
 Second, add execution-linked replenishment and event-sequence features, with synthetic reconstruction tests and explicit uncertainty. Test their incremental value against activity, depth, price-only and existing CVD controls. An apparent refill advantage must survive those controls before it is called absorption information.
 
