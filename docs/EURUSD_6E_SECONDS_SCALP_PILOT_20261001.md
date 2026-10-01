@@ -1,0 +1,32 @@
+# EUR/USD seconds scale scalp pilot
+
+Status, 2026-10-01: **reject this simple high-frequency rule for paper-strategy promotion.** It generated hundreds of short-horizon 6E futures quote counterfactuals per day, but their average crossed bid/ask result was negative before commission or slippage. This is a test of one specified rule on three already-exposed historical days, not a finding that all fast EUR/USD strategies fail or that a cTrader trade would have filled at these prices.
+
+## Data and decision rule
+
+The [versioned replay](../src/ai_trader/research/databento_6e_seconds_pilot.py) read four SHA-pinned Databento UTC MBO members for the dated 6EM5 contract, covering the March 31 through April 2, 2025 CME trading days. It checked complete `F_LAST` events before using a quote or signed trade flow; a trade in an unfinished multi-record event could not enter an earlier decision. The three days were all in the original, previously examined training cohort. There is **no fresh holdout** in this pilot. [Databento's GLBX documentation](https://databento.com/docs/venues-and-datasets) explains the per-instrument event-end flag and Trade/Fill normalization.
+
+The frozen rule sampled every five seconds from 12:00 UTC inclusive to 16:00 UTC exclusive. A decision required a completed quote no more than 500 ms old, a one-tick spread, and agreement between the sign of known-side trade volume over five seconds and the sign of best-queue imbalance. Unknown-side trades were counted but not assigned a direction. The policy selected at most one counterfactual per contiguous signal episode, kept one primary position at a time, and waited ten seconds after its exit. Entry used the first eligible completed quote after a 100 ms delay; exit used the first eligible quote 15 seconds after entry, with a one-second quote-wait limit at each step. Longs entered at the ask and exited at the bid; shorts did the reverse. Missing or widened entry quotes and missing exit quotes were censored, never counted as wins. This uses top-of-book prices without consuming depth or modeling a fill.
+
+The [V1 configuration](../configs/databento_6e_seconds_pilot_v1.json) required fresh quotes on 95% of daily grid marks and stopped on the first day at 2,293 of 2,880 marks; it published no result artifact. After inspecting **only that coverage failure**, [V2](../configs/databento_6e_seconds_pilot_v2.json) fixed a 70% whole-day opportunity-availability gate while keeping every per-row freshness, signal, entry, exit, latency and cost rule unchanged. V2's config SHA256 is `9bae6c20c5c0740c758bfbb00485db3656f64481d390742a9cac22629292ea13`. The V2 config's phrase “no signal or outcome results were produced” means none were **published or inspected**; the failed V1 pass necessarily calculated some rows in memory before rejecting its day.
+
+## Observed quote outcomes
+
+| Exposed day | Fresh grids of 2,880 | Raw signal marks | Selected episodes | Resolved 15 s round trips | Positive gross | Mean gross crossed ticks |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 2025-03-31 | 2,293 | 772 | 338 | 286 | 64 | −0.81 |
+| 2025-04-01 | 2,254 | 726 | 337 | 286 | 49 | −1.05 |
+| 2025-04-02 | 2,329 | 800 | 345 | 295 | 57 | −1.12 |
+| Total | 6,876 | 2,298 | 1,020 | 867 | 170 | −0.99 |
+
+The median resolved result was **−1 tick**; only 170 of 867 (19.6%) were positive. The average signed midpoint move was +0.11 tick, but the average entry/exit spread burden was about 1.11 ticks. Thus a small directional move did not pay for crossing the market. For the same 100 ms-selected schedule, 500 ms and 1,000 ms entry-delay variants had 801 and 787 resolved rows and negative means of −0.97 and −1.08 ticks respectively. Those unpaired means have different censoring sets and are **not** an estimate that 500 ms is superior. On the 636 rows resolved under all three delays, all three average outcomes remained negative. Adding just one tick of extra round-trip cost to the primary resolved rows changed the mean to −1.99 ticks.
+
+Of 1,020 primary selections, 153 did not resolve: 48 entry quote timeouts, 64 widened entry spreads, and 41 exit quote timeouts. The last group would need an explicit fallback exit in a real position; simply dropping those rows would overstate safety. The data yielded 6,479,754 target-contract MBO records, but density of records does not establish executable broker liquidity. [CME's 6E contract specifications](https://www.cmegroup.com/markets/fx/g10/euro-fx/specs) put one tick at 0.00005 USD per euro; a one-tick favorable mid move against a one-tick spread can be breakeven before fees.
+
+The ignored local row file `data/processed/databento_6e_seconds_pilot_v2_rows.jsonl` has raw SHA256 `e687b1dbe01eacacd4ff92b4bfb238a1faea488fa07579723e2d0a38cca83cd8`; its summary `data/processed/databento_6e_seconds_pilot_v2_summary.json` has raw SHA256 `c985f5d8d4381da58c643b090468130120774bb44cd580c52ff45580f36152d2`. An independent row-level check matched the summary, crossed-quote arithmetic, and daily counts. These ignored artifacts are local research evidence, not a trained model or paper fills.
+
+## Strategy decision and next gate
+
+Keep this queue-plus-CVD sign rule at `no_trade`. Do not relax its threshold or select only its best historical intervals to manufacture a backtest win. The next separate hypothesis is event-level best-book order-flow imbalance, with queue imbalance and microprice as supporting features; the [OFI research](https://arxiv.org/abs/1011.6402) and [queue-imbalance research](https://arxiv.org/abs/1512.03492) motivate tests, but their markets and directional results do not establish profitable 6E or CFD execution. Freeze that rule before using new, quality-audited whole sessions and compare it with a simple control after spread and delay.
+
+For eventual EUR/USD spot/CFD paper trading, collect synchronized 6E events and **the chosen cTrader broker's** bid/ask, spread and deal timestamps, then simulate arrival-time prices, commissions, slippage, timeouts and fallback exits. cTrader exposes live spot/depth subscriptions and historical bid/ask ticks, but broker depth is not CME MBO and the present repository has no cTrader execution adapter. [cTrader market-data documentation](https://help.ctrader.com/open-api/symbol-data/). Keep Qwen out of the low-latency decision loop and live orders disabled until a small cost-aware policy clears fresh session-level validation and broker paper execution.
