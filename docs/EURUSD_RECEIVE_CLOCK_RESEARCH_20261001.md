@@ -94,6 +94,8 @@ Do not promote these sign-only policies or use their losing trades as positive Q
 
 The next bounded research step is to preregister a selective, cost-aware entry experiment on development data: predict net opportunity as well as direction, allow abstention, compare against no-trade and CVD-only baselines, and measure whether execution features add value. Use chronological whole-session splits with training-only calibration, report missing outcomes and activity-stratified coverage, and keep the reserved 2026 data untouched. This is a proposed experiment, not an authorization to search many thresholds until a profitable backtest appears or a claim that a model will solve the cost problem. Qwen training remains deferred until there is a defensible learning target.
 
+The subsequent [archive movement study](EURUSD_ARCHIVE_MOVEMENT_RESEARCH_20261001.md) records the actual coverage, the broader development census and the completed selective CPU comparison. Its candidates abstained; no profitable model was promoted.
+
 ## Research limits
 
 This comparison is development research, not an independent test or an execution simulation at a cTrader broker. Quote returns omit broker-specific costs and fills. Conditional directional AUC uses hindsight-positive outcomes and is not a live entry filter. Correct clock handling does not establish a profitable strategy or justify promoting any of the nine rules.
