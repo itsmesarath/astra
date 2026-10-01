@@ -62,7 +62,7 @@ With plus or minus 4 ticks over 60 seconds, long paths recorded 2,044 targets fi
 
 Keep one-to-five-second market-crossing trades as an unproven, cost-constrained hypothesis, not the default training objective. This pilot does not rule out selective event-driven scalps, passive orders or different regimes. It does show why labeling many tiny moves as good trades would be misleading under the current cost assumptions.
 
-The next historical step is execution-linked replenishment and absorption features: distinguish executed volume from cancellations, retain order identity and event sequence, and compare against activity and price-only controls. Freeze that feature design and its comparison budget before expanding to additional historical months. A separate latency-aware barrier execution test can then use the new path infrastructure; no horizon or stop setting is promoted from this pilot.
+The subsequent [execution-linked research pilot](EURUSD_EXECUTION_LINKED_RESEARCH_20261001.md) now separates passive fills, displayed decreases and replenishment while preserving all original outcomes. Its nine frozen sign comparisons did not establish a profitable edge. The next phase is a dated-contract, multi-month cohort and a preregistered sequence-confirmation study. A separate latency-aware barrier execution test can use the path infrastructure; no horizon or stop setting is promoted from this pilot.
 
 ## Reproduction
 
