@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AlgoPublish>false</AlgoPublish>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="cTrader.Automate" Version="[1.0.21]" />
+    <Compile Include="../market_data/BoundedCaptureWriter.cs" Link="BoundedCaptureWriter.cs" />
+  </ItemGroup>
+</Project>

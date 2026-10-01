@@ -91,3 +91,5 @@ These short-horizon candidates overlap and are not independent samples or an ach
 ## Next step
 
 Do not turn this model into an order source or force trades by relaxing the gate. Prioritize synchronized cTrader EUR/USD quote collection and measured broker costs so that the execution target matches the intended market. A further signal experiment should register its event definitions and reserve new whole sessions before looking at their outcomes. True execution-linked replenishment patterns would need stronger evidence than the current visible-queue proxies. More model capacity or Qwen fine-tuning alone is not evidence of an edge.
+
+The next data-collection foundation is available in the [NinjaTrader and cTrader capture guide](NINJATRADER_CTRADER_CAPTURE.md). It adds disabled-by-default 6E and EURUSD observation adapters and an offline auditor; platform deployment, real-time feed entitlement and cross-provider clock alignment remain unverified.
