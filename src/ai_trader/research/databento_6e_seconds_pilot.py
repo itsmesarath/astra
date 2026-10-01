@@ -155,6 +155,7 @@ class SecondsPilot:
         sessions: tuple[str, ...] = SESSIONS,
         contract: str = "6EM5",
         minimum_fresh_grids_per_day: int = MIN_FRESH_GRIDS_PER_DAY,
+        quote_warmup_ns: int = FLOW_NS,
     ):
         if not 1 <= minimum_fresh_grids_per_day <= GRIDS_PER_DAY:
             raise ValueError("Invalid per-day fresh quote coverage threshold")
@@ -162,6 +163,7 @@ class SecondsPilot:
         self.session_set = set(sessions)
         self.contract = contract
         self.minimum_fresh_grids_per_day = minimum_fresh_grids_per_day
+        self.quote_warmup_ns = quote_warmup_ns
         self.rows: list[dict] = []
         self.counts = Counter()
         self.trade_counts = Counter()
@@ -244,21 +246,13 @@ class SecondsPilot:
         reason = None
         direction = 0
         imbalance = None
+        signal_fields = {}
         if quote is None or age_ns is None or not 0 < age_ns <= QUOTE_AGE_NS:
             reason = "stale_or_missing_completed_quote"
         else:
             self.counts["fresh_quote_grids"] += 1
             imbalance = (quote.bid_qty - quote.ask_qty) / (quote.bid_qty + quote.ask_qty)
-            if quote.spread_ticks != 1:
-                reason = "spread_not_one_tick"
-            elif known == 0:
-                reason = "no_known_side_trades_5s"
-            elif cvd == 0:
-                reason = "zero_known_side_cvd_5s"
-            elif imbalance == 0 or (cvd > 0) != (imbalance > 0):
-                reason = "cvd_queue_sign_disagree_or_flat"
-            else:
-                direction = 1 if cvd > 0 else -1
+            direction, reason, signal_fields = self._signal_at_grid(grid_ns, quote, imbalance)
         if known:
             self.counts["grids_with_known_side_trades"] += 1
         if unknown:
@@ -287,6 +281,7 @@ class SecondsPilot:
             "policy_reason": reason,
             "selected_counterfactual": False,
             "latency_variants": {},
+            **signal_fields,
         }
         self.rows.append(row)
         self.counts["decision_grids"] += 1
@@ -322,6 +317,21 @@ class SecondsPilot:
                     "gross_crossed_quote_ticks": None,
                     "net_after_extra_cost_ticks": None,
                 }
+
+    def _signal_at_grid(self, grid_ns: int, quote: Quote, imbalance: float) -> tuple:
+        """Extension point; the original pilot retains its frozen CVD rule."""
+        if quote.spread_ticks != 1:
+            return 0, "spread_not_one_tick", {}
+        if self.flow.known == 0:
+            return 0, "no_known_side_trades_5s", {}
+        if self.flow.cvd == 0:
+            return 0, "zero_known_side_cvd_5s", {}
+        if imbalance == 0 or (self.flow.cvd > 0) != (imbalance > 0):
+            return 0, "cvd_queue_sign_disagree_or_flat", {}
+        return (1 if self.flow.cvd > 0 else -1), None, {}
+
+    def _observe_completed_quote(self, quote: Quote) -> None:
+        """Hook for causal features built only from completed exchange events."""
 
     def _process_quote(self, quote: Quote) -> None:
         still_pending = []
@@ -480,9 +490,10 @@ class SecondsPilot:
             return
         if self.day.isoformat() not in self.session_set:
             return
-        if not self.window_start_ns - FLOW_NS <= recv < self.window_end_ns:
+        if not self.window_start_ns - self.quote_warmup_ns <= recv < self.window_end_ns:
             return
         quote = self._quote_at_last(recv)
+        self._observe_completed_quote(quote)
         self.last_quote = quote
         if recv >= self.window_start_ns:
             self._process_quote(quote)
