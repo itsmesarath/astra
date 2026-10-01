@@ -61,6 +61,8 @@ To reproduce this frozen experiment, run the module with `--config configs/datab
 
 ## Next research step
 
-Keep this version stopped and unscored. Before another strategy test, design a separate event-triggered protocol that makes decisions only when a complete fresh book event arrives, with a fixed decision-rate limit. Specify observability, outage detection, expiry, position exits and cost assumptions before inspecting new returns; retain whole-session reporting and separate development from evaluation dates. This is a proposed design, not an implemented or tested improvement, and must not be presented as a passing rerun of this experiment.
+Follow-up: the separate [event-triggered experiment](EURUSD_6E_EVENT_SCALP_20261001.md) has now been implemented and evaluated. It completed its frozen cohort but produced negative quote returns; it did not change or rerun this fixed-grid experiment's failed gate.
+
+Keep this version stopped and unscored. The follow-up protocol makes decisions only when a complete fresh book event arrives, with a fixed decision-rate limit. It specified observability, inactivity detection, expiry, position exits and cost assumptions before inspecting new returns, and retained whole-session reporting with separate development and evaluation dates. Its results must not be presented as a passing rerun of this experiment.
 
 For the user's eventual cTrader EUR/USD spot/CFD bot, synchronized broker bid/ask data and an execution-cost model are still necessary. A CME futures directional signal does not establish profitable broker execution. Keep model promotion and live orders disabled, and do not feed these unvalidated scenarios to Qwen as examples of a proven profitable strategy.
