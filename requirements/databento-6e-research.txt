@@ -1,0 +1,3 @@
+# Local, read-only DBN replay of the supplied CME 6E archives.
+databento-dbn==0.70.0
+zstandard==0.25.0
