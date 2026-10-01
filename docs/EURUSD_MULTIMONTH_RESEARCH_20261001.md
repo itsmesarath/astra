@@ -67,6 +67,8 @@ Databento preserves publisher event timestamps without adjustment, warns that pu
 
 The next engineering step is a separately versioned receive-time causality and clock-quality policy. It must distinguish nonmonotonic arrival time, bad source flags and invalid book transitions from disagreement between independent clocks; retain original timestamps and anomaly counts; and predefine how anomalies inside versus outside decision windows affect eligibility. Do not select a tolerance from profitable outcomes, reorder by exchange time, delete offending records or revive this failed registration. Regression against the existing exposed cohorts is still required before another comparison. No conclusion about the nine rules' multi-month profitability is available from this attempt.
 
+The subsequent [receive-clock V2 protocol](EURUSD_RECEIVE_CLOCK_RESEARCH_20261001.md) implements that separate revision and retains this failed attempt as exposure evidence. Its status and results are documented separately; V1 is not relabeled as successful.
+
 ## Local evidence
 
 Prepared registration: `logs/6e_multimonth_development_20261001_1_registration.json`.
