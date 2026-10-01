@@ -76,7 +76,7 @@ Matched passive-flow direction agreed with CVD on 99.74% of eligible decisions w
 
 Keep the execution-aware parser and audited feature definitions as research infrastructure. Do not promote these sign rules or train a model to treat replenishment as an automatic trade signal. Better mechanical labels have not yet produced a demonstrated directional edge.
 
-The next historical phase should establish a dated-contract, multi-month cohort and an exposure ledger, then preregister a small sequence-confirmation comparison. That can distinguish replenishment followed by renewed pressure from replenishment followed by rejection, with separate longer-horizon and latency-aware exit tests. Preserve unused evaluation periods and do not use three exposed days to choose thresholds or model architecture. Training and platform connections remain deferred.
+The [multi-month historical phase](EURUSD_MULTIMONTH_RESEARCH_20261001.md) adds an exposure ledger, protected calendar partitions and explicit dated-contract blocks. It first fixes a replication of these nine rules across April, July and October development dates. A subsequent sequence-confirmation comparison can distinguish replenishment followed by renewed pressure from replenishment followed by rejection, with separate longer-horizon and latency-aware exit tests. Preserve unused evaluation periods and do not use three exposed days to choose thresholds or model architecture. Training and platform connections remain deferred.
 
 ## Reproduction
 
