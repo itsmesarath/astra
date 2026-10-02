@@ -151,6 +151,11 @@ hashes, along with the frozen protocol. It is not a deployable-model approval.
 
 ## Next decision
 
+Update: the [past-only context and snapshot-tree comparison](EURUSD_CAUSAL_CONTEXT_20261002.md)
+has now completed. It adds a support/conservation audit over all 196 decision
+sessions and constructs context over the complete decision corpus. Both trees
+still abstain under the fixed costs; no candidate or Qwen teacher was promoted.
+
 No model is automatically promoted. A weak or abstaining baseline is a research
 result, not a reason to lower costs or force more trades. The next separately
 specified experiment should examine causal sequence/context features and the
