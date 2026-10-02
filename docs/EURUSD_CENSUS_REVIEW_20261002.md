@@ -83,6 +83,8 @@ The next development model should separate an activity/volatility gate from dire
 
 Before that model fit, the quote-bound date and suspected holiday windows need a recorded disposition. Publish a new training manifest with whole source-session roles, the full date coverage ledger, unavailable-label accounting and conservative refusal handling. The original census's `training_eligible=False` reports must not be silently treated as approved training artifacts. The reserved 2026 periods stay available for a later candidate evaluated under frozen rules.
 
+Update: the [refusal diagnostic and disk-backed resource correction](EURUSD_CENSUS_GAP_DIAGNOSIS_20261002.md) now explain all 17 refusals and recover April 4 without changing quality gates. Its accepted control is byte-identical to the original census. The proposed corpus increases to 196 decision sessions; an explicit training manifest remains the next step.
+
 Qwen should receive structured causal observations and carefully defined research labels after this evidence review. There is not yet a verified profitable teacher policy, and this review does not supply one. No Qwen call, weight update, paper order or broker connection was made.
 
 ## Evidence and reproducibility
