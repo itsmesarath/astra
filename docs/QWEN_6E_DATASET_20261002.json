@@ -1,0 +1,91 @@
+{
+  "status": "development_dataset_and_cpu_token_preflight_completed",
+  "date": "2026-10-02",
+  "task": "six_e_quote_opportunity_v1",
+  "scope": "Future Qwen training on historical 6E signals for EURUSD research. Not a trade policy, independent evaluation or broker execution model.",
+  "inputs": {
+    "causal_feature_count": 37,
+    "type": "Current completed receive-time snapshot: book depth, queue imbalance, OFI, CVD, passive executions, absorption and replenishment proxies",
+    "longer_history_encoded": false,
+    "future_fields_in_prompt": false,
+    "source_date_exact_contract_role_in_prompt": false,
+    "numeric_precision": "Eight significant decimal digits"
+  },
+  "targets": {
+    "entry_delay_ms": 100,
+    "hold_seconds": 15,
+    "extra_round_trip_cost_ticks": [1, 2, 4],
+    "classes": ["long_positive", "short_positive", "neither_positive"],
+    "positive_boundary": "Strictly positive crossed-quote net ticks",
+    "unavailable_or_uncertain": "Retained separately without a supervised completion; never relabeled neither_positive",
+    "semantics": "Observed quote outcome classes, not causal explanations, confirmed icebergs or an instruction to buy/sell"
+  },
+  "coverage": {
+    "inspected_sessions": 196,
+    "inspected_sixty_second_spaced_cases": 45816,
+    "supervised_examples": 34293,
+    "unavailable_or_uncertain_examples": 11523,
+    "full_decision_rows_reprocessed_this_step": 0,
+    "source_inventory_dates": 471,
+    "reserved_dates_metadata_only": 230,
+    "train": {"sessions": 112, "cases": 26187, "supervised": 19678, "unavailable_or_uncertain": 6509},
+    "validation_development": {"sessions": 43, "cases": 10080, "supervised": 7810, "unavailable_or_uncertain": 2270},
+    "test_development": {"sessions": 41, "cases": 9549, "supervised": 6805, "unavailable_or_uncertain": 2744}
+  },
+  "training_classes_at_one_extra_tick": {
+    "long_positive": 1946,
+    "short_positive": 1996,
+    "neither_positive": 15736
+  },
+  "verification": {
+    "every_source_case_reconciled_independently": true,
+    "quote_arithmetic_verified_at_all_three_costs": true,
+    "exact_causal_projection_checked": true,
+    "exclusive_whole_session_roles": true,
+    "all_supervised_examples_cpu_tokenized": true,
+    "tokenizer_version": "0.23.2",
+    "max_prompt_tokens": 844,
+    "max_completion_tokens_including_eos": 29,
+    "max_active_tokens": 873,
+    "padded_sequence_tokens": 2304,
+    "prompt_loss_masked": true,
+    "completion_and_eos_supervised": true,
+    "truncation": false,
+    "model_weights_loaded": false,
+    "source_manifest_and_protected_registry_unchanged": true
+  },
+  "evidence": {
+    "dataset_directory": "data/processed/6e_qwen_dataset_20261002_1",
+    "registration": "logs/6e_qwen_dataset_20261002_1_registration.json",
+    "registration_sha256": "ab698b5eb18d37604ed931b14522f34f6e73326cbc23abd2b67152cb3e425eb0",
+    "dataset_completion_sha256": "4c3178a6ae5fc6d839e23349609f4580f69cb896144b576a57a35eff3f5314eb",
+    "token_preflight": "logs/6e_qwen_dataset_20261002_1_token_preflight.json",
+    "token_preflight_sha256": "4aa0d5e576799de7b11250ffb73a72e422cc5237aa3d36754be0d0e940a07616",
+    "source_manifest_sha256": "ba773292535c97402826e6b40b34d367379a2db899f0010d474628220f965c2b",
+    "tokenizer_sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+    "protected_registry_sha256": "0026c7f909435a0d7a1cce5530c56dc91e4307e29ccdc3ce8fdd7d85c0318075"
+  },
+  "authority": {
+    "market_model_training_started": false,
+    "training_authorized_by_this_artifact": false,
+    "independent_holdout_created": false,
+    "reserved_raw_or_outcomes_opened": false,
+    "existing_btc_advisory_contract_changed": false,
+    "model_promotion": false,
+    "paper_or_live_trading_started": false,
+    "downloads_or_network_requests": false
+  },
+  "limitations": [
+    "All three 2025 roles are already exposed development. The later roles must never be called untouched validation/test data.",
+    "Class imbalance and different opportunity rates across dates make headline accuracy misleading; compare against a no-opportunity/prior baseline and measure directional precision and coverage.",
+    "Excluding missing, late or inactivity-exposed outcomes conditions supervision on future observability; it is not evidence those cases would lose or that abstention can be inferred from their future status.",
+    "This step uses sampled snapshot cases, not the full raw order-event stream or temporal LOB sequences. It does not explain why a movement happened.",
+    "Futures quote proxies do not establish EURUSD CFD profitability, cross-market basis, broker spreads, commission or measured fills.",
+    "Active token lengths fit the contract, but the existing mask protocol pads to 2304 tokens. GPU memory headroom remains a separate tight hardware constraint."
+  ],
+  "next": [
+    "Reserve genuinely disjoint, previously unopened evaluation sessions under a new versioned research scope without consuming their outcomes for training or tuning.",
+    "Implement a bounded task-specific Qwen LoRA training experiment using train.jsonl only; the old BTC advisory worker is not automatically compatible or approved for this task.",
+    "Compare frozen forecasts with fixed prior/no-opportunity controls. Any later trading deployment remains gated by independent cost-aware and broker-specific validation."
+  ]
+}
