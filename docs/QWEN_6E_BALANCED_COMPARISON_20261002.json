@@ -1,0 +1,158 @@
+{
+  "kind": "qwen_6e_balanced_inner_check_comparison_report_v1",
+  "date": "2026-10-02",
+  "execution_status": "completed_frozen_inner_check_comparison_not_validation",
+  "research_decision": "Do not promote this adapter as a trading signal. Keep it quarantined; valid output formatting is not a directional edge.",
+  "summary": "One bounded offline comparison completed on the exact 80 cases frozen before the 224-update fit. The adapter produced valid structured outputs but heavily overcalled long opportunities. It matched only 8/80 cases at the lowest cost and missed every short opportunity. Base outputs were all token-limited and invalid. Frozen CPU controls showed no useful directional detection on this sample either.",
+  "sample": {
+    "examples": 80,
+    "source_sessions": 28,
+    "dates": "2025-07-23 through 2025-08-29",
+    "selection": "Original pre-training even-rank selection from 5008 inner-check examples; exact case, input, target and token-count bindings retained",
+    "exposure": "Already-exposed within-training development, not an independent holdout",
+    "truth_joint_counts": {"NNN": 65, "LNN": 3, "LLN": 5, "SNN": 3, "SSN": 4},
+    "truth_by_cost": {
+      "extra_1_tick": {"long_positive": 8, "short_positive": 7, "neither_positive": 65},
+      "extra_2_ticks": {"long_positive": 5, "short_positive": 4, "neither_positive": 71},
+      "extra_4_ticks": {"long_positive": 0, "short_positive": 0, "neither_positive": 80}
+    },
+    "state_key": "Characters encode outcomes at 1/2/4 extra ticks: N neither-positive, L long-positive, S short-positive",
+    "target": "6E futures crossed-quote opportunity classes after 100ms delayed entry and 15s hold, not EUR/USD CFD fills or portfolio returns"
+  },
+  "protocol": {
+    "gpu_calls": 160,
+    "gpu_modes": ["base", "adapter"],
+    "cpu_control_predictions": 160,
+    "controls": ["no_opportunity", "inner_fit_joint_prior", "joint_linear_unweighted", "joint_linear_inverse_sqrt"],
+    "inference": "Frozen greedy CUDA BF16 inference, 48-token maximum, EOS required, exact JSON/classes and cost monotonicity; no repairs, retries or constrained decoding",
+    "gpu_timeout_seconds": 600,
+    "cpu_timeout_seconds": 30,
+    "gpu_input_isolation": "80 causal feature prompts plus case/input/token metadata; no completion, target hash, source date, dataset path or CPU coefficients",
+    "cpu_input_isolation": "Same 80 selected prompts plus the two frozen coefficient sets; no labels, dates, dataset path or GPU model assets",
+    "scoring": "All outputs and complete durable journals verified before scoring; invalid outputs stay invalid and count as incorrect",
+    "cpu_runtime": "Original study environment: Python 3.12.10 Windows AMD64, NumPy 2.5.3",
+    "gpu_runtime": "Separately pinned training environment: Python 3.12.10 Windows AMD64, NumPy 2.5.0, Torch 2.14.0+cu132, Transformers 5.17.0, PEFT 0.21.0",
+    "cpu_refit": false,
+    "training_performed_this_step": false
+  },
+  "results": {
+    "base": {
+      "valid_outputs": 0,
+      "token_limit_invalid_outputs": 80,
+      "correct_by_cost": [0, 0, 0],
+      "interpretation": "No usable forecasts under this frozen decoding protocol, not evidence that the base has zero market knowledge under every possible prompt"
+    },
+    "adapter": {
+      "valid_outputs": 80,
+      "invalid_outputs": 0,
+      "joint_prediction_counts": {"LLL": 29, "LLN": 47, "SSN": 4},
+      "extra_1_tick": {
+        "correct": 8,
+        "overall_accuracy": 0.1,
+        "predicted_long": 76,
+        "predicted_short": 4,
+        "predicted_neither": 0,
+        "directional_predictions": 80,
+        "correct_directional_predictions": 8,
+        "incorrect_directional_predictions": 72,
+        "directional_precision": 0.1,
+        "directional_recall": 0.5333333333333333,
+        "actual_short_opportunities": 7,
+        "short_opportunities_correctly_detected": 0,
+        "no_opportunities_overcalled": 65
+      },
+      "extra_2_ticks": {
+        "correct": 5,
+        "overall_accuracy": 0.0625,
+        "directional_predictions": 80,
+        "correct_directional_predictions": 5,
+        "incorrect_directional_predictions": 75,
+        "directional_precision": 0.0625,
+        "directional_recall": 0.5555555555555556
+      },
+      "extra_4_ticks": {
+        "correct": 51,
+        "overall_accuracy": 0.6375,
+        "directional_predictions": 29,
+        "correct_directional_predictions": 0,
+        "incorrect_directional_predictions": 29,
+        "directional_precision": 0.0,
+        "directional_recall": null,
+        "interpretation": "All 80 targets were neither-positive, so this sample cannot estimate recall on high-cost opportunities"
+      }
+    },
+    "no_opportunity": {"correct_by_cost": [65, 71, 80], "directional_predictions_by_cost": [0, 0, 0]},
+    "inner_fit_joint_prior": {"correct_by_cost": [65, 71, 80], "directional_predictions_by_cost": [0, 0, 0]},
+    "joint_linear_unweighted": {"correct_by_cost": [65, 71, 80], "directional_predictions_by_cost": [0, 0, 0]},
+    "joint_linear_inverse_sqrt": {"correct_by_cost": [64, 70, 79], "directional_predictions_by_cost": [1, 1, 1], "correct_directional_predictions_by_cost": [0, 0, 0]},
+    "baseline_warning": "High no-opportunity accuracy reflects negative-class prevalence. An idle baseline or near-idle CPU model is not a profitable trading strategy.",
+    "model_comparison_warning": "CPU controls used all 14670 inner-fit examples; Qwen used 224. These results are not a controlled verdict about model architectures."
+  },
+  "verified_execution": {
+    "elapsed_seconds": 461.84399999992456,
+    "gpu_predictions": 160,
+    "gpu_journal_events": 323,
+    "cpu_predictions": 160,
+    "workers_exited_successfully": true,
+    "parameters_frozen": true,
+    "cpu_coefficients_unchanged": true,
+    "independent_post_run_artifact_and_score_verification": true,
+    "device": "NVIDIA GeForce RTX 5080 Laptop GPU",
+    "peak_allocated_bytes": 8547610112,
+    "peak_reserved_bytes": 8829009920,
+    "device_total_bytes": 17066033152,
+    "cuda_bf16": true,
+    "deterministic_algorithms": true,
+    "tf32_enabled": false
+  },
+  "artifacts": {
+    "registration": {"path": "logs/6e_qwen_balanced_eval_20261002_1_registration.json", "raw_sha256": "c031dc3df465ebab3c2c591c5ee4a5d8fe5b448c4f584ead3becf29e6f159b76"},
+    "run": {"path": "logs/6e_qwen_balanced_eval_20261002_1/run.json", "raw_sha256": "ca7e70199bd11774c00c0f0e9c0984dc9bfaf739b870af998db972731c892e5d"},
+    "gpu_request": {"path": "logs/6e_qwen_balanced_eval_20261002_1/request.json", "raw_sha256": "dfa0bcee608bf63badbb9bf9e3beb919634fc6f3a9a03284b1446fcb894203d1"},
+    "gpu_predictions": {"path": "logs/6e_qwen_balanced_eval_20261002_1/predictions.jsonl", "raw_sha256": "0473691c6a246ceaf91d6c8019b7a68d97cf8d756f5870ba844c3c867658bd0c"},
+    "gpu_journal": {"path": "logs/6e_qwen_balanced_eval_20261002_1/events.jsonl", "raw_sha256": "d02765145a94b576dc743f3394c743be6e82ac8e5b12116ab58f346fd3e19e98"},
+    "cpu_request": {"path": "logs/6e_qwen_balanced_eval_20261002_1/controls/request.json", "raw_sha256": "e87feb182e8d4dbca488d118867e515f843817bdfba1ad0f2d801327119546b7"},
+    "cpu_predictions": {"path": "logs/6e_qwen_balanced_eval_20261002_1/controls/predictions.jsonl", "raw_sha256": "149cdbaf601a02a00a5b20e895081a2aaa9894c082f38df59977560f8b7579a5"},
+    "comparison_source_content_sha256": "b90637f86aa09a76bb25707bb0840375ea42715c5d80c15e66454f96a8bc56a2",
+    "training_source_content_sha256": "348f04cab9cc7b4ac2f5ac80f6f153088ca697009983a8847ab73a5ec498a861",
+    "pre_training_registration_raw_sha256": "e734c416b98fd54009430e366c4d8a5518bc86d577bb16bdaeefff37c5207fa7",
+    "training_run_raw_sha256": "98a68eb1cb3e7252d565889895e652dde2417a83c514cc2fcf3ff937fab71947",
+    "adapter_weights_raw_sha256": "74e9dcf3f0c2653e9b1914f9cbea6990087ece9dbbb88fa6110c6e677ff2134a",
+    "adapter_manifest_content_sha256": "963256555aef630ee895cceb130332d4d5e8bbc83cb9e0cde78efcc002574f01",
+    "cpu_models_raw_sha256": "3559edf914a5bad47c68c63cbe2f9c62d76e44d1cbc2e8e4d5b455bb120b187b",
+    "6e_reservation_metadata_raw_sha256": "e6c216f2091d7cc9d594cb52589da65c81f546ad9c76b44ccf4a6bc904656107",
+    "btc_reservation_metadata_raw_sha256": "0026c7f909435a0d7a1cce5530c56dc91e4307e29ccdc3ce8fdd7d85c0318075"
+  },
+  "interpretation_and_next_step": {
+    "established": "The adapter learned valid output formatting but showed severe directional overcalling and long bias on this frozen development sample. It is unsuitable for promotion on this evidence.",
+    "inference_not_proven_cause": "The overcalling is consistent with the warned class-prior shift from uniform joint-state training quotas. This experiment does not isolate that as the cause or prove that more updates alone would fix it.",
+    "next_research_step": "Design a new training-only experiment with an explicit no-opportunity/false-direction cost, representative class priors and stronger causal temporal context. Freeze its objective and development evaluation before fitting. Do not tune thresholds on this comparison or open reserved 2026 outcomes automatically.",
+    "not_performed": "No new training, rebalanced rerun, threshold tuning, model promotion, paper/live trading or reserved-outcome evaluation."
+  },
+  "checks": {
+    "baseline_tests": {"passed": 3874, "optional_nautilus_skips": 1, "elapsed_seconds": 473.48},
+    "new_synthetic_tests": 55,
+    "full_tests_before_native_run": {"passed": 3929, "optional_nautilus_skips": 1, "elapsed_seconds": 672.63},
+    "ruff": "passed",
+    "existing_training_and_inference_sources_changed": false,
+    "dependencies_changed": false,
+    "btc_collector_changed": false,
+    "credentials_accessed": false,
+    "network_downloads": false
+  },
+  "limitations": [
+    "Small, imbalanced, already-exposed sample; no independent evidence or statistical profitability claim.",
+    "No positive targets at the highest cost, so high-cost sensitivity cannot be evaluated here.",
+    "Snapshot/proxy features do not establish confirmed icebergs or causal reasons for future movements.",
+    "Class matching does not measure magnitudes, cTrader spreads/slippage, fills, risk sizing or portfolio PnL.",
+    "The candidate stays quarantined; completed execution is not strategy validation."
+  ],
+  "adapter_quarantined": true,
+  "training_performed": false,
+  "independent_holdout": false,
+  "reserved_outcomes_opened": false,
+  "promotion_allowed": false,
+  "trading_enabled": false,
+  "adapter_approved_for_deployment": false,
+  "automatic_retry": false
+}
