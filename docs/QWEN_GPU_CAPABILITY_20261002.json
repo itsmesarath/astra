@@ -1,0 +1,76 @@
+{
+  "status": "passed_synthetic_gpu_capability_only",
+  "date": "2026-10-02",
+  "scope": "Engineering test on fixed synthetic token IDs. Not market learning, trading validation, held-out evaluation or model promotion.",
+  "model": "Qwen/Qwen3-4B-Base",
+  "device": "NVIDIA GeForce RTX 5080 Laptop GPU",
+  "configuration": {
+    "dtype": "bfloat16",
+    "quantization": "none",
+    "batch_size": 1,
+    "sequence_tokens": 2304,
+    "prompt_tokens": 2048,
+    "supervised_completion_and_eos_tokens": 256,
+    "lora_rank": 8,
+    "lora_alpha": 16,
+    "target_modules": ["q_proj", "v_proj"],
+    "trainable_adapter_parameters": 2949120,
+    "gradient_checkpointing": true,
+    "deterministic_algorithms": true,
+    "tf32_enabled": false,
+    "optimizer_steps": 3,
+    "worker_timeout_seconds": 600,
+    "automatic_retries": 0
+  },
+  "observed": {
+    "supervisor_elapsed_seconds": 114.98400000005495,
+    "losses": [0.7821376323699951, 0.7182211875915527, 0.5949170589447021],
+    "gradient_norms": [1.3968329429626465, 1.3000833988189697, 1.1204187870025635],
+    "peak_tensor_allocated_bytes": 12867778560,
+    "peak_allocator_reserved_bytes": 16001269760,
+    "device_total_bytes": 17066033152,
+    "adapter_file_total_bytes": 11822002,
+    "adapter_updated": true,
+    "reload_adapter_state_equal": true,
+    "reload_probe_before": 0.482858806848526,
+    "reload_probe_after": 0.482858806848526,
+    "base_checkpoint_unchanged": true,
+    "protected_registry_unchanged": true
+  },
+  "evidence": {
+    "directory": "logs/qwen_synthetic_gpu_capability_20261002_1",
+    "request_raw_sha256": "380c9f23104637db9f0553c2eb188b64cf163ba956e1074442525b38c2a3f449",
+    "run_raw_sha256": "8e6d6c0320aad5618470488e8723cdeb9cc24dfce71cf8d67507d0d35701e47f",
+    "journal_raw_sha256": "2dc666a0e7f8665d8f0a424918f89108288afeae1276bf9fd49c7c8939935961",
+    "implementation_sha256": "045bcff099beefd6655c04cf6a9e336de2b867d2f0d6baa3ecc7b5502c93907c",
+    "checkpoint_content_sha256": "8a1a0f20ba8a2c6d4480309f0f442114c4fa310018d143ee610061b1ecf47d3c",
+    "dependency_lock_raw_sha256": "8aedce7455c963753e0c8c5339e8abea7cc74ea0bddfb4c93390d4530d43af57",
+    "runtime_raw_sha256": "4840c478f76734ca6a9a5eec678a6dfbc314772a3a53a1e278b78f7e80e7a6bb",
+    "protected_registry_raw_sha256": "0026c7f909435a0d7a1cce5530c56dc91e4307e29ccdc3ce8fdd7d85c0318075"
+  },
+  "authority": {
+    "market_data_used": false,
+    "curriculum_used": false,
+    "held_out_evaluated": false,
+    "promotion_allowed": false,
+    "execution_allowed": false,
+    "adapter_approved_for_inference": false,
+    "market_training_gate_relaxed": false,
+    "adapter_quarantined_from_production": true
+  },
+  "limitations": [
+    "Synthetic loss reduction demonstrates numerical updates, not financial learning.",
+    "Memory headroom is tight. This verifies only this batch/sequence/adapter configuration and three steps, not full fine-tuning or a larger training run.",
+    "PyTorch allocation/reservation peaks are process allocator metrics, not total system or driver memory use. No hard OS memory or network sandbox is claimed.",
+    "The existing protected-evaluation registry is still an empty pending template. Curriculum training remains blocked by its original gate."
+  ],
+  "next": [
+    "Specify and build a versioned EURUSD/6E supervised task with causal inputs, favourable/unfavourable outcomes and explicit unknowns.",
+    "Reserve genuinely disjoint evaluation examples before a bounded market-curriculum training experiment.",
+    "Evaluate the trained model independently; any deployment still needs cost-aware strategy and broker-execution validation."
+  ],
+  "metric_definitions": [
+    "https://docs.pytorch.org/docs/2.14/generated/torch.cuda.memory.max_memory_allocated.html",
+    "https://docs.pytorch.org/docs/2.14/generated/torch.cuda.memory.max_memory_reserved.html"
+  ]
+}
