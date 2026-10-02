@@ -1,0 +1,159 @@
+{
+  "date": "2026-10-02",
+  "status": "training_only_balance_plan_and_cpu_controls_completed_not_validated",
+  "scope": "Audit the complete prepared train partition, freeze a larger Qwen curriculum, and fit two offline CPU controls. No new Qwen training, reserved outcomes, downloads or trading.",
+  "findings": {
+    "original_twenty_update_trial": "Fifteen examples were no-opportunity; LLL, SSN and SSS were absent. This identifies a supervision coverage gap, not a proven causal explanation for the adapter's collapsed predictions.",
+    "cpu_controls": "The unweighted classifier has slightly better joint probability scores than its fit-only prior but extremely sparse directional predictions. Softened class weighting increases predictions while reducing directional precision and worsening probability scores.",
+    "decision": "Neither control demonstrates a deployable trading strategy. Keep both CPU models and the original Qwen adapter quarantined; do not choose a trading policy or tune thresholds from this study."
+  },
+  "training_data_audit": {
+    "role": "train",
+    "examples_audited": 19678,
+    "source_sessions": 112,
+    "first_date": "2025-03-26",
+    "last_date": "2025-08-29",
+    "joint_state_key": "N=neither_positive, L=long_positive, S=short_positive; positions are extra 1/2/4 round-trip ticks",
+    "joint_counts": {"NNN": 15736, "LNN": 927, "LLN": 720, "LLL": 299, "SNN": 919, "SSN": 735, "SSS": 342},
+    "original_twenty_joint_counts": {"NNN": 15, "LNN": 2, "LLN": 2, "LLL": 0, "SNN": 1, "SSN": 0, "SSS": 0},
+    "later_development_test_unavailable_and_reserved_outcomes_opened": false
+  },
+  "session_boundary_split": {
+    "unit": "Whole source_session, chronological 75/25 session-count split within train only",
+    "fit": {"source_sessions": 84, "examples": 14670, "first_date": "2025-03-26", "last_date": "2025-07-22"},
+    "check": {"source_sessions": 28, "examples": 5008, "first_date": "2025-07-23", "last_date": "2025-08-29"},
+    "overlapping_sessions": 0,
+    "exposure": "All sessions are previously exposed 2025 development, NOT an independent holdout",
+    "original_adapter_training_cases_in_check": 5,
+    "fresh_qwen_initialization_required": true,
+    "check_directional_support": {
+      "extra_1_tick": {"long_positive": 430, "short_positive": 415, "neither_positive": 4163},
+      "extra_2_ticks": {"long_positive": 194, "short_positive": 204, "neither_positive": 4610},
+      "extra_4_ticks": {"long_positive": 54, "short_positive": 49, "neither_positive": 4905}
+    }
+  },
+  "qwen_plan": {
+    "status": "curriculum_and_recipe_frozen_native_runner_not_yet_implemented",
+    "unique_examples": 224,
+    "examples_per_joint_state": 32,
+    "selected_source_sessions": 73,
+    "first_selected_date": "2025-03-26",
+    "last_selected_date": "2025-07-22",
+    "pool": "Inner fit sessions only; every inner check session excluded",
+    "selection": "Label-stratified training-only undersampling with session-spread even ranks, no duplicate cases, and fixed joint-state round-robin order",
+    "initialization": "Fresh pinned Qwen3-4B-Base, NOT the twenty-update adapter",
+    "planned_recipe": {
+      "method": "LoRA",
+      "rank": 8,
+      "alpha": 16,
+      "target_modules": ["q_proj", "v_proj"],
+      "dtype": "bfloat16",
+      "optimizer": "AdamW",
+      "learning_rate": 0.0002,
+      "seed": 42,
+      "batch_size": 1,
+      "maximum_optimizer_updates": 224,
+      "maximum_worker_seconds": 1800,
+      "loss": "Completion and EOS only; prompt masked",
+      "automatic_retries": 0
+    },
+    "full_training_epoch": false,
+    "gpu_training_started": false,
+    "training_authorized_by_this_metadata": false,
+    "worker_bounds_currently_enforced": false,
+    "warning": "Uniform joint-state sampling changes priors. At the lowest cost, the planned sample contains 96 long, 96 short and 32 neither examples, unlike the natural fit distribution. False signals may increase; balancing is not guaranteed improvement."
+  },
+  "cpu_study": {
+    "completed_fits": 2,
+    "fit_examples_per_model": 14670,
+    "feature_count": 37,
+    "joint_classes": 7,
+    "epochs_per_fit": 200,
+    "learning_rate": 0.05,
+    "l2": 0.01,
+    "standardized_clip": 10.0,
+    "normalization": "Population mean/std from fit-session features only; constant scales set to one",
+    "initialization": "Zero weights and Laplace-smoothed weighted fit-only log prior",
+    "controls": ["no_opportunity", "inner_fit_joint_prior", "joint_linear_unweighted", "joint_linear_inverse_sqrt"],
+    "weight_powers": {"joint_linear_unweighted": 0.0, "joint_linear_inverse_sqrt": 0.5},
+    "early_stopping_threshold_tuning_or_refitting": false,
+    "elapsed_seconds": 13.90700000000652,
+    "cooperative_cpu_wall_guard_seconds": 600,
+    "joint_probability_scores": {
+      "inner_fit_joint_prior": {"log_loss": 0.7416250403096313, "brier": 0.3052539918914095},
+      "joint_linear_unweighted": {"log_loss": 0.7009054783262961, "brier": 0.29286806960021805},
+      "joint_linear_inverse_sqrt": {"log_loss": 0.8806874121647414, "brier": 0.38101082596397445}
+    },
+    "by_cost": {
+      "extra_1_tick": {
+        "check_examples": 5008,
+        "directional_targets": 845,
+        "no_opportunity_correct": 4163,
+        "unweighted": {"correct": 4166, "directional_predictions": 12, "correct_directional": 7, "directional_precision": 0.5833333333333334, "directional_recall": 0.008284023668639054, "macro_f1": 0.31366237799224106, "balanced_accuracy": 0.33860752239219044},
+        "inverse_sqrt": {"correct": 4156, "directional_predictions": 72, "correct_directional": 23, "directional_precision": 0.3194444444444444, "directional_recall": 0.027218934911242602, "macro_f1": 0.3360629287207528, "balanced_accuracy": 0.3489848292611255}
+      },
+      "extra_2_ticks": {
+        "check_examples": 5008,
+        "directional_targets": 398,
+        "no_opportunity_correct": 4610,
+        "unweighted": {"correct": 4611, "directional_predictions": 12, "correct_directional": 6, "directional_precision": 0.5, "directional_recall": 0.01507537688442211, "macro_f1": 0.3385146011033901, "balanced_accuracy": 0.3428599481327816},
+        "inverse_sqrt": {"correct": 4590, "directional_predictions": 72, "correct_directional": 18, "directional_precision": 0.25, "directional_recall": 0.04522613065326633, "macro_f1": 0.37051307876582656, "balanced_accuracy": 0.36092393543652374}
+      },
+      "extra_4_ticks": {
+        "check_examples": 5008,
+        "directional_targets": 103,
+        "no_opportunity_correct": 4905,
+        "unweighted": {"correct": 4900, "directional_predictions": 12, "correct_directional": 3, "directional_precision": 0.25, "directional_recall": 0.02912621359223301, "macro_f1": 0.36306433693566303, "balanced_accuracy": 0.35319783366965546},
+        "inverse_sqrt": {"correct": 4869, "directional_predictions": 69, "correct_directional": 11, "directional_precision": 0.15942028985507245, "directional_recall": 0.10679611650485436, "macro_f1": 0.4152309359339022, "balanced_accuracy": 0.4018198376870286}
+      }
+    },
+    "weighted_outputs_calibrated": false,
+    "models_quarantined": true
+  },
+  "verification": {
+    "baseline_full_tests_passed": 3770,
+    "baseline_full_test_seconds": 402.75,
+    "new_focused_tests_passed": 45,
+    "related_focused_tests_passed": 217,
+    "post_change_full_tests_passed": 3815,
+    "post_change_full_tests_skipped": 1,
+    "post_change_full_test_seconds": 252.10,
+    "skip_reason": "Optional native Nautilus evaluation dependency",
+    "ruff": "passed",
+    "separate_post_run_recomputation_of_all_pooled_and_session_scores": true,
+    "confusion_counts_separately_recounted": true,
+    "saved_model_fit_only_normalization_verified": true,
+    "curriculum_unique_and_check_sessions_excluded": true,
+    "original_trial_adapter_comparison_and_reservation_pins_unchanged": true,
+    "nontrain_and_reserved_file_access_refusal_tests": true,
+    "partial_failure_drift_and_output_overwrite_refusal_tests": true
+  },
+  "evidence": {
+    "entrypoint": "ai_trader.training.six_e_balance_plan",
+    "registration": "logs/6e_trainonly_balance_20261002_1_registration.json",
+    "registration_raw_sha256": "e4e6cfb523aaff69593c83c68e27ace698764f945b8fc9ffd8fffe14c6ffaef8",
+    "source_content_sha256": "51e98c9539df69b9558527c5f50fa2181f074832a0f4181ed551de28de500f79",
+    "directory": "logs/6e_trainonly_balance_20261002_1",
+    "request_raw_sha256": "51fead6a621392e104fd2b77ccb11dcd749fb8496c56f7df2c82eeaba8ccbcaf",
+    "models_raw_sha256": "3559edf914a5bad47c68c63cbe2f9c62d76e44d1cbc2e8e4d5b455bb120b187b",
+    "models_content_sha256": "856fc5ae09c0b54a13772015d134f5537f82ac5f2871e8bafdb16dfd333018c0",
+    "run_raw_sha256": "7fca104ce0026ffd8d961c2b415b47b36a1c5fdba2e31bed91f30e4cee490da9",
+    "reserved_calendar_raw_sha256": "e6c216f2091d7cc9d594cb52589da65c81f546ad9c76b44ccf4a6bc904656107",
+    "old_btc_protected_registry_raw_sha256": "0026c7f909435a0d7a1cce5530c56dc91e4307e29ccdc3ce8fdd7d85c0318075"
+  },
+  "limitations": [
+    "The complete train partition was audited, but the CPU models fit only its first 84 sessions. This is not analysis or training of reserved 2026 outcomes.",
+    "The inner check is already-exposed development. The original Qwen trial fitted five of its cases, so it cannot be reused for an honest inner-check comparison without restarting from the base checkpoint.",
+    "The two CPU controls use all 14,670 inner fit examples; the future Qwen trial will use only 224. Their data budgets differ and must be reported, not mistaken for an architecture-only comparison.",
+    "Targets are observability-conditioned 6E futures quote-opportunity classes at a 100ms delay and 15s hold. Counts and probabilities do not establish realized PnL, loss magnitudes, CFD basis, broker costs or fills.",
+    "Prediction counts at nested cost settings share cases and must not be summed as distinct trades.",
+    "The small directional sample and very low recall do not support high-frequency execution or profitability claims. Reweighted probabilities are not calibrated market likelihoods.",
+    "No hyperparameters were tuned or models refitted after viewing check scores. The balanced Qwen recipe remains a proposed bounded experiment, not evidence that balancing will solve the task."
+  ],
+  "next": [
+    "Implement a separate source-bound native worker for the frozen 224-case curriculum, retaining completion-only loss, immutable base weights, token/gradient/resource guards, durable per-update receipts and exclusive outputs.",
+    "Preregister the later-session Qwen diagnostic sample and all comparisons before fitting; enforce the new 30-minute worker budget and zero automatic retries without altering the original twenty-update worker or artifacts.",
+    "Start from the pinned base, save a separate quarantined adapter, then compare against frozen CPU controls. Keep reserved 2026 validation, test and lockbox outcomes out of tuning.",
+    "Do not connect any candidate to trading unless independent evidence and broker-specific paper execution economics separately justify it."
+  ]
+}
