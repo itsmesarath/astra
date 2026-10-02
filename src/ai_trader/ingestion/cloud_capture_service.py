@@ -136,8 +136,9 @@ def _session_dirs(spool: Path) -> list[Path]:
     return result
 
 
-def _finalize(path: Path, *, status: str, trades: int = 0, depths: int = 0,
-              error_type: str | None = None) -> dict[str, object]:
+def _finalize(
+    path: Path, *, status: str, trades: int = 0, depths: int = 0, error_type: str | None = None
+) -> dict[str, object]:
     files = []
     for name in _ARTIFACTS:
         item = path / name

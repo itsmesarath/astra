@@ -132,9 +132,7 @@ def test_upload_outage_retains_spool_and_retry_uses_same_session(tmp_path: Path)
     session = next(tmp_path.glob("s_*"))
     assert (session / "evidence.tar.gz").is_file()
     assert not (session / "uploaded.json").exists()
-    result = asyncio.run(
-        run_cloud_capture_service(config, uploader=uploader, max_new_sessions=0)
-    )
+    result = asyncio.run(run_cloud_capture_service(config, uploader=uploader, max_new_sessions=0))
     assert result["attempts"] == 1
     assert (session / "uploaded.json").is_file()
     assert len(uploader.objects) == 2

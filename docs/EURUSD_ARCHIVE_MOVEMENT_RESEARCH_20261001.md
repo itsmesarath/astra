@@ -80,6 +80,8 @@ The contrast between many hindsight winners and no profitable fitted leaf matter
 
 ## Run status
 
+The census finished at **21:49 Lisbon time on 1 October 2026**. The [completed review on 2 October](EURUSD_CENSUS_REVIEW_20261002.md) reconciles all 471 dates and verifies all published hashes: 195 weekday decision dates, 26 Sunday reconstruction dates, 17 refusals, three vendor-degraded members and 230 reserved metadata-only dates. It analyzes 45,584 thinned movement cases and documents the changing opportunity rates, separate activity/direction associations and sparse same-ID replenishment features. This completion covers the registered four-hour development windows; all-hours research and strategy validation remain pending. The launch and first-shard notes below are retained as historical operation evidence.
+
 The archive census was launched locally at **2026-10-01 19:14:32 UTC** (20:14 Lisbon), with launcher PID 36200 and Python child PID 35120. These IDs identify this launch only; future checks must also match command line and creation time. The run is independent of this chat and remains bounded by its registered limits.
 
 The first published day, 26 March, contains 11,001 decision snapshots and 235 thinned cases. Its full-member replay counted 1,856,559 target records. An independent artifact audit verified the row/case hashes, source pin, target arithmetic, timing, feature allowlists, exact causal case selection, all published horizon summaries and execution conservation. This is evidence of a functioning first shard, not completion of the 241-file development phase. Completion requires the final receipt, all-date accounting, retained refusals and artifact verification—not merely a running process or a progress line.
