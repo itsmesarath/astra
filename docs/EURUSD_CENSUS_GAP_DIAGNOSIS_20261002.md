@@ -93,6 +93,11 @@ estimator, with no-trade, CVD and queue-imbalance controls. All inspected 2025
 evidence is development data, not independent validation. Reserved 2026 data
 stays closed until a candidate and evaluation protocol are frozen.
 
+Update: the [whole-session manifest and four-model CPU experiment](EURUSD_ACTIVITY_DIRECTION_BASELINE_20261002.md)
+are complete. All 84 later development sessions were evaluated; every model
+abstained at the unchanged cost-aware threshold. This is not a profitable
+teacher policy, and no model was promoted or reserved outcome opened.
+
 ## Pins and local artifacts
 
 - Diagnostic registration: `logs/6e_refusal_diagnostic_20261002_1_registration.json`, SHA256 `6cc8a108f4f2b56242212d5a4943d922660346e9eb292cf0e51aff7b752c69bb`.
