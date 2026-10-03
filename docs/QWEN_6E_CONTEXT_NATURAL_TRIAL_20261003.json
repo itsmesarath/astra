@@ -1,0 +1,269 @@
+{
+  "kind": "qwen_6e_context_v2_natural_lora_trial_report",
+  "date": "2026-10-03",
+  "status": "completed_192_update_context_v2_natural_trial_not_validated",
+  "summary": "Implemented, preregistered and completed one bounded offline context-v2 LoRA pilot from fresh local Qwen3-4B-Base, using 192 unique fit-only examples at approximately natural joint-state proportions. Independently verified the request, all updates, saved/reloaded adapter, resources and unchanged source/input pins. This is a quarantined engineering pilot, not demonstrated trading improvement.",
+  "registration": {
+    "path": "logs/6e_qwen_context_natural_20261003_1_registration.json",
+    "raw_sha256": "e2f9110ab07df3a0eb72dc6b6336d41f031a9ff42c5b6ea4416948d5f51aa28c",
+    "source_content_sha256": "1d09d351b37f0a990b43498307c41cc2146c5c82de02a6191490f30d0974cf0b",
+    "schema_content_sha256": "57221aaccd27924524e02bd3813d6a661d31a0daf05cfc4708158fdd352b5536",
+    "created_before_any_native_fit": true
+  },
+  "inputs": {
+    "instrument": "6E futures auxiliary research signals for EUR/USD spot/CFD work",
+    "task": "six_e_quote_opportunity_context_v2",
+    "supervised_fit_examples": 14670,
+    "fit_sessions": 84,
+    "selected_examples": 192,
+    "selected_sessions": 84,
+    "fit_joint_counts": {
+      "NNN": 11573,
+      "LNN": 691,
+      "LLN": 580,
+      "LLL": 245,
+      "SNN": 708,
+      "SSN": 580,
+      "SSS": 293
+    },
+    "selected_joint_counts": {
+      "NNN": 151,
+      "LNN": 9,
+      "LLN": 8,
+      "LLL": 3,
+      "SNN": 9,
+      "SSN": 8,
+      "SSS": 4
+    },
+    "state_order": [
+      "NNN",
+      "LNN",
+      "LLN",
+      "LLL",
+      "SNN",
+      "SSN",
+      "SSS"
+    ],
+    "state_key": "Characters encode the unchanged opportunity direction at 1/2/4 extra ticks: N neither, L long, S short.",
+    "quota_rule": "Largest integer remainders of 192 times full-fit class count divided by 14670; fixed state-order ties. No minority minimum, oversampling, duplicate cases or class-loss weights.",
+    "quota_error": "Every selected class count differs from its exact natural fractional quota by less than one case.",
+    "within_state_rule": "Spread over fit sessions, then unique even within-session ranks; not an IID sample, and preserving joint proportions does not remove selection bias.",
+    "training_order": "SHA256 of seed 42 and case_id; fixed independently of check labels.",
+    "causal_features": "43 current values and three past-only [count,span,ten snapshot means] arrays for 5/15/30 seconds; empty history explicit, no interpolation.",
+    "native_request_bytes": 939308,
+    "native_request_limit_bytes": 1048575,
+    "max_selected_prompt_tokens": 1420,
+    "native_isolation": "Selected train/inner-fit examples and asset/split/prior metadata only; no dataset, raw/dense history, check-example, CPU model or historical adapter paths.",
+    "unknown_outcomes": "6509 unavailable/uncertain eligible cases remain unknown and are not selected as negative labels.",
+    "target": "Unchanged delayed-entry 15-second 6E crossed-quote class at 1/2/4 extra total round-trip ticks. Not broker fills, portfolio returns or PnL.",
+    "full_training_epoch": false
+  },
+  "recipe": {
+    "initialization": "Fresh pinned local Qwen3-4B-Base and fresh q/v LoRA; rejected snapshot adapters never resumed.",
+    "optimizer_updates": 192,
+    "maximum_worker_seconds": 1800,
+    "batch_size": 1,
+    "gradient_accumulation_steps": 1,
+    "seed": 42,
+    "learning_rate": 0.0002,
+    "lora_rank": 8,
+    "lora_alpha": 16,
+    "lora_dropout": 0,
+    "target_modules": [
+      "q_proj",
+      "v_proj"
+    ],
+    "dtype": "CUDA BF16, deterministic algorithms, TF32 disabled",
+    "loss": "Unweighted completion plus real EOS only; prompt and padding masked.",
+    "maximum_prompt_tokens": 2048,
+    "maximum_completion_including_eos_tokens": 256,
+    "maximum_sequence_tokens": 2304,
+    "gradient_checkpointing": true,
+    "gradient_clip_norm": 1,
+    "quantization": false,
+    "cpu_fallback": false,
+    "automatic_retries": 0
+  },
+  "frozen_future_evaluation": {
+    "cases": 5008,
+    "sessions": 28,
+    "scope": "All original inner-check examples, not a selected subset.",
+    "check_file_raw_sha256": "d49eb471d283a14887b8493f6df48ed0438aa155ca25b017351b633fa8ab9576",
+    "ordered_full_example_digests_content_sha256": "ff304373503c9fc3b2679fdebe173e0096013263b0370e0cc1fb4bf17c6c8b18",
+    "exposure": "Already-exposed within-training temporal development, not an independent holdout.",
+    "modes": [
+      "base",
+      "adapter"
+    ],
+    "controls": [
+      "no_opportunity",
+      "inner_fit_joint_prior",
+      "natural_context_joint_linear"
+    ],
+    "linear_specification": "79 numeric causal columns; normalize on all fit only, count/window plus span/means; natural unweighted 200-epoch cross entropy, learning rate 0.05, L2 0.01, clip 10, zero weights and Laplace-smoothed fit log priors. No class penalty or reweighting.",
+    "decoding": "Frozen greedy BF16 generation with existing 48-token cap; strict EOS, JSON fields/classes and cost monotonicity; no repairs or retries.",
+    "metrics": "Complete pooled and every-session support, coverage, per-cost confusion, directional precision/recall, wrong-side/no-opportunity calls, missed opportunities and activity. Invalid outputs incorrect, never relabeled abstention.",
+    "threshold_tuning": false,
+    "early_stopping": false,
+    "evaluation_performed": false,
+    "implementation_status": "Preregistered specification only; context-v2 full-check evaluator and numeric control runner are the next development step."
+  },
+  "checks": {
+    "baseline_tests": {
+      "passed": 4029,
+      "optional_nautilus_skips": 1,
+      "elapsed_seconds": 793.73
+    },
+    "new_synthetic_tests": {
+      "passed": 51,
+      "elapsed_seconds": 81.06
+    },
+    "full_tests_before_native_run": {
+      "status": "passed",
+      "passed": 4080,
+      "optional_nautilus_skips": 1,
+      "elapsed_seconds": 745.6
+    },
+    "ruff": "passed",
+    "formatting": "passed",
+    "pure_import_verified_in_actual_gpu_environment": true,
+    "relative_cli_path_bug_fixed_and_regression_tested": true,
+    "initial_metadata_preflight": "Refused a relative temporary validation path before registration creation or model loading. Fixed normalization, then completed all preparation checks; no native training retry.",
+    "existing_sources_changed": false,
+    "dependencies_changed": false,
+    "btc_collector_changed": false,
+    "credentials_accessed": false,
+    "network_requests": false,
+    "preexisting_user_changes_preserved": true
+  },
+  "safety": {
+    "adapter_quarantined": true,
+    "independent_holdout": false,
+    "promotion_allowed": false,
+    "execution_allowed": false,
+    "reserved_outcomes_opened": false,
+    "trading_enabled": false,
+    "automatic_retry": false,
+    "native_boundary": "Owned bounded offline subprocess, local safetensors and pinned runtime. Not an OS sandbox or hard VRAM quota.",
+    "latency_warning": "No model decision latency, 100ms broker execution, CFD spread/fills, risk/PnL or live suitability demonstrated. A lower training loss is not predictive or trading validation."
+  },
+  "qwen_training_performed": true,
+  "verified_result": {
+    "artifact_raw_pins": {
+      "adapter/adapter_model.safetensors": "4bbbc14275499decfa71f24133c46bba180d205e8cb75e3c802784d064ea77d8",
+      "request.json": "6dd2544b4e6d4fc2b8619fedcf9b855232c3a531769977d96337eb36fa313d28",
+      "run.json": "e276ca70ef4e6661449e4dd33febbeeda00aac9b8218b61c71a8329a187c4b76",
+      "steps.jsonl": "fbbb13a95ef9c8e35d9523c02371cd68544d3ca44525f1e8a525025789c31946"
+    },
+    "durable_events": 388,
+    "elapsed_seconds": 631.969000000041,
+    "evaluation_performed": false,
+    "input_and_source_pins_reverified": true,
+    "old_artifact_raw_pins_reverified": {
+      "data/processed/6e_qwen_dataset_20261002_1/train.jsonl": "8f5d6c2d0173d09aeacf1dcbce45f6dccc865c49bb4664205f06db75f67bd297",
+      "logs/6e_qwen_balanced_lora_20261002_1/adapter/adapter_model.safetensors": "74e9dcf3f0c2653e9b1914f9cbea6990087ece9dbbb88fa6110c6e677ff2134a",
+      "logs/6e_qwen_eval_reservation_20261002_1.json": "e6c216f2091d7cc9d594cb52589da65c81f546ad9c76b44ccf4a6bc904656107",
+      "logs/6e_trainonly_balance_20261002_1/models.json": "3559edf914a5bad47c68c63cbe2f9c62d76e44d1cbc2e8e4d5b455bb120b187b",
+      "logs/qwen_protected_eval_reservation_pending_20260924.json": "0026c7f909435a0d7a1cce5530c56dc91e4307e29ccdc3ce8fdd7d85c0318075"
+    },
+    "reload": {
+      "adapter_manifest": {
+        "files": [
+          {
+            "bytes": 1200,
+            "name": "adapter_config.json",
+            "sha256": "630568954c06ec138b67799295cae0d955751fd675a2c414b45abaf21c0ac53e"
+          },
+          {
+            "bytes": 11815504,
+            "name": "adapter_model.safetensors",
+            "sha256": "4bbbc14275499decfa71f24133c46bba180d205e8cb75e3c802784d064ea77d8"
+          },
+          {
+            "bytes": 5298,
+            "name": "README.md",
+            "sha256": "cedcdcb623b3cc2e2b20f6800c83a629e5d0e4b2432985dd9feabc1de03fe717"
+          }
+        ],
+        "total_bytes": 11822002
+      },
+      "adapter_updated": true,
+      "base_checkpoint_unchanged": true,
+      "probe_loss_absolute_tolerance": 0.00001,
+      "probe_loss_after": 0.006646192166954279,
+      "probe_loss_before": 0.006646192166954279,
+      "reload_state_equal": true
+    },
+    "request_content_sha256": "9173b76ffc9f6e209a00260fa0e41445a13136ccb79095e662105c738491d1ce",
+    "resources": {
+      "cuda_bf16": true,
+      "deterministic_algorithms": true,
+      "device": "NVIDIA GeForce RTX 5080 Laptop GPU",
+      "peak_allocated_bytes": 12867778560,
+      "peak_reserved_bytes": 16001269760,
+      "tf32_enabled": false,
+      "total_bytes": 17066033152
+    },
+    "selected_joint_counts": {
+      "LLL": 3,
+      "LLN": 8,
+      "LNN": 9,
+      "NNN": 151,
+      "SNN": 9,
+      "SSN": 8,
+      "SSS": 4
+    },
+    "status": "independently_verified_completed_quarantined_trial",
+    "steps": 192,
+    "summary": {
+      "first_loss": 0.37157848477363586,
+      "last_loss": 0.007435148116201162,
+      "maximum_gradient_norm": 1.7568804025650024,
+      "minimum_loss": 0.003177383914589882
+    },
+    "trainable_parameters": 2949120
+  },
+  "artifacts": {
+    "local_only": true,
+    "output_directory": "logs/6e_qwen_context_natural_20261003_1",
+    "weights_committed": false,
+    "logs_committed": false
+  },
+  "input_asset_pins": {
+    "context_completion": {
+      "path": "data/processed/6e_qwen_context_20261003_1/completion.json",
+      "raw_sha256": "4806eac87d498871c87d6a8a8d706ef8125a9bae85893dc7061c2301cf3d10f1"
+    },
+    "context_fit": {
+      "raw_sha256": "a5777406f00136bb056e17e521292581b539833c4b5c8e2b9f8bd7e921784d01"
+    },
+    "context_unknown_ledger": {
+      "raw_sha256": "a58ba27e35e5443f3011942fd97cc17a2cb8d1a0200e2387067eea075c01c272"
+    },
+    "all_example_token_preflight": {
+      "path": "logs/6e_qwen_context_20261003_1_token_preflight.json",
+      "raw_sha256": "07fc497e64d8a6a4f4692ad4479e7fe37d827a69d6bdd48cc32f1d16295a48d8"
+    },
+    "asset_metadata_registration": {
+      "path": "logs/6e_qwen_balanced_lora_20261002_1_registration.json",
+      "raw_sha256": "e734c416b98fd54009430e366c4d8a5518bc86d577bb16bdaeefff37c5207fa7",
+      "adapter_from_this_registration_loaded": false
+    },
+    "base_checkpoint": {
+      "path": "checkpoints/qwen3-4b-base-906bfd4b4dc7",
+      "manifest_content_sha256": "8a1a0f20ba8a2c6d4480309f0f442114c4fa310018d143ee610061b1ecf47d3c"
+    },
+    "tokenizer": {
+      "raw_sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"
+    },
+    "runtime_lock": {
+      "path": "requirements/qwen-training-win-py312.txt",
+      "raw_sha256": "8aedce7455c963753e0c8c5339e8abea7cc74ea0bddfb4c93390d4530d43af57"
+    },
+    "runtime_capability": {
+      "path": "logs/qwen_training_runtime_versions_20261002_capability.json",
+      "raw_sha256": "4840c478f76734ca6a9a5eec678a6dfbc314772a3a53a1e278b78f7e80e7a6bb"
+    }
+  },
+  "next_step": "Implement and test the preregistered context-v2 numeric controls and complete 5008-example inner-check comparison, then evaluate the fresh base and quarantined adapter on identical cases. No partial sample, repaired outputs or threshold search; no larger training or trading promotion based on this pilot."
+}
