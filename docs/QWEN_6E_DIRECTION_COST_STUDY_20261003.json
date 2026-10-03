@@ -1,0 +1,166 @@
+{
+  "kind": "qwen_6e_train_only_direction_cost_report_v1",
+  "date": "2026-10-03",
+  "execution_status": "completed_cpu_research_study_not_strategy_validation",
+  "research_decision": "Do not promote either CPU control or repeat Qwen training with this penalty alone. The penalty control abstained on every case and missed every opportunity; reducing false calls by becoming idle is not a trading edge.",
+  "summary": "Added and tested a fixed false-direction objective with natural training frequencies. Two bounded CPU fits completed and were checked on every inner-check example. A separate timestamp-only audit establishes that the existing sparse Qwen examples cannot supply 5/15/30-second temporal context. No Qwen training, trading, threshold tuning or reserved evaluation occurred.",
+  "data": {
+    "partition": "train.jsonl only",
+    "whole_training_examples": 19678,
+    "whole_training_sessions": 112,
+    "inner_fit": {
+      "examples": 14670,
+      "sessions": 84,
+      "date_range": "2025-03-26 through 2025-07-22",
+      "joint_counts": {"NNN": 11573, "LNN": 691, "LLN": 580, "LLL": 245, "SNN": 708, "SSN": 580, "SSS": 293}
+    },
+    "inner_check": {
+      "examples": 5008,
+      "sessions": 28,
+      "date_range": "2025-07-23 through 2025-08-29",
+      "positive_directional_targets_by_cost": [845, 398, 103],
+      "neither_positive_targets_by_cost": [4163, 4610, 4905]
+    },
+    "exposure": "Already-exposed within-training temporal development, not an independent holdout. These check sessions and labels have been examined by previous studies.",
+    "target": "6E futures crossed-quote class after 100ms delayed entry and 15s hold with 1/2/4 extra round-trip ticks; not EUR/USD CFD fills, trade returns or portfolio PnL",
+    "observability_limitation": "Only causally eligible resolved examples with acceptable outcomes are in this supervised file. Unavailable/uncertain outcomes remain excluded rather than negative labels, and selection bias is not removed by natural class frequencies."
+  },
+  "preregistered_objective": {
+    "models": {"natural_cross_entropy": 0.0, "natural_direction_penalty": 1.0},
+    "formula": "Mean joint cross entropy + strength * softmax-expected class penalty + 0.5 * 0.01 * squared weight norm",
+    "class_error_penalties": {"missed_opportunity": 1.0, "no_opportunity_overcall": 4.0, "wrong_side": 6.0},
+    "penalty_units": "Arbitrary research units averaged across three cost classes; not measured monetary costs or three independent trade returns",
+    "sampling": "All inner-fit examples at natural frequencies; no balancing, class weights, minority oversampling or check-data fitting",
+    "optimization": "200 full-batch epochs, learning rate 0.05, L2 0.01, standardized clipping at 10, zero weights and Laplace-smoothed natural log priors",
+    "normalization": "Inner-fit population means/std only, constant columns use scale one",
+    "decision_rule": "Same coherent joint-state argmax with fixed tie order for both controls. No decision threshold, early stopping, search, retry or winner selection.",
+    "probability_warning": "Risk-regularized softmax values are not calibrated market probabilities",
+    "frozen_before_fit": true
+  },
+  "results": {
+    "cost_order": ["extra_1_tick", "extra_2_ticks", "extra_4_ticks"],
+    "natural_cross_entropy": {
+      "correct_by_cost": [4166, 4611, 4900],
+      "directional_predictions_by_cost": [12, 12, 12],
+      "correct_directional_predictions_by_cost": [7, 6, 3],
+      "incorrect_directional_calls_by_cost": [5, 6, 9],
+      "no_opportunity_overcalls_by_cost": [4, 5, 8],
+      "wrong_side_calls_by_cost": [1, 1, 1],
+      "missed_opportunities_by_cost": [837, 391, 99],
+      "directional_precision_by_cost": [0.5833333333333334, 0.5, 0.25],
+      "directional_recall_by_cost": [0.008284023668639054, 0.01507537688442211, 0.02912621359223301],
+      "joint_log_loss": 0.7009054783262961,
+      "joint_brier_score": 0.29286806960021805,
+      "mean_argmax_class_penalty": 0.09404952076677316,
+      "mean_softmax_expected_class_penalty": 0.4282615764783829,
+      "interpretation": "Matches the earlier unweighted CPU control numerically. Only 12 directional predictions are too sparse to establish a usable frequent-trading strategy or economic edge."
+    },
+    "natural_direction_penalty": {
+      "correct_by_cost": [4163, 4610, 4905],
+      "directional_predictions_by_cost": [0, 0, 0],
+      "correct_directional_predictions_by_cost": [0, 0, 0],
+      "incorrect_directional_calls_by_cost": [0, 0, 0],
+      "missed_opportunities_by_cost": [845, 398, 103],
+      "directional_precision_by_cost": [null, null, null],
+      "directional_recall_by_cost": [0.0, 0.0, 0.0],
+      "joint_log_loss": 0.770043662012587,
+      "joint_brier_score": 0.3102206443655913,
+      "mean_argmax_class_penalty": 0.08958998935037271,
+      "mean_softmax_expected_class_penalty": 0.21762192899867527,
+      "interpretation": "Lower expected class penalty but worse log loss/Brier and no opportunity detection. Its discrete predictions equal the idle controls; not an improved trading model."
+    },
+    "no_opportunity": {
+      "correct_by_cost": [4163, 4610, 4905],
+      "directional_predictions_by_cost": [0, 0, 0],
+      "missed_opportunities_by_cost": [845, 398, 103],
+      "mean_argmax_class_penalty": 0.08958998935037271
+    },
+    "inner_fit_joint_prior": {
+      "correct_by_cost": [4163, 4610, 4905],
+      "directional_predictions_by_cost": [0, 0, 0],
+      "joint_log_loss": 0.7416250403096313,
+      "joint_brier_score": 0.3052539918914095
+    },
+    "reporting": "Full pooled and all 28 per-session confusions, support, precision/recall and penalties are retained in the pinned local run receipt. No model was selected for promotion."
+  },
+  "causal_history_feasibility": {
+    "audit_inputs": "Role, dated session/contract and decision timestamp only; no feature, prompt or target access in the audit",
+    "semantics": "Timestamp-only upper bound on prior observed decisions in [now-window, now); reset on source session or gap >5s, exclude current until after counting",
+    "inner_fit": {
+      "minimum_spacing_seconds": 60.000004914,
+      "median_spacing_seconds": 61.1821274235,
+      "maximum_spacing_seconds": 894.544856129,
+      "same_session_intervals": 14586,
+      "gap_resets": 14586,
+      "rows_with_prior_timestamp_upper_bound": {"5": 0, "15": 0, "30": 0}
+    },
+    "inner_check": {
+      "minimum_spacing_seconds": 60.000030517,
+      "median_spacing_seconds": 61.1225909335,
+      "maximum_spacing_seconds": 517.424318012,
+      "same_session_intervals": 4980,
+      "gap_resets": 4980,
+      "rows_with_prior_timestamp_upper_bound": {"5": 0, "15": 0, "30": 0}
+    },
+    "conclusion": "Neither partition has any preceding row within the intended 5/15/30-second history windows. Do not interpolate, forward-fill or mislabel minute-spaced examples as a temporal order-book encoder.",
+    "audit_limit": "The dense engine also resets on causal prior-quote gaps. Timestamp presence alone would not establish usable context; the zero upper bound here does establish its absence in the sparse file.",
+    "existing_dense_engine": "causal_6e_context.py already supports receive-time past-only snapshot means, current-minus-past changes, sample counts, spans and session/gap resets. Prior dense context-tree results selected no trades; context presence alone has not proven an edge.",
+    "post_run_dense_availability_check": {
+      "manifest_path": "data/processed/6e_training_manifest_20261002_1.json",
+      "manifest_raw_sha256": "ba773292535c97402826e6b40b34d367379a2db899f0010d474628220f965c2b",
+      "training_sessions_matching_sparse_dataset": 112,
+      "training_dense_rows_according_to_pinned_metadata": 1242509,
+      "training_dense_files_present": 112,
+      "file_size_bytes": 2311338400,
+      "contents_opened_or_rehashed": false,
+      "limitation": "Metadata and regular-file presence only. A future authorized builder must hash and validate every consumed shard; this check does not establish fresh content integrity or performance."
+    },
+    "dense_rows_opened_this_step": false,
+    "new_temporal_features_constructed_this_step": false
+  },
+  "verified_execution": {
+    "cpu_environment": "Original CPU .venv: Python 3.12.10 Windows AMD64, NumPy 2.5.3",
+    "elapsed_seconds": 27.594000000040978,
+    "cpu_controls_fitted": 2,
+    "gpu_calls": 0,
+    "artifact_and_pooled_and_per_session_scores_verified": true,
+    "natural_control_matches_previous_cpu_control": true,
+    "final_source_and_input_revalidation": true,
+    "models_quarantined": true,
+    "automatic_retry": false
+  },
+  "artifacts": {
+    "registration": {"path": "logs/6e_direction_cost_20261003_1_registration.json", "raw_sha256": "c8b9643fe102cc0dcf1b85268ef9823b2f524af40d27cea3118b793250bdd075"},
+    "request": {"path": "logs/6e_direction_cost_20261003_1/request.json", "raw_sha256": "04320e4defbe7a7640d41afe460d4b6a70484831bb2bed23e051ed567a318293"},
+    "run": {"path": "logs/6e_direction_cost_20261003_1/run.json", "raw_sha256": "beda710492967cea0642ef9eaf9acd0e21525af25b9e8b3a582b4a13e6b9b0ea"},
+    "models": {"path": "logs/6e_direction_cost_20261003_1/models.json", "raw_sha256": "07a524d98fa25a2432ce954688aaa2b6ed1e47016c9572c1da640490835dd0d1", "content_sha256": "e4a6312f9daf1b11583ff118c2e33f0b405dd9f74a944b5add79d50514dd3723"},
+    "study_source_content_sha256": "d20e9a8cd31838c0d85e080478f01c4028d8e26f0710dbc4376acad038367834",
+    "original_balance_registration_raw_sha256": "e4e6cfb523aaff69593c83c68e27ace698764f945b8fc9ffd8fffe14c6ffaef8",
+    "dataset_completion_raw_sha256": "4c3178a6ae5fc6d839e23349609f4580f69cb896144b576a57a35eff3f5314eb",
+    "train_jsonl_raw_sha256": "8f5d6c2d0173d09aeacf1dcbce45f6dccc865c49bb4664205f06db75f67bd297"
+  },
+  "next_separately_bounded_step": {
+    "development": "Create a versioned, train-only context-to-Qwen dataset builder using existing pinned one-second processed rows. Construct history sequentially within each source_session/contract, then attach it to the unchanged eligible sixty-second decision cases. Do not create context from sparse supervised rows or use target availability as an input.",
+    "verification": "Prove prefix invariance, exact expiry, gap/session/contract resets, missing-history encoding and future-field independence. Keep unknown outcomes unknown, preserve whole-session fit/check isolation, and bind each example to its dense source and original sparse case.",
+    "model_before_training": "Define compact causal features and an explicit versioned task; run tokenizer-only context/sequence preflight. Freeze a new representative-prior curriculum and evaluation before any native training. No automatic resume of the rejected adapter.",
+    "gates": "Context features are another research hypothesis, not confirmed icebergs or a profitability guarantee. Need adequate supported directional detection and executable costs/risk validation; do not loosen the current safeguards or open reserved 2026 labels."
+  },
+  "checks": {
+    "baseline_tests": {"passed": 3929, "optional_nautilus_skips": 1, "elapsed_seconds": 733.27},
+    "new_synthetic_tests": {"passed": 50, "elapsed_seconds": 13.79},
+    "full_regression": {"status": "passed", "passed": 3979, "optional_nautilus_skips": 1, "elapsed_seconds": 694.29},
+    "ruff": "passed",
+    "new_file_formatting": "passed",
+    "existing_training_and_evaluation_sources_changed": false,
+    "dependencies_changed": false,
+    "btc_collector_changed": false,
+    "credentials_accessed": false,
+    "network_downloads": false
+  },
+  "qwen_training_performed": false,
+  "independent_holdout": false,
+  "reserved_outcomes_opened": false,
+  "promotion_allowed": false,
+  "trading_enabled": false,
+  "adapter_approved_for_deployment": false
+}
