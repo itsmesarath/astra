@@ -1,0 +1,320 @@
+{
+  "kind": "qwen_6e_context_v2_full_comparison_readiness_report",
+  "date": "2026-10-03",
+  "status": "cpu_controls_completed_full_qwen_comparison_ready_not_started",
+  "summary": "Implemented and tested the preregistered natural-context numeric controls and a separate full-check paired Qwen evaluator. One fixed CPU fit completed; all 5008 check cases were scored under all three controls. No Qwen forecasts have been generated in this step. The prior adapter remains quarantined.",
+  "cpu_fit": {
+    "examples": 14670,
+    "sessions": 84,
+    "epochs": 200,
+    "columns": 79,
+    "learning_rate": 0.05,
+    "l2": 0.01,
+    "standardized_clip": 10,
+    "initialization": "Zero weights and Laplace-smoothed all-fit joint-state log priors.",
+    "normalization": "Population mean/std from every inner-fit case only; constant scale one.",
+    "class_weighting": false,
+    "opportunity_penalty": false,
+    "threshold_tuning": false,
+    "early_stopping": false,
+    "scaler_fit_only_exact_match": true,
+    "independent_read_only_arithmetic_replay_max_abs_coefficient_difference": 0,
+    "runtime": {
+      "machine": "AMD64",
+      "numpy": "2.5.0",
+      "python_executable": "C:\\Users\\pabta\\Projects\\ai-trader\\.venv-qwen-train\\Scripts\\python.exe",
+      "python_version": "3.12.10",
+      "system": "Windows"
+    },
+    "runtime_note": "A fresh CPU fit in the existing Qwen/tokenizer environment (NumPy 2.5.0), not reuse or alteration of the older NumPy 2.5.3 control coefficients. GPU weights were not loaded."
+  },
+  "complete_cpu_comparison": {
+    "examples": 5008,
+    "sessions": 28,
+    "predictions": 15024,
+    "control_names": [
+      "inner_fit_joint_prior",
+      "natural_context_joint_linear",
+      "no_opportunity"
+    ],
+    "truth_joint_counts": {
+      "LLL": 54,
+      "LLN": 140,
+      "LNN": 236,
+      "NNN": 4163,
+      "SNN": 211,
+      "SSN": 155,
+      "SSS": 49
+    },
+    "scope": "ALL original inner-check examples and every session, not the earlier 80-case subset.",
+    "exposure": "Previously exposed within-training temporal development; NOT an independent holdout.",
+    "target": "6E futures crossed-quote opportunities after 100ms delayed entry, 15-second hold, extra total round-trip costs 1/2/4 ticks. Not EUR/USD CFD broker fills or portfolio PnL.",
+    "elapsed_seconds": 34.281999999890104,
+    "all_prediction_outputs_and_pooled_and_every_session_scores_independently_recomputed": true,
+    "results": {
+      "inner_fit_joint_prior": {
+        "coverage": 1,
+        "by_cost": {
+          "extra_1_tick": {
+            "correct": 4163,
+            "overall_accuracy": 0.8312699680511182,
+            "directional_predictions": 0,
+            "correct_directional_predictions": 0,
+            "directional_precision": null,
+            "directional_recall": 0,
+            "wrong_side_predictions": 0,
+            "no_opportunity_overcalls": 0,
+            "missed_opportunities": 845
+          },
+          "extra_2_ticks": {
+            "correct": 4610,
+            "overall_accuracy": 0.9205271565495208,
+            "directional_predictions": 0,
+            "correct_directional_predictions": 0,
+            "directional_precision": null,
+            "directional_recall": 0,
+            "wrong_side_predictions": 0,
+            "no_opportunity_overcalls": 0,
+            "missed_opportunities": 398
+          },
+          "extra_4_ticks": {
+            "correct": 4905,
+            "overall_accuracy": 0.9794329073482428,
+            "directional_predictions": 0,
+            "correct_directional_predictions": 0,
+            "directional_precision": null,
+            "directional_recall": 0,
+            "wrong_side_predictions": 0,
+            "no_opportunity_overcalls": 0,
+            "missed_opportunities": 103
+          }
+        }
+      },
+      "natural_context_joint_linear": {
+        "coverage": 1,
+        "by_cost": {
+          "extra_1_tick": {
+            "correct": 4164,
+            "overall_accuracy": 0.8314696485623003,
+            "directional_predictions": 13,
+            "correct_directional_predictions": 5,
+            "directional_precision": 0.38461538461538464,
+            "directional_recall": 0.005917159763313609,
+            "wrong_side_predictions": 4,
+            "no_opportunity_overcalls": 4,
+            "missed_opportunities": 840
+          },
+          "extra_2_ticks": {
+            "correct": 4609,
+            "overall_accuracy": 0.9203274760383386,
+            "directional_predictions": 13,
+            "correct_directional_predictions": 4,
+            "directional_precision": 0.3076923076923077,
+            "directional_recall": 0.010050251256281407,
+            "wrong_side_predictions": 4,
+            "no_opportunity_overcalls": 5,
+            "missed_opportunities": 394
+          },
+          "extra_4_ticks": {
+            "correct": 4900,
+            "overall_accuracy": 0.9784345047923323,
+            "directional_predictions": 13,
+            "correct_directional_predictions": 3,
+            "directional_precision": 0.23076923076923078,
+            "directional_recall": 0.02912621359223301,
+            "wrong_side_predictions": 2,
+            "no_opportunity_overcalls": 8,
+            "missed_opportunities": 100
+          }
+        }
+      },
+      "no_opportunity": {
+        "coverage": 1,
+        "by_cost": {
+          "extra_1_tick": {
+            "correct": 4163,
+            "overall_accuracy": 0.8312699680511182,
+            "directional_predictions": 0,
+            "correct_directional_predictions": 0,
+            "directional_precision": null,
+            "directional_recall": 0,
+            "wrong_side_predictions": 0,
+            "no_opportunity_overcalls": 0,
+            "missed_opportunities": 845
+          },
+          "extra_2_ticks": {
+            "correct": 4610,
+            "overall_accuracy": 0.9205271565495208,
+            "directional_predictions": 0,
+            "correct_directional_predictions": 0,
+            "directional_precision": null,
+            "directional_recall": 0,
+            "wrong_side_predictions": 0,
+            "no_opportunity_overcalls": 0,
+            "missed_opportunities": 398
+          },
+          "extra_4_ticks": {
+            "correct": 4905,
+            "overall_accuracy": 0.9794329073482428,
+            "directional_predictions": 0,
+            "correct_directional_predictions": 0,
+            "directional_precision": null,
+            "directional_recall": 0,
+            "wrong_side_predictions": 0,
+            "no_opportunity_overcalls": 0,
+            "missed_opportunities": 103
+          }
+        }
+      }
+    }
+  },
+  "interpretation": {
+    "lowest_cost_numeric_control": "13 directional forecasts, 5 correct, 4 wrong-side and 4 no-opportunity overcalls. Detected only 5 of 845 opportunities (about 0.59% recall); 38.46% directional precision on tiny call support.",
+    "majority_warning": "83.15% lowest-cost accuracy is only one additional correct case over the idle baseline. At higher costs the numeric control is worse than the idle baseline. Idle/near-idle accuracy is not a trading edge or evidence of profitability.",
+    "qwen_result": "Not evaluated in this step; the numeric control result neither proves nor disproves the quarantined Qwen adapter.",
+    "research_decision": "Do not promote any model, change thresholds or infer trading suitability from these development scores.",
+    "architecture_warning": "The numeric control used all 14670 inner-fit examples; the existing Qwen pilot used 192. These are reference controls, not a controlled verdict about model architectures."
+  },
+  "full_qwen_evaluator": {
+    "implemented": true,
+    "native_worker_synthetic_tests_only": true,
+    "gpu_evaluation_started": false,
+    "cases": 5008,
+    "sessions": 28,
+    "modes": [
+      "base",
+      "adapter"
+    ],
+    "planned_gpu_forecasts": 10016,
+    "feature_only_sidecar": {
+      "bytes": 18233874,
+      "sha256": "723112a2281aa4201a9f9c0d699a81adc4638fa5bf784c0c7f51d499c9a72272"
+    },
+    "request_metadata_bytes": 4062,
+    "max_cases": 6000,
+    "max_sidecar_and_each_artifact_bytes": 33554432,
+    "max_request_metadata_bytes": 65536,
+    "maximum_gpu_worker_seconds": 43200,
+    "inference": "Unchanged frozen greedy CUDA BF16/eager decoding, seed 42, no sampling, maximum 48 generated tokens, EOS required, strict JSON/classes and cost monotonicity. No constrained decoding, repairs or retries.",
+    "worker_isolation": "Own bounded/pinned features.jsonl plus metadata/asset pins only. No fit/check dataset paths, targets, exact dates/contracts, raw archives or CPU coefficients.",
+    "completion": "All 10016 paired forecasts and all 20035 intent/completion/stage events must pass identity/order/hash/resource checks before scoring; partial, interrupted or drifted runs get no GPU score.",
+    "score_contract": "Pooled and every-session coverage, confusion/support, directional activity, precision/recall, wrong-side/no-opportunity calls and missed opportunities. Invalid forecasts stay incorrect, never converted to no-opportunity.",
+    "long_run_note": "May take several hours; a 12-hour worker deadline is a ceiling, not an ETA or assurance of completion. Metadata preparation/verification occurs outside that native-worker budget. No GPU run is started by freezing its plan.",
+    "launch_decision": "Awaiting user's timing choice for the long local GPU run.",
+    "command": ".venv-qwen-train\\Scripts\\python.exe -I -m ai_trader.research.six_e_context_eval run --registration logs/6e_qwen_context_full_eval_20261003_2_registration.json --registration-sha256 ecdbcb41f6d20952e9aca787640805875bda513796bad093b4ec80d38c8e961b --enable-development-evaluation --output logs/6e_qwen_context_full_eval_20261003_1",
+    "output_pre_write_guard": "Check canonical UTF-8 bytes, newline, line size and cumulative file offset before every durable inference write, including escaped/multibyte text. Refuse before crossing the 32 MiB per-file accepted artifact bound."
+  },
+  "pins": {
+    "controls_registration": {
+      "path": "logs/6e_context_controls_20261003_1_registration.json",
+      "raw_sha256": "2b7e73403d4cd1a5c89e6182a4ba51544e11192efcad50d31f62993c2f8b08ef"
+    },
+    "controls_report": {
+      "path": "logs/6e_context_controls_20261003_1/run.json",
+      "raw_sha256": "54826b6cc375c1819848acf203e359ef982e73914124f1761b63d42f04343ea4"
+    },
+    "controls_files": {
+      "epochs.jsonl": {
+        "bytes": 20361,
+        "sha256": "0ff928174bcc4d15c0b691087085876fb2af1bf8e15db483e12dff1cfbd9cdc3"
+      },
+      "model.json": {
+        "bytes": 15311,
+        "sha256": "0a4a9b599402056450c7dae716e249e43c04bc47b6dde78b173632ca1cda02be"
+      },
+      "predictions.jsonl": {
+        "bytes": 4687404,
+        "sha256": "5284f28997268adfa0fe8c2458acbb5749ed1974419bd8a0ae2221d048890896"
+      },
+      "request.json": {
+        "bytes": 174,
+        "sha256": "6e6ddbea3c7cb895547b73d8ea49ed41a96110e6e3fc37068d917b611dab5299"
+      }
+    },
+    "controls_source_content_sha256": "aa764808316a4cf3bb9e8b52ff374bd0f3421a19da12c9f4c42acf3547c2b97a",
+    "full_evaluation_registration": {
+      "path": "logs/6e_qwen_context_full_eval_20261003_2_registration.json",
+      "raw_sha256": "ecdbcb41f6d20952e9aca787640805875bda513796bad093b4ec80d38c8e961b"
+    },
+    "full_evaluation_source_content_sha256": "f47085813ca5b4bae9765aeff0a0329e116808180a84243c21cbdc159fa224e4",
+    "original_training_source_content_sha256": "1d09d351b37f0a990b43498307c41cc2146c5c82de02a6191490f30d0974cf0b",
+    "original_training_registration_raw_sha256": "e2f9110ab07df3a0eb72dc6b6336d41f031a9ff42c5b6ea4416948d5f51aa28c",
+    "original_quarantined_adapter_weights_raw_sha256": "4bbbc14275499decfa71f24133c46bba180d205e8cb75e3c802784d064ea77d8",
+    "check_file_raw_sha256": "d49eb471d283a14887b8493f6df48ed0438aa155ca25b017351b633fa8ab9576",
+    "ordered_check_examples_content_sha256": "ff304373503c9fc3b2679fdebe173e0096013263b0370e0cc1fb4bf17c6c8b18",
+    "six_e_reserved_calendar_metadata_raw_sha256": "e6c216f2091d7cc9d594cb52589da65c81f546ad9c76b44ccf4a6bc904656107",
+    "btc_reserved_calendar_metadata_raw_sha256": "0026c7f909435a0d7a1cce5530c56dc91e4307e29ccdc3ce8fdd7d85c0318075",
+    "superseded_pre_hardening_metadata": {
+      "path": "logs/6e_qwen_context_full_eval_20261003_1_registration.json",
+      "raw_sha256": "c320c0f2513f3961aec61c02d05c185401d71c81c318e99b50f71f9ec5764158",
+      "retained": true,
+      "native_calls_started": 0,
+      "reason": "Added pre-write artifact byte guard only; no change to CPU coefficients, data, cases, labels, inference recipe, scoring or authority. Source-bound older metadata now correctly refuses execution."
+    }
+  },
+  "checks": {
+    "baseline_full_suite": {
+      "passed": 4080,
+      "skipped": 1,
+      "elapsed_seconds": 763.05
+    },
+    "new_synthetic_tests": {
+      "cases": 48,
+      "dedicated_pre_hardening": {
+        "passed": 45,
+        "elapsed_seconds": 225.41
+      },
+      "pre_write_boundary_subset": {
+        "passed": 4,
+        "elapsed_seconds": 2.95
+      },
+      "full_suite_execution": "passed"
+    },
+    "final_full_suite": {
+      "status": "passed",
+      "passed": 4128,
+      "optional_nautilus_skips": 1,
+      "elapsed_seconds": 976.21
+    },
+    "ruff": "passed",
+    "formatting": "passed",
+    "independent_coefficients_prediction_score_and_artifact_verification": true,
+    "original_training_sources_and_adapter_unchanged": true,
+    "dependencies_changed": false,
+    "btc_collector_changed": false,
+    "credentials_accessed": false,
+    "reserved_outcomes_opened": false,
+    "network_requests": false,
+    "preexisting_changes_preserved": true,
+    "full_suite_before_output_hardening": {
+      "passed": 4125,
+      "skipped": 1,
+      "elapsed_seconds": 988.98
+    },
+    "hardened_plan_independently_reverified": {
+      "all_cpu_controls_reverified": true,
+      "cases": 5008,
+      "feature_sidecar_unchanged": true,
+      "original_adapter_reverified": true,
+      "qwen_forecasts_started": false,
+      "registration_sha256": "ecdbcb41f6d20952e9aca787640805875bda513796bad093b4ec80d38c8e961b",
+      "request_bytes": 4062,
+      "source_sha256": "f47085813ca5b4bae9765aeff0a0329e116808180a84243c21cbdc159fa224e4",
+      "status": "hardened_full_comparison_ready_not_started"
+    }
+  },
+  "safety": {
+    "cpu_fit_performed": true,
+    "qwen_training_performed": false,
+    "model_downloads": false,
+    "independent_holdout": false,
+    "adapter_quarantined": true,
+    "promotion_allowed": false,
+    "trading_enabled": false,
+    "paper_or_live_orders": false,
+    "automatic_retry": false,
+    "native_boundary": "Owned offline subprocess with pinned installed runtime and local safetensors; not an OS sandbox or hard RAM/VRAM quota.",
+    "latency_or_economics": "No measured CFD fills/spread, portfolio PnL, high-frequency decision latency or execution suitability demonstrated."
+  },
+  "artifacts_local_only": "Raw datasets, predictions, journals and coefficients remain ignored local artifacts. Only source, synthetic tests and this metadata/results report are committed."
+}
