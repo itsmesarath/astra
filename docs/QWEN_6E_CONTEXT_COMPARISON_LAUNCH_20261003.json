@@ -1,0 +1,149 @@
+{
+  "kind": "qwen_6e_context_v2_full_comparison_launch",
+  "date": "2026-10-03",
+  "status": "started_local_gpu_comparison_completion_unverified",
+  "summary": "Started exactly one offline paired base/adapter comparison after fresh Ruff, all 48 evaluator tests, source/runtime/asset preflight and frozen CPU-control verification. Native initialization and the first paired forecasts have been observed. No score or completed-run claim is made here.",
+  "source_commit_at_launch": "6c8869e827254026fdefba92d8e7ec97db24bec4",
+  "output": "logs/6e_qwen_context_full_eval_20261003_1",
+  "registration": {
+    "path": "logs/6e_qwen_context_full_eval_20261003_2_registration.json",
+    "raw_sha256": "ecdbcb41f6d20952e9aca787640805875bda513796bad093b4ec80d38c8e961b"
+  },
+  "pins": {
+    "evaluation_source_content_sha256": "f47085813ca5b4bae9765aeff0a0329e116808180a84243c21cbdc159fa224e4",
+    "cpu_controls_source_content_sha256": "aa764808316a4cf3bb9e8b52ff374bd0f3421a19da12c9f4c42acf3547c2b97a",
+    "original_training_source_content_sha256": "1d09d351b37f0a990b43498307c41cc2146c5c82de02a6191490f30d0974cf0b",
+    "original_quarantined_adapter_weights_raw_sha256": "4bbbc14275499decfa71f24133c46bba180d205e8cb75e3c802784d064ea77d8",
+    "request": {
+      "path": "logs/6e_qwen_context_full_eval_20261003_1/request.json",
+      "bytes": 4063,
+      "raw_sha256": "e322af85f0226761ef0f913f07c0d7dac6c5c4a26b357240cd93fe9d7818a2f1"
+    },
+    "feature_sidecar": {
+      "path": "logs/6e_qwen_context_full_eval_20261003_1/features.jsonl",
+      "bytes": 18233874,
+      "raw_sha256": "723112a2281aa4201a9f9c0d699a81adc4638fa5bf784c0c7f51d499c9a72272"
+    }
+  },
+  "comparison": {
+    "cases": 5008,
+    "sessions": 28,
+    "modes": [
+      "base",
+      "adapter"
+    ],
+    "expected_forecasts": 10016,
+    "expected_durable_events": 20035,
+    "same_inputs_for_each_mode": true,
+    "scope": "ALL original already-exposed inner-check examples and sessions; not the earlier 80-case subset or full 18-month raw archive.",
+    "target": "6E futures quote opportunities after 100ms delayed entry, 15-second hold, extra total round-trip costs 1/2/4 ticks; not EUR/USD CFD broker fills or portfolio PnL.",
+    "completion": "All outputs, identities, ordering, journals, runtime/resource guards and final source/input/CPU/adapter pins must verify before scoring. No successful-subset score.",
+    "decoder": "Frozen deterministic greedy CUDA BF16/eager, maximum 48 new tokens, EOS and strict JSON/coherent cost classes; no repairs, constrained decoding or retries.",
+    "worker_maximum_seconds": 43200,
+    "native_deadline_note": "12 hours is a native worker ceiling, not an ETA or promise. Metadata preparation and final verification occur outside it.",
+    "monitor_overdue_utc": "2026-10-04T07:25:00Z"
+  },
+  "process_identity_at_launch": {
+    "launcher": {
+      "pid": 13668,
+      "parent_pid": 20952,
+      "cim_creation_utc": "2026-10-03T19:06:55.6413930Z",
+      "executable": "C:/Users/pabta/Projects/ai-trader/.venv-qwen-train/Scripts/python.exe"
+    },
+    "supervisor": {
+      "pid": 42040,
+      "parent_pid": 13668,
+      "cim_creation_utc": "2026-10-03T19:06:55.6784310Z",
+      "executable": "C:/Users/pabta/AppData/Local/Programs/Python/Python312/python.exe"
+    },
+    "native_launcher": {
+      "pid": 25640,
+      "parent_pid": 42040,
+      "cim_creation_utc": "2026-10-03T19:07:50.4909340Z",
+      "executable": "C:/Users/pabta/Projects/ai-trader/.venv-qwen-train/Scripts/python.exe"
+    },
+    "native_worker": {
+      "pid": 23700,
+      "parent_pid": 25640,
+      "cim_creation_utc": "2026-10-03T19:07:50.5168530Z",
+      "executable": "C:/Users/pabta/AppData/Local/Programs/Python/Python312/python.exe"
+    },
+    "command": ".venv-qwen-train/Scripts/python.exe -I -m ai_trader.research.six_e_context_eval run --registration logs/6e_qwen_context_full_eval_20261003_2_registration.json --registration-sha256 ecdbcb41f6d20952e9aca787640805875bda513796bad093b4ec80d38c8e961b --enable-development-evaluation --output logs/6e_qwen_context_full_eval_20261003_1",
+    "native_command_module": "ai_trader.models._six_e_context_eval_worker",
+    "identity_note": "Verify process creation, executable, command and parent relation, not PID alone. Presence is not completed-run evidence.",
+    "console_stdout": "logs/6e_qwen_context_full_eval_20261003_1_stdout.log",
+    "console_stderr": "logs/6e_qwen_context_full_eval_20261003_1_stderr.log",
+    "background_launch": "Hidden Start-Process with a separate owned, deadline-bounded native worker; no visible terminal or source changes."
+  },
+  "observed_progress": {
+    "as_of_utc": "2026-10-03T19:09:09.4138857Z",
+    "native_initialization_completed": true,
+    "highest_observed_completed_call_unverified": 10,
+    "next_observed_intent": 11,
+    "receipt_exists": false,
+    "failure_metadata_exists": false,
+    "gpu_memory_used_mib": 11348,
+    "gpu_memory_total_mib": 16303,
+    "gpu_utilization_percent": 51,
+    "progress_only": "Bounded event tail and process/file metadata only. No prediction content, partial outcome score or performance claim. This is a launch-time snapshot, not current status."
+  },
+  "checks": {
+    "ruff_this_turn": "passed_whole_repository",
+    "evaluator_tests_this_turn": {
+      "passed": 48,
+      "elapsed_seconds": 290.44
+    },
+    "last_full_suite_on_same_frozen_source": {
+      "passed": 4128,
+      "optional_nautilus_skips": 1,
+      "elapsed_seconds": 976.21,
+      "source_commit": "6c8869e",
+      "rerun_this_turn": false
+    },
+    "all_cpu_controls_reverified": true,
+    "original_training_candidate_and_adapter_reverified": true,
+    "exact_full_feature_selection_and_token_pins_reverified": true,
+    "runtime_and_source_pins_reverified": true,
+    "output_and_console_paths_unused_before_launch": true,
+    "no_competing_model_process_observed_before_launch": true,
+    "disk_free_before_launch_bytes": 710504099840,
+    "code_changed_this_turn": false,
+    "dependencies_changed": false,
+    "preexisting_user_changes_preserved": true
+  },
+  "completion_followup": {
+    "automation_id": "check-one-full-qwen-comparison",
+    "status_at_creation": "ACTIVE",
+    "kind": "heartbeat_in_this_chat",
+    "interval_minutes": 60,
+    "explicit_user_authorization": "Yes, monitor this one run",
+    "purpose": "Read-only verification of this single run; quiet during normal progress. Notify only on completion, failure, overdue state, pin drift or necessary user action, then delete the follow-up.",
+    "terminal_verification": "Original registration rebuild; exact saved worker packet; validate_result for all 10016 calls/20035 events; exact recomputation of every pooled and per-session score; bounded raw-file hashes; process exit and false-authority checks.",
+    "no_automatic_retries_repairs_training_or_trades": true,
+    "keep_computer_awake_plugged_in_and_app_running": true,
+    "guidance_used": "OpenAI Docs skill and official scheduled-task guidance shaped a current-chat, narrow read-only follow-up with terminal self-removal.",
+    "official_guidance_url": "https://learn.chatgpt.com/docs/automations?surface=app"
+  },
+  "safety": {
+    "evaluation_started": true,
+    "evaluation_completed": false,
+    "model_training_started_this_turn": false,
+    "model_downloads": false,
+    "api_key_required": false,
+    "credentials_accessed": false,
+    "worker_offline_environment": true,
+    "independent_holdout": false,
+    "reserved_outcomes_opened": false,
+    "adapter_quarantined": true,
+    "adapter_approved_for_deployment": false,
+    "promotion_allowed": false,
+    "trading_enabled": false,
+    "paper_or_live_orders": false,
+    "btc_collector_or_cloud_changes": false,
+    "automatic_retry": false,
+    "boundary": "Owned offline subprocess with pinned local runtime/safetensors, not an OS sandbox or a hard RAM/VRAM quota.",
+    "network_note": "Official documentation lookup and user-authorized app automation setup only; the evaluation itself is local and offline."
+  },
+  "artifacts_local_only": "Request, features, predictions, event journals and final receipt remain ignored local artifacts. This report contains only bounded launch/progress metadata; it does not establish model quality or profitability.",
+  "next_step": "After full receipt verification, compare Qwen base, quarantined adapter and all three frozen CPU controls across the complete development set. No independent validation, larger training trial, policy tuning or deployment is authorized by the follow-up."
+}
