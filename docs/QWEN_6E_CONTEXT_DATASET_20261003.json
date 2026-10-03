@@ -1,0 +1,266 @@
+{
+  "kind": "qwen_6e_train_only_causal_context_dataset_report_v2",
+  "date": "2026-10-03",
+  "execution_status": "dataset_prepared_and_all_supervised_tokens_verified_not_model_training",
+  "research_decision": "Use this versioned context dataset to design a new bounded training-only experiment. Do not resume the rejected snapshot adapter or claim a strategy improvement from feature availability.",
+  "summary": "Joined genuine sequential past-only observations from 112 training sessions to the unchanged eligible sixty-second decision cases. Every dense observation contributes regardless of eligibility or future target availability. All 19,678 supervised examples passed local tokenizer-only preflight; no model weights, inference, fitting or trading.",
+  "data": {
+    "scope": "Only train-role processed row/case files and original train.jsonl; original manifest and research-report metadata revalidated. No raw archive replay, validation/test row files, reserved outcomes or broker/cloud/BTC changes.",
+    "dense_observations": 1242509,
+    "training_sessions": 112,
+    "eligible_decision_cases": 26187,
+    "supervised_examples": 19678,
+    "unavailable_or_uncertain_cases": 6509,
+    "source_dense_and_case_file_bytes": 2455900724,
+    "inner_fit": {
+      "sessions": 84,
+      "examples": 14670,
+      "date_range": "2025-03-26 through 2025-07-22",
+      "examples_with_prior_context": 14629,
+      "examples_with_empty_history": 41,
+      "joint_counts": {
+        "NNN": 11573,
+        "LNN": 691,
+        "LLN": 580,
+        "LLL": 245,
+        "SNN": 708,
+        "SSN": 580,
+        "SSS": 293
+      }
+    },
+    "inner_check": {
+      "sessions": 28,
+      "examples": 5008,
+      "date_range": "2025-07-23 through 2025-08-29",
+      "examples_with_prior_context": 4991,
+      "examples_with_empty_history": 17,
+      "joint_counts": {
+        "NNN": 4163,
+        "LNN": 236,
+        "LLN": 140,
+        "LLL": 54,
+        "SNN": 211,
+        "SSN": 155,
+        "SSS": 49
+      }
+    },
+    "whole_session_split_unchanged": true,
+    "exposure": "Already-exposed within-training temporal development, not an independent holdout. No 2026 reserved outcome access.",
+    "target": "Unchanged 6E futures crossed-quote opportunity classes after 100ms delayed entry and 15s hold at 1/2/4 extra total round-trip ticks. Not EUR/USD broker CFD fills, portfolio returns or executed trades.",
+    "unknown_handling": "Unavailable and uncertain targets remain a separate ledger with null completion. They never become negative training labels, but their observations still contribute to later causal context.",
+    "selection_warning": "Resolved acceptable cases only supply supervised targets. Retaining unknowns and natural class counts does not remove outcome-selection bias.",
+    "not_all_historical_data": "This step joins the existing training-only decision-window observations; it does not analyze all raw history or expand the original session/window split."
+  },
+  "encoding": {
+    "task": "six_e_quote_opportunity_context_v2",
+    "current_values": 43,
+    "original_snapshot_values": 37,
+    "derived_pressure_support_values": 4,
+    "interaction_products": 2,
+    "lookbacks_seconds": [
+      5,
+      15,
+      30
+    ],
+    "history_mean_values_per_window": 10,
+    "history_rows": "Three [prior count, prior span fraction, ten observation-weighted snapshot means] arrays.",
+    "total_compact_numeric_values": 79,
+    "full_context_engine_columns": 109,
+    "history_inputs": [
+      "queue_imbalance",
+      "depth5_imbalance",
+      "normalized_ofi_5s",
+      "normalized_cvd_5s",
+      "mid_change_5s_ticks",
+      "log_quote_events_5s",
+      "passive_pressure",
+      "held_support",
+      "other_reload_support",
+      "generic_reload_support"
+    ],
+    "interval": "Completed receive-time observations in [now-lookback,now); current excluded from history until after encoding.",
+    "reset": "Fresh state per session/contract; reset on observation gap greater than 5 seconds or causal prior-quote-gap feature greater than 5 seconds.",
+    "missing_history": "Explicit zero count/span/means; no interpolation, forward fill or borrowing from another session.",
+    "precision": "Finite eight-significant-digit encoding, integer sample counts preserved. No sequence truncation.",
+    "limitations": "Means of 5-second CVD/OFI snapshots are not longer-window raw volume sums. Replenishment and absorption inputs are observable proxies, not confirmed iceberg labels or causal explanations.",
+    "versioning": "Separate schema and task incompatible with existing v1 snapshot runners and adapters; this dataset alone does not add v2 training or inference support.",
+    "with_prior_observations": {
+      "supervised": 19620,
+      "all_eligible_cases": 26086
+    },
+    "without_prior_observations": {
+      "supervised": 58,
+      "all_eligible_cases": 101
+    },
+    "all_eligible_case_sample_count_ranges": {
+      "5_seconds": [
+        0,
+        4
+      ],
+      "15_seconds": [
+        0,
+        14
+      ],
+      "30_seconds": [
+        0,
+        29
+      ]
+    }
+  },
+  "verification": {
+    "all_19678_original_targets_and_completion_bytes_unchanged": true,
+    "all_19678_original_case_identity_and_source_bindings_unchanged": true,
+    "all_19678_original_current_features_match_declared_rounding": true,
+    "all_19678_original_record_digests_verified": true,
+    "source_files": "Every consumed dense row and eligible case file verified against original pinned SHA256 and counts at read and rehashed before completion.",
+    "case_cohort": "Every eligible sparse case must equal the original causally thinned dense row after removing case-only path_horizons; no successful subset.",
+    "causal_prefix": "Each case bound to newline-canonical causal fields only through the current decision; full source SHA256 and original case/record pins retained separately.",
+    "context_observer_future_access": "Observer receives only session/contract/partition/time/features/execution_features, never eligibility, outcome, path, target or hindsight fields.",
+    "independent_direct_sum_checks": [
+      {
+        "partition": "fit",
+        "session": "2025-03-26",
+        "dense_rows": 11001,
+        "supervised_cases_checked": 189
+      },
+      {
+        "partition": "check",
+        "session": "2025-07-23",
+        "dense_rows": 10308,
+        "supervised_cases_checked": 169
+      }
+    ],
+    "independent_check_semantics": "Direct prior-window summation, count/span and prefix hashing independently checked every supervised case on these two sessions, including unfiltered ineligible observations; finite means tolerance 1e-7 relative / 1e-8 absolute.",
+    "builder_elapsed_seconds": 117.563,
+    "bounds": {
+      "builder_seconds": 1200,
+      "dense_rows": 2000000,
+      "source_bytes": 4294967296,
+      "output_bytes": 268435456,
+      "cases": 50000,
+      "token_preflight_seconds": 600
+    },
+    "failure_behavior": "New exclusive outputs only; retain failure evidence without completion receipt, subset acceptance, output reuse or automatic retries."
+  },
+  "token_preflight": {
+    "environment": ".venv-qwen-train, Python 3.12.10, local tokenizers 0.23.2; historical builder ran in original CPU .venv",
+    "decoder_dependency_fix": "A separate pure token-preflight module can inspect the completed pinned dataset without databento_dbn, torch, transformers or peft imports. Only the explicitly requested local tokenizer is loaded.",
+    "fit": {
+      "examples": 14670,
+      "max_prompt_tokens": 1435,
+      "max_completion_with_eos_tokens": 29,
+      "max_active_tokens": 1464
+    },
+    "check": {
+      "examples": 5008,
+      "max_prompt_tokens": 1431,
+      "max_completion_with_eos_tokens": 29,
+      "max_active_tokens": 1460
+    },
+    "limits": {
+      "prompt": 2048,
+      "completion_with_eos": 256,
+      "sequence": 2304
+    },
+    "eos_token_id": 151643,
+    "pad_token_id": 151643,
+    "unavailable_cases_not_tokenized": 6509,
+    "prompt_loss_masked": true,
+    "completion_and_eos_supervised": true,
+    "truncation": false,
+    "model_weights_loaded": false,
+    "receipt_distinction": "Token preflight records the preparation source pin and revalidates the lightweight token-pipeline code pin. It does not import or re-execute the historical preparation pipeline; that stronger check was done separately in the CPU environment."
+  },
+  "artifacts": {
+    "registration": {
+      "path": "logs/6e_qwen_context_20261003_1_registration.json",
+      "raw_sha256": "3a3e3919d23befc0b97fe3156b614ee7b796bfb06f81330a509f77817666e079"
+    },
+    "dataset": {
+      "path": "data/processed/6e_qwen_context_20261003_1",
+      "completion_raw_sha256": "4806eac87d498871c87d6a8a8d706ef8125a9bae85893dc7061c2301cf3d10f1"
+    },
+    "fit": {
+      "path": "data/processed/6e_qwen_context_20261003_1/fit.jsonl",
+      "count": 14670,
+      "bytes": 63184225,
+      "raw_sha256": "a5777406f00136bb056e17e521292581b539833c4b5c8e2b9f8bd7e921784d01"
+    },
+    "check": {
+      "path": "data/processed/6e_qwen_context_20261003_1/check.jsonl",
+      "count": 5008,
+      "bytes": 21600888,
+      "raw_sha256": "d49eb471d283a14887b8493f6df48ed0438aa155ca25b017351b633fa8ab9576"
+    },
+    "unavailable": {
+      "path": "data/processed/6e_qwen_context_20261003_1/unavailable.jsonl",
+      "count": 6509,
+      "bytes": 5002199,
+      "raw_sha256": "a58ba27e35e5443f3011942fd97cc17a2cb8d1a0200e2387067eea075c01c272"
+    },
+    "token_preflight": {
+      "path": "logs/6e_qwen_context_20261003_1_token_preflight.json",
+      "raw_sha256": "07fc497e64d8a6a4f4692ad4479e7fe37d827a69d6bdd48cc32f1d16295a48d8"
+    },
+    "builder_source_content_sha256": "9034c335ff9ee01864de6b126c38f82da34e9cf4064f11d6d05c5645840048ad",
+    "token_pipeline_source_content_sha256": "01557661c28af24c8ec8317ac608dc61f3fa1c9f8b2424c6573e11a3a09368f0",
+    "schema_content_sha256": "57221aaccd27924524e02bd3813d6a661d31a0daf05cfc4708158fdd352b5536",
+    "manifest_raw_sha256": "ba773292535c97402826e6b40b34d367379a2db899f0010d474628220f965c2b",
+    "original_balance_registration_raw_sha256": "e4e6cfb523aaff69593c83c68e27ace698764f945b8fc9ffd8fffe14c6ffaef8",
+    "original_train_raw_sha256": "8f5d6c2d0173d09aeacf1dcbce45f6dccc865c49bb4664205f06db75f67bd297",
+    "local_tokenizer_raw_sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+    "local_large_data_not_committed": true
+  },
+  "unchanged_frozen_evidence": {
+    "original_dataset_completion_raw_sha256": "4c3178a6ae5fc6d839e23349609f4580f69cb896144b576a57a35eff3f5314eb",
+    "old_adapter_raw_sha256": "74e9dcf3f0c2653e9b1914f9cbea6990087ece9dbbb88fa6110c6e677ff2134a",
+    "old_balanced_training_source_sha256": "348f04cab9cc7b4ac2f5ac80f6f153088ca697009983a8847ab73a5ec498a861",
+    "old_balanced_evaluation_source_sha256": "b90637f86aa09a76bb25707bb0840375ea42715c5d80c15e66454f96a8bc56a2",
+    "old_direction_cost_study_source_sha256": "d20e9a8cd31838c0d85e080478f01c4028d8e26f0710dbc4376acad038367834",
+    "old_cpu_models_raw_sha256": "3559edf914a5bad47c68c63cbe2f9c62d76e44d1cbc2e8e4d5b455bb120b187b",
+    "evaluation_reservation_raw_sha256": "e6c216f2091d7cc9d594cb52589da65c81f546ad9c76b44ccf4a6bc904656107",
+    "protected_reservation_raw_sha256": "0026c7f909435a0d7a1cce5530c56dc91e4307e29ccdc3ce8fdd7d85c0318075",
+    "all_pins_freshly_reverified": true
+  },
+  "next_separately_bounded_step": {
+    "development": "Add a new versioned context-v2 training recipe/worker and pre-register a representative-prior inner-fit curriculum, comparison controls and full inner-check evaluation before fitting.",
+    "sampling": "Preserve natural fit class proportions and include no-opportunity cases. No check examples in fitting and no repeat of the rejected uniformly balanced 224-example snapshot experiment.",
+    "starting_model": "Use the unchanged approved local base checkpoint; do not resume or promote the rejected adapter.",
+    "gates": "Run a bounded offline research fit only after the v2 runner and all safety gates pass tests. No automatic GPU training from dataset preparation, no check-driven threshold tuning, no reserved evaluation or deployment.",
+    "evaluation": "Report wrong-side/no-opportunity directional errors, missed opportunities, activity, per-session support and abstention alongside accuracy. Improved context availability is not strategy validation or proof of profitability.",
+    "execution": "EUR/USD CFD trading still requires broker-specific cost/fill evidence and paper/risk validation; 6E futures labels are auxiliary research signals."
+  },
+  "checks": {
+    "baseline_tests": {
+      "passed": 3979,
+      "optional_nautilus_skips": 1,
+      "elapsed_seconds": 630.85
+    },
+    "new_synthetic_tests": {
+      "passed": 50,
+      "elapsed_seconds": 37.74
+    },
+    "full_regression": {
+      "status": "passed",
+      "passed": 4029,
+      "optional_nautilus_skips": 1,
+      "elapsed_seconds": 671.84
+    },
+    "ruff": "passed",
+    "new_file_formatting": "passed",
+    "decoder_free_import_checked_in_actual_tokenizer_environment": true,
+    "existing_training_and_evaluation_sources_changed": false,
+    "dependencies_changed": false,
+    "btc_collector_changed": false,
+    "credentials_accessed": false,
+    "network_requests": false
+  },
+  "qwen_training_performed": false,
+  "gpu_inference_calls": 0,
+  "cpu_models_fitted": 0,
+  "independent_holdout": false,
+  "reserved_outcomes_opened": false,
+  "promotion_allowed": false,
+  "trading_enabled": false,
+  "adapter_approved_for_deployment": false
+}
