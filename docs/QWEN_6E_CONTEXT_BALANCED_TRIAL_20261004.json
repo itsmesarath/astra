@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "kind": "six_e_context_v2_balanced_196_update_lora_result",
+  "date_utc": "2026-10-04",
+  "status": "verified_balanced_training_not_validation",
+  "source_commit": "38ca173",
+  "scope": {
+    "instrument": "CME 6E historical context-v2 quote-opportunity labels; not broker EURUSD fills",
+    "selected_training_examples": 196,
+    "selected_training_sessions": 67,
+    "original_fit_pool_examples": 14670,
+    "original_fit_sessions": 84,
+    "selection": "28 unique fit-only examples per seven joint states; deterministic session spread and even row ranks followed by the unchanged seed-42 case-hash order",
+    "selected_joint_counts": {
+      "LLL": 28,
+      "LLN": 28,
+      "LNN": 28,
+      "NNN": 28,
+      "SNN": 28,
+      "SSN": 28,
+      "SSS": 28
+    },
+    "full_training_epoch": false,
+    "model_calls_for_evaluation": 0,
+    "raw_archives_opened": false,
+    "reserved_outcomes_opened": false,
+    "unchanged": "Fresh pinned base, original causal prompts/targets, completion+EOS-only loss, optimizer, LoRA settings and decoding contract",
+    "change": "Class sampling plus four additional updates (196 versus 192). This is not a perfectly isolated causal comparison."
+  },
+  "execution": {
+    "authorization": "User continue following the offered class-balanced pilot; announced one 196-update run before dispatch",
+    "registration": "logs/6e_qwen_context_balanced_20261004_1_registration.json",
+    "registration_file": {
+      "bytes": 117675,
+      "sha256": "6c3aba7406c64cfbf1af6b108192c357511cb262588e6354cb2733ecf8c16956"
+    },
+    "output": "logs/6e_qwen_context_balanced_20261004_1",
+    "source_sha256": "87c6cd0f2641e736d8230fe3bd0907a103dd9764a3b19a9d0a6dfd09611c34c9",
+    "dispatches": 1,
+    "automatic_retry": false,
+    "native_worker_limit_seconds": 1800,
+    "supervisor_elapsed_seconds": 731.25,
+    "elapsed_scope": "After initial registration revalidation; includes native training and final input revalidation. Initial preparation and independent final verification are outside this duration.",
+    "all_owned_processes_exited_before_independent_verification": true,
+    "processes": [
+      {
+        "pid": 19208,
+        "parent": 21636,
+        "creation_utc": "2026-10-04T11:31:37.7385610Z",
+        "exe": "C:/Users/pabta/Projects/ai-trader/.venv-qwen-train/Scripts/python.exe",
+        "role": "launcher"
+      },
+      {
+        "pid": 20064,
+        "parent": 19208,
+        "creation_utc": "2026-10-04T11:31:37.7552590Z",
+        "exe": "C:/Users/pabta/AppData/Local/Programs/Python/Python312/python.exe",
+        "role": "supervisor"
+      },
+      {
+        "pid": 39928,
+        "parent": 20064,
+        "creation_utc": "2026-10-04T11:32:44.5575340Z",
+        "exe": "C:/Users/pabta/Projects/ai-trader/.venv-qwen-train/Scripts/python.exe",
+        "role": "worker_launcher"
+      },
+      {
+        "pid": 26852,
+        "parent": 39928,
+        "creation_utc": "2026-10-04T11:32:44.5788130Z",
+        "exe": "C:/Users/pabta/AppData/Local/Programs/Python/Python312/python.exe",
+        "role": "native_worker"
+      }
+    ],
+    "profile": {
+      "base_weights_frozen": true,
+      "batch_size": 1,
+      "cublas_workspace_config": ":4096:8",
+      "dtype": "bfloat16",
+      "eos_token_id": 151643,
+      "evaluation": "None during training; save/reload probe on first selected fit case only",
+      "gradient_accumulation_steps": 1,
+      "gradient_checkpointing": true,
+      "initialization": "Fresh pinned base and fresh q/v LoRA; no adapter resume",
+      "learning_rate": "0.0002",
+      "limits_enforced_by_training_worker": true,
+      "lora_alpha": 16,
+      "lora_dropout": "0",
+      "lora_rank": 8,
+      "loss": "completion_and_eos_only",
+      "max_completion_tokens_including_eos": 256,
+      "max_grad_norm": "1",
+      "max_optimizer_steps": 196,
+      "max_prompt_tokens": 2048,
+      "max_retries": 0,
+      "max_sequence_tokens": 2304,
+      "max_wall_time_seconds": 1800,
+      "method": "lora",
+      "model_id": "Qwen/Qwen3-4B-Base",
+      "optimizer": "adamw",
+      "order": "Sort by SHA256 of seed 42 and case_id, independent of state and check labels",
+      "pad_token_id": 151643,
+      "purpose": "six_e_context_v2_balanced_196_update_lora",
+      "quantization": "none",
+      "schema_sha256": "57221aaccd27924524e02bd3813d6a661d31a0daf05cfc4708158fdd352b5536",
+      "seed": 42,
+      "selection": "28 unique fit cases per each of seven joint states; same session spread and even within-session ranks; no duplication, reweighting or outcome search",
+      "target_modules": [
+        "q_proj",
+        "v_proj"
+      ],
+      "task": "six_e_quote_opportunity_context_v2",
+      "token_protocol": "qwen_base_separate_completion_eos_v1",
+      "use_cache": false
+    },
+    "runtime": {
+      "kind": "qwen_lora_runtime_versions_v1",
+      "machine": "AMD64",
+      "packages": {
+        "accelerate": "1.15.0",
+        "numpy": "2.5.0",
+        "peft": "0.21.0",
+        "safetensors": "0.8.0",
+        "tokenizers": "0.23.2",
+        "torch": "2.14.0+cu132",
+        "transformers": "5.17.0"
+      },
+      "python_executable": "C:\\Users\\pabta\\Projects\\ai-trader\\.venv-qwen-train\\Scripts\\python.exe",
+      "python_version": "3.12.10",
+      "schema_version": 1,
+      "system": "Windows"
+    },
+    "resources": {
+      "cuda_bf16": true,
+      "deterministic_algorithms": true,
+      "device": "NVIDIA GeForce RTX 5080 Laptop GPU",
+      "peak_allocated_bytes": 12867778560,
+      "peak_reserved_bytes": 16001269760,
+      "tf32_enabled": false,
+      "total_bytes": 17066033152
+    },
+    "trainable_adapter_parameters": 2949120,
+    "no_downloads_or_trades": true,
+    "no_source_dependency_configuration_or_dataset_changes_during_run": true
+  },
+  "result": {
+    "updates": 196,
+    "journal_events": 396,
+    "adapter_quarantined": true,
+    "online_pre_update_loss_summary": {
+      "first_loss": 0.3878663182258606,
+      "last_loss": 0.043211255222558975,
+      "maximum_gradient_norm": 2.996107816696167,
+      "minimum_loss": 0.028189407661557198
+    },
+    "loss_interpretation": "These are online PRE-update losses on different selected examples. Falling first-to-last loss is not post-fit accuracy, directional recall, validation or evidence of profitability.",
+    "persistence": {
+      "adapter_manifest": {
+        "files": [
+          {
+            "bytes": 1200,
+            "name": "adapter_config.json",
+            "sha256": "f547d7aaf3e0bc71c8b5a8741ac8116a66651d7d77a508f604e3cb547e6b97da"
+          },
+          {
+            "bytes": 11815504,
+            "name": "adapter_model.safetensors",
+            "sha256": "d3ee62899814a8d533de7caab9438b1b8b995edac9276f716b25dd1db9d41c8d"
+          },
+          {
+            "bytes": 5298,
+            "name": "README.md",
+            "sha256": "cedcdcb623b3cc2e2b20f6800c83a629e5d0e4b2432985dd9feabc1de03fe717"
+          }
+        ],
+        "total_bytes": 11822002
+      },
+      "adapter_updated": true,
+      "base_checkpoint_unchanged": true,
+      "probe_loss_absolute_tolerance": 0.00001,
+      "probe_loss_after": 0.19784337282180786,
+      "probe_loss_before": 0.19784337282180786,
+      "reload_state_equal": true
+    },
+    "reload_probe": {
+      "case_id": "9c19247023b182d3e3fefc965e94fcbbfe6f80a803afff3c079b454bca9910c3",
+      "joint_state": "LLL"
+    },
+    "probe_interpretation": "First selected LLL fit case only: same teacher-forced loss before/after fresh reload. This proves persistence consistency, not generated directional recall or generalization.",
+    "evaluation_performed": false,
+    "independent_holdout": false,
+    "promotion_allowed": false,
+    "trading_enabled": false
+  },
+  "evidence": {
+    "verification": "Original closed seen-fit diagnosis and its completed natural training/development lineage revalidated; exact persisted request and all selected-example identities/token masks; every ordered durable update, all-stage journal, native receipt, recomputed summary, package/runtime/resource/frozen-gradient guards; adapter save/fresh reload and four closed raw files hashed before/after",
+    "files": {
+      "native_result.json": {
+        "bytes": 1953,
+        "sha256": "0cea79a13ae9498876302ecff787151722be0eaa73b91c21169c165799c57c78"
+      },
+      "request.json": {
+        "bytes": 962851,
+        "sha256": "3adc5daed0c56a44ab75d9e80904842314a9a00fd4bea1c8f21e0d78d271cddb"
+      },
+      "run.json": {
+        "bytes": 2676,
+        "sha256": "e3f35e653fd01bb659343b5f54093776f8c52f4fa6f71e8209a7bbc183d7bfbf"
+      },
+      "steps.jsonl": {
+        "bytes": 89170,
+        "sha256": "572e142ac580b9ef39e4e549bb5569e5a47df823479efd59696586610002843b"
+      }
+    },
+    "adapter_manifest": {
+      "files": [
+        {
+          "bytes": 1200,
+          "name": "adapter_config.json",
+          "sha256": "f547d7aaf3e0bc71c8b5a8741ac8116a66651d7d77a508f604e3cb547e6b97da"
+        },
+        {
+          "bytes": 11815504,
+          "name": "adapter_model.safetensors",
+          "sha256": "d3ee62899814a8d533de7caab9438b1b8b995edac9276f716b25dd1db9d41c8d"
+        },
+        {
+          "bytes": 5298,
+          "name": "README.md",
+          "sha256": "cedcdcb623b3cc2e2b20f6800c83a629e5d0e4b2432985dd9feabc1de03fe717"
+        }
+      ],
+      "total_bytes": 11822002
+    },
+    "ordered_example_digests_sha256": "160414483a889208f694d4234783dfe191cec52cfde1c3101b9242655fff3e65",
+    "prior_diagnosis": {
+      "registration": "logs/6e_qwen_fit_recall_20261004_2_registration.json",
+      "registration_sha256": "e917c4ea8435ec796f7b6ad172fcda20ba9e048aa24d221edf5f97f0592cebf8",
+      "output": "logs/6e_qwen_fit_recall_20261004_2",
+      "report_sha256": "b8aad9678e302203fddd819aab34c7ed1a0754725e18a2ccc0d1c3ac00c4b5f6",
+      "conclusion": "collapse_on_seen_fit",
+      "retained_unmodified": true
+    },
+    "original_training_source_unchanged": "1d09d351b37f0a990b43498307c41cc2146c5c82de02a6191490f30d0974cf0b",
+    "original_diagnostic_source_unchanged": "8dc591a6955f8020ac3074313076f5431f63198fadca8664cdbf500e3d8df177"
+  },
+  "next_step": {
+    "status": "not_implemented_or_started",
+    "action": "Separate complete seen-fit recall comparison for all 196 selected cases, paired base and this adapter (392 forecasts), using the unchanged greedy/EOS/48-token contract and fixed idle/full-original-fit-prior controls.",
+    "required": "Feature-only bounded owned worker sidecar; no targets/session/dataset paths in inference worker; all predictions and journal events before scoring; valid-output coverage, pooled/every-session cost metrics, wrong-side/idle overcalls, precision/recall and missed opportunities. Invalid outputs are incorrect, not abstentions.",
+    "following_step": "Only after fully verified seen-fit results, separately assess all 5008 already-exposed temporal inner-check cases at their original natural distribution; no subset, reserved-outcome tuning or automatic retry.",
+    "warning": "Balanced training changes class priors and may increase false directional calls. Positive seen-fit recall is not promotion approval. Do not infer CFD fills, PnL or profitability from quote-opportunity classifications.",
+    "activate_trading": false,
+    "autonomous_continuous_training_started": false
+  },
+  "verification_commands": {
+    "shell": "PowerShell from C:/Users/pabta/Projects/ai-trader",
+    "verify_existing_only": ".venv-qwen-train/Scripts/python.exe -I -m ai_trader.training.six_e_context_balanced verify --registration C:/Users/pabta/Projects/ai-trader/logs/6e_qwen_context_balanced_20261004_1_registration.json --registration-sha256 6c3aba7406c64cfbf1af6b108192c357511cb262588e6354cb2733ecf8c16956 --output C:/Users/pabta/Projects/ai-trader/logs/6e_qwen_context_balanced_20261004_1 --report-sha256 e3f35e653fd01bb659343b5f54093776f8c52f4fa6f71e8209a7bbc183d7bfbf",
+    "policy": "This verifier performs no model calls or writes. Do not rerun training into the claimed output, resume the adapter or start a replacement automatically."
+  },
+  "checks": {
+    "baseline_full_suite": {
+      "passed": 4164,
+      "skipped": 1,
+      "seconds": 1086.87
+    },
+    "targeted_suite": {
+      "passed": 48,
+      "seconds": 109.78
+    },
+    "expanded_full_suite": {
+      "passed": 4212,
+      "skipped": 1,
+      "seconds": 1182.07,
+      "skip": "Optional Nautilus evaluation dependency"
+    },
+    "ruff": "All checks passed.",
+    "format": "All three new source/test files formatted.",
+    "staged_scope": "Only new runner, private worker and tests; unrelated existing changes preserved."
+  },
+  "adapter_approved_for_inference": false,
+  "adapter_quarantined": true,
+  "automatic_retry": false,
+  "evaluation_performed": false,
+  "execution_allowed": false,
+  "full_training_epoch": false,
+  "held_out_evaluated": false,
+  "independent_performance_proven": false,
+  "promotion_allowed": false,
+  "qwen_training_performed": true,
+  "reserved_outcomes_opened": false,
+  "trading_enabled": false
+}
