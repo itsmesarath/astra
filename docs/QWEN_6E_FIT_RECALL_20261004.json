@@ -1,0 +1,254 @@
+{
+  "kind": "qwen_6e_original_seen_fit_recall_diagnostic_report",
+  "date": "2026-10-04",
+  "purpose": "Diagnose the original context-v2 pilot's constant abstention using every example actually used for its 192 updates. Not training, independent validation, trading or profitability evidence.",
+  "completed_development_comparison": {
+    "registration": "logs/6e_qwen_context_full_eval_20261003_2_registration.json",
+    "registration_sha256": "ecdbcb41f6d20952e9aca787640805875bda513796bad093b4ec80d38c8e961b",
+    "directory": "logs/6e_qwen_context_full_eval_20261003_1",
+    "run_sha256": "6e2421c2f34b0514210fc7f3b2ebfafa68ec9326f60d6375007236b2581ebb75",
+    "examples": 5008,
+    "sessions": 28,
+    "paired_forecasts": 10016,
+    "journal_events": 20035,
+    "adapter_valid_outputs": 5008,
+    "adapter_directional_calls": 0,
+    "meaning": "Already-exposed development quote-opportunity classification, not independent holdout, full-archive training, CFD fills or PnL. All metrics are reverified before freezing this diagnostic.",
+    "base_invalid_reasons": {
+      "token_limit": 4995,
+      "invalid_json_or_contract": 13
+    },
+    "numeric_reference_extra_1_tick": {
+      "calls": 13,
+      "correct": 5,
+      "wrong_side": 4,
+      "no_opportunity_overcalls": 4,
+      "missed": 840,
+      "precision": 0.38461538461538464,
+      "recall": 0.005917159763313609
+    }
+  },
+  "experiment": {
+    "selection": "Exactly all 192 original unique fit examples, unchanged original update order; no new subset, check-outcome search, oversampling or optimizer.",
+    "trained_selection_joint_counts": {
+      "NNN": 151,
+      "LNN": 9,
+      "LLN": 8,
+      "LLL": 3,
+      "SNN": 9,
+      "SSN": 8,
+      "SSS": 4
+    },
+    "modes": [
+      "base",
+      "adapter"
+    ],
+    "maximum_calls": 384,
+    "native_worker_seconds": 1800,
+    "maximum_artifact_bytes": 2097152,
+    "maximum_metadata_bytes": 65536,
+    "decoding": "Identical pinned frozen inference backend, BF16 CUDA, greedy 48-token EOS/strict JSON contract; invalid outputs stay incorrect.",
+    "native_input": "695856-byte pinned feature-only sidecar: case/input/token identities and causal prompts. No labels, session dates, dataset paths or fit priors.",
+    "checkpoint_unchanged": true,
+    "adapter_unchanged": true,
+    "no_parameter_updates": true,
+    "candidate_adapter_weights_sha256": "4bbbc14275499decfa71f24133c46bba180d205e8cb75e3c802784d064ea77d8"
+  },
+  "interpretation_cautions": [
+    "Original logged losses are online pre-update completion-token losses on different cases and different training steps. Class aggregates do not measure final class accuracy or identify a causal mechanism.",
+    "The save/reload probe was a single NNN example. Equal low probe losses prove persistence, not directional learning.",
+    "Seen-example recall is diagnostic, not generalization. An unchanged idle control can achieve high accuracy because no-opportunity dominates.",
+    "Class imbalance and limited pilot coverage are hypotheses, not established sole causes. Encoding, labels, optimization budget and feature informativeness also require controlled tests.",
+    "6E crossed-quote opportunity labels are auxiliary futures research, not spot/CFD fills, profits or account permission."
+  ],
+  "safety": {
+    "training_performed": false,
+    "independent_holdout": false,
+    "reserved_outcomes_opened": false,
+    "promotion_allowed": false,
+    "trading_enabled": false,
+    "adapter_approved_for_deployment": false,
+    "automatic_retry": false,
+    "adapter_quarantined": true,
+    "btc_collector_changed": false,
+    "credentials_accessed": false,
+    "network_downloads": false
+  },
+  "status": "diagnostic_implemented_reporting_failure_fixed_first_attempt_quarantined",
+  "summary": "Implemented original-fit recall tooling and ran exactly one bounded 384-forecast diagnostic. Native predictions and journals completed, but terminal reporting exceeded the inherited 1 MiB writer limit. Retained and audited complete identity evidence without publishing fit scores because the original native resource/result receipt was not durable. Corrected the writer/reader budget and added durable native-result storage plus production-shaped regression tests. All 36 corrected diagnostic tests and all 4164 workspace tests passed (one optional dependency skip); Ruff is clean. A source-bound corrected registration is ready but has not started. No further GPU run, training or trade was launched.",
+  "registration": {
+    "path": "logs/6e_qwen_fit_recall_20261004_1_registration.json",
+    "raw_sha256": "d12cb4acdedfe8fe65d2e676a28e7716c70f2df05b6ad7858195139696f639ce",
+    "source_content_sha256": "e6231a01a9096c9299b7c2b360c5febbf52d4fecaa53bc4957b8b74c342a9bb9",
+    "status": "first_failed_attempt_historical_evidence_not_current_launch_authority"
+  },
+  "failed_attempt": {
+    "status": "failed_reporting_attempt_retained_not_verified_model_comparison",
+    "directory": "logs/6e_qwen_fit_recall_20261004_1",
+    "source_snapshot_directory": "logs/6e_qwen_fit_recall_20261004_1_source_snapshot",
+    "registration_sha256": "d12cb4acdedfe8fe65d2e676a28e7716c70f2df05b6ad7858195139696f639ce",
+    "original_source_sha256": "e6231a01a9096c9299b7c2b360c5febbf52d4fecaa53bc4957b8b74c342a9bb9",
+    "source_snapshot": {
+      "models/_six_e_fit_recall_worker.py": {
+        "bytes": 6522,
+        "sha256": "e8d1fe228addcd7a7561ba3ddec4f9612a04e62580eb43127538fc90912d94c0"
+      },
+      "research/six_e_fit_recall.py": {
+        "bytes": 24764,
+        "sha256": "b76514e81a0c52a0ab5d980cbe38dbe36a2ac8c385ae3fee3da7a2325f8f8592"
+      }
+    },
+    "files": {
+      "events.jsonl": {
+        "bytes": 199966,
+        "sha256": "a8d5b6d7232757e0fb7ebd19ff5a1a4590f8d79093efe99d40d163b413b4a482"
+      },
+      "features.jsonl": {
+        "bytes": 695856,
+        "sha256": "6464379b66fa976544d0a0af11188d0e5f66e0c58cbab8ad8146e5ca25f0a93f"
+      },
+      "predictions.jsonl": {
+        "bytes": 159653,
+        "sha256": "1a93eb7586e05fb4790f5d7d6db27b32f113000ed94cc3474bf9915ea4377ce8"
+      },
+      "request.json": {
+        "bytes": 3168,
+        "sha256": "6be37ad60e324b63274cb02a31db62f2f840cc081049cb79df638f54cdb24bf7"
+      },
+      "run.json": {
+        "bytes": 337,
+        "sha256": "50d6c6134b63d57350b756f0bdba7775b2711cb0cb963329a10f225e6b40b6ff"
+      }
+    },
+    "complete_prediction_identity_records": 384,
+    "complete_journal_identity_records": 771,
+    "native_result_and_resource_receipt_missing": true,
+    "fit_scores_published": false,
+    "root_cause": "Inherited advisory_training_run._write accepts only 1048576 UTF-8 bytes. A full 84-session, four-model pooled/per-session report exceeded it, despite the diagnostic protocol allowing 2097152 bytes. Smaller fixture session counts did not exercise this mismatch.",
+    "terminal_stage": "post_diagnostic_pins",
+    "recovery_policy": "No scoring or resource-receipt reconstruction, no edits to failed run/registration, no automatic native retry. Original source retained with matching raw pins. The old registration is historical evidence and deliberately cannot run against changed source."
+  },
+  "training_trace": {
+    "by_joint_state": {
+      "LLL": {
+        "examples": 3,
+        "max_pre_update_loss": 0.3154173195362091,
+        "mean_pre_update_loss": 0.20017452538013458,
+        "median_pre_update_loss": 0.18721100687980652,
+        "min_pre_update_loss": 0.09789524972438812
+      },
+      "LLN": {
+        "examples": 8,
+        "max_pre_update_loss": 0.20650988817214966,
+        "mean_pre_update_loss": 0.15846567507833242,
+        "median_pre_update_loss": 0.16291196644306183,
+        "min_pre_update_loss": 0.11145228892564774
+      },
+      "LNN": {
+        "examples": 9,
+        "max_pre_update_loss": 0.3746025264263153,
+        "mean_pre_update_loss": 0.16682807604471842,
+        "median_pre_update_loss": 0.14310845732688904,
+        "min_pre_update_loss": 0.06552665680646896
+      },
+      "NNN": {
+        "examples": 151,
+        "max_pre_update_loss": 0.37157848477363586,
+        "mean_pre_update_loss": 0.017913951782127287,
+        "median_pre_update_loss": 0.00887178722769022,
+        "min_pre_update_loss": 0.003177383914589882
+      },
+      "SNN": {
+        "examples": 9,
+        "max_pre_update_loss": 0.18120908737182617,
+        "mean_pre_update_loss": 0.12122365915113026,
+        "median_pre_update_loss": 0.10698536783456802,
+        "min_pre_update_loss": 0.09993915259838104
+      },
+      "SSN": {
+        "examples": 8,
+        "max_pre_update_loss": 0.18840612471103668,
+        "mean_pre_update_loss": 0.15147937182337046,
+        "median_pre_update_loss": 0.13668552041053772,
+        "min_pre_update_loss": 0.12407422810792923
+      },
+      "SSS": {
+        "examples": 4,
+        "max_pre_update_loss": 0.22878383100032806,
+        "mean_pre_update_loss": 0.16333440504968166,
+        "median_pre_update_loss": 0.15411202609539032,
+        "min_pre_update_loss": 0.11632973700761795
+      }
+    },
+    "interpretation": "Original online PRE-update loss by class; not post-fit loss or fit accuracy. The single reload probe is identified by its original first-example class.",
+    "reload_probe": {
+      "case_id": "f8724be385c80c5450a0eef28a1e203ad3972fd8c5fd52f49c2a8a8994ffe7a8",
+      "joint_state": "NNN",
+      "probe_loss_absolute_tolerance": 0.00001,
+      "probe_loss_after": 0.006646192166954279,
+      "probe_loss_before": 0.006646192166954279
+    }
+  },
+  "reporting_fix": {
+    "writer": "Exclusive binary UTF-8, size checked before creation, 2097152-byte cap, flush and fsync.",
+    "reader": "Pinned existing metadata parser also caps at 2097152 bytes.",
+    "native_receipt": "gpu_result.json is saved and fsynced by the native worker before transport. Parent and read-only verifier require exact canonical equality with transported/report evidence.",
+    "validation": "Complete 384 forecasts, all 771 journal entries, native receipt, pinned metadata and source, runtime/resources/parameter guards, full pooled and every-session scores; no subset, no retry.",
+    "regressions": [
+      "84-session report exceeds legacy 1 MiB writer but fits and round-trips at the declared 2 MiB cap",
+      "UTF-8 overflow rejected before file creation",
+      "Exclusive output cannot overwrite an existing artifact",
+      "Persisted native result required for verification",
+      "Pure import, exact fit-only membership before target reads, packet drift, offline/runtime/tokenization/resource/frozen guards, journal completeness, no subset or transport retry, post-input drift"
+    ]
+  },
+  "next_step": {
+    "current_model_still_quarantined": true,
+    "action": "One fresh explicitly approved, newly registered comparison after final tests; unchanged original 192 examples and same adapter/decoding, 384 forecasts, 30-minute native cap, no updates/downloads/trading/retries.",
+    "reason": "Without a verified fit-recall result, distinguish learning failure from development transfer failure before choosing the next training design.",
+    "candidate_training_not_launched": "If seen-fit recall also collapses, predeclare one fresh label-focused/class-coverage training pilot using fit-only selection, then separately assess seen recall and full already-exposed development transfer. Do not tune on reserved outcomes or equate higher activity with edge."
+  },
+  "corrected_registration": {
+    "registration": "C:/Users/pabta/Projects/ai-trader/logs/6e_qwen_fit_recall_20261004_2_registration.json",
+    "registration_sha256": "e917c4ea8435ec796f7b6ad172fcda20ba9e048aa24d221edf5f97f0592cebf8",
+    "source_sha256": "8dc591a6955f8020ac3074313076f5431f63198fadca8664cdbf500e3d8df177",
+    "output": "C:/Users/pabta/Projects/ai-trader/logs/6e_qwen_fit_recall_20261004_2",
+    "authorized_native_run": false,
+    "started": false,
+    "targeted_tests": 36,
+    "status": "registered_not_run_waiting_for_new_explicit_comparison_approval"
+  },
+  "verification_commands": {
+    "shell": "PowerShell, from C:/Users/pabta/Projects/ai-trader",
+    "run_after_explicit_approval": ".venv-qwen-train/Scripts/python.exe -I -m ai_trader.research.six_e_fit_recall run --registration C:/Users/pabta/Projects/ai-trader/logs/6e_qwen_fit_recall_20261004_2_registration.json --registration-sha256 e917c4ea8435ec796f7b6ad172fcda20ba9e048aa24d221edf5f97f0592cebf8 --output C:/Users/pabta/Projects/ai-trader/logs/6e_qwen_fit_recall_20261004_2 --enable-fit-diagnostic",
+    "verify_existing_completed_only": ".venv-qwen-train/Scripts/python.exe -I -m ai_trader.research.six_e_fit_recall verify --registration C:/Users/pabta/Projects/ai-trader/logs/6e_qwen_fit_recall_20261004_2_registration.json --registration-sha256 e917c4ea8435ec796f7b6ad172fcda20ba9e048aa24d221edf5f97f0592cebf8 --output C:/Users/pabta/Projects/ai-trader/logs/6e_qwen_fit_recall_20261004_2 --report-sha256 <actual-completed-run-json-raw-SHA256>",
+    "policy": "Registration is not launch authority. Never reuse old failure output or mark partial evidence successful; no retry or automatic model promotion."
+  },
+  "verification": {
+    "baseline_full_suite": {
+      "passed": 4128,
+      "skipped": 1,
+      "seconds": 1116.92
+    },
+    "pre_fix_full_suite": {
+      "passed": 4161,
+      "skipped": 1,
+      "seconds": 1244.04
+    },
+    "corrected_targeted_suite": {
+      "passed": 36,
+      "seconds": 124.87
+    },
+    "corrected_full_suite": {
+      "passed": 4164,
+      "skipped": 1,
+      "seconds": 1236.02,
+      "skip": "Optional Nautilus evaluation dependency"
+    },
+    "ruff": "All checks passed.",
+    "current_source_sha256": "8dc591a6955f8020ac3074313076f5431f63198fadca8664cdbf500e3d8df177",
+    "original_evaluation_source_unchanged": "f47085813ca5b4bae9765aeff0a0329e116808180a84243c21cbdc159fa224e4",
+    "reserved_data_read": false,
+    "verified_fit_recall_result_available": false
+  }
+}
