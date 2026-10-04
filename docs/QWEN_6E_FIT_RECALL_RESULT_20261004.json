@@ -1,0 +1,688 @@
+{
+  "schema_version": 1,
+  "kind": "six_e_context_v2_original_192_fit_recall_diagnostic_result",
+  "date_utc": "2026-10-04",
+  "status": "verified_seen_fit_diagnostic_not_validation",
+  "diagnostic_conclusion": "collapse_on_seen_fit",
+  "scope": {
+    "instrument": "CME 6E historical quote-opportunity research, not broker EURUSD fills",
+    "cohort": "All 192 unique examples used by the completed original natural-distribution pilot, in their original update order.",
+    "partition": "Previously exposed train / inner-fit only; no new sampling or reserved outcomes.",
+    "examples": 192,
+    "source_sessions": 84,
+    "paired_forecasts": 384,
+    "journal_events": 771,
+    "modes": [
+      "base",
+      "adapter"
+    ],
+    "independent_validation": false,
+    "no_full_archive_coverage_claim": true,
+    "no_profitability_claim": true
+  },
+  "execution": {
+    "authorization": "User CONTINUE after the explicit offer of one corrected comparison.",
+    "registration": "logs/6e_qwen_fit_recall_20261004_2_registration.json",
+    "registration_sha256": "e917c4ea8435ec796f7b6ad172fcda20ba9e048aa24d221edf5f97f0592cebf8",
+    "output": "logs/6e_qwen_fit_recall_20261004_2",
+    "native_worker_limit_seconds": 1800,
+    "supervisor_elapsed_seconds": 823.6720000000205,
+    "elapsed_scope": "After initial registration revalidation; includes inference and post-diagnostic input checks.",
+    "process_identity_verified": true,
+    "all_owned_processes_exited_before_readonly_verification": true,
+    "launcher": {
+      "pid": 8116,
+      "parent_pid": 25520,
+      "creation_utc": "2026-10-04T10:06:31.3596880Z",
+      "executable": "C:/Users/pabta/Projects/ai-trader/.venv-qwen-train/Scripts/python.exe"
+    },
+    "supervisor": {
+      "pid": 35988,
+      "parent_pid": 8116,
+      "creation_utc": "2026-10-04T10:06:31.3778500Z",
+      "executable": "C:/Users/pabta/AppData/Local/Programs/Python/Python312/python.exe"
+    },
+    "worker_launcher": {
+      "pid": 28412,
+      "parent_pid": 35988,
+      "creation_utc": "2026-10-04T10:07:24.0434250Z",
+      "executable": "C:/Users/pabta/Projects/ai-trader/.venv-qwen-train/Scripts/python.exe"
+    },
+    "native_worker": {
+      "pid": 47860,
+      "parent_pid": 28412,
+      "creation_utc": "2026-10-04T10:07:24.0661180Z",
+      "executable": "C:/Users/pabta/AppData/Local/Programs/Python/Python312/python.exe"
+    },
+    "source_commit": "9659812",
+    "decoding": "Unchanged 48-token greedy BF16 protocol; no retries, truncation or optimizer updates.",
+    "resources": {
+      "cuda_bf16": true,
+      "deterministic_algorithms": true,
+      "device": "NVIDIA GeForce RTX 5080 Laptop GPU",
+      "peak_allocated_bytes": 9063968256,
+      "peak_reserved_bytes": 10336862208,
+      "tf32_enabled": false,
+      "total_bytes": 17066033152
+    }
+  },
+  "result": {
+    "adapter_valid_outputs": 192,
+    "adapter_joint_no_opportunity_predictions": 192,
+    "adapter_directional_predictions": 0,
+    "adapter_matches_fixed_idle_control_exactly": true,
+    "adapter_matches_full_fit_joint_prior_control_exactly": true,
+    "base_valid_outputs": 0,
+    "output_status_counts": {
+      "adapter": {
+        "valid": 192
+      },
+      "base": {
+        "token_limit": 192
+      }
+    },
+    "truth_joint_counts": {
+      "LLL": 3,
+      "LLN": 8,
+      "LNN": 9,
+      "NNN": 151,
+      "SNN": 9,
+      "SSN": 8,
+      "SSS": 4
+    },
+    "adapter_scores": {
+      "by_cost": {
+        "extra_1_tick": {
+          "accuracy_on_valid": 0.7864583333333334,
+          "balanced_accuracy_over_supported_classes": 0.3333333333333333,
+          "confusion": {
+            "long_positive": {
+              "invalid": 0,
+              "long_positive": 0,
+              "neither_positive": 20,
+              "short_positive": 0
+            },
+            "neither_positive": {
+              "invalid": 0,
+              "long_positive": 0,
+              "neither_positive": 151,
+              "short_positive": 0
+            },
+            "short_positive": {
+              "invalid": 0,
+              "long_positive": 0,
+              "neither_positive": 21,
+              "short_positive": 0
+            }
+          },
+          "correct": 151,
+          "correct_directional_predictions": 0,
+          "directional_precision": null,
+          "directional_prediction_rate": 0.0,
+          "directional_predictions": 0,
+          "directional_recall": 0.0,
+          "macro_f1_over_supported_classes": 0.29348882410106897,
+          "missed_as_invalid": 0,
+          "missed_as_no_opportunity": 41,
+          "missed_opportunities": 41,
+          "no_opportunity_overcalls": 0,
+          "overall_accuracy": 0.7864583333333334,
+          "per_class": {
+            "long_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 20,
+              "true_positive": 0
+            },
+            "neither_positive": {
+              "f1": 0.880466472303207,
+              "precision": 0.7864583333333334,
+              "predicted": 192,
+              "recall": 1.0,
+              "support": 151,
+              "true_positive": 151
+            },
+            "short_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 21,
+              "true_positive": 0
+            }
+          },
+          "supported_classes": [
+            "long_positive",
+            "short_positive",
+            "neither_positive"
+          ],
+          "wrong_side_predictions": 0
+        },
+        "extra_2_ticks": {
+          "accuracy_on_valid": 0.8802083333333334,
+          "balanced_accuracy_over_supported_classes": 0.3333333333333333,
+          "confusion": {
+            "long_positive": {
+              "invalid": 0,
+              "long_positive": 0,
+              "neither_positive": 11,
+              "short_positive": 0
+            },
+            "neither_positive": {
+              "invalid": 0,
+              "long_positive": 0,
+              "neither_positive": 169,
+              "short_positive": 0
+            },
+            "short_positive": {
+              "invalid": 0,
+              "long_positive": 0,
+              "neither_positive": 12,
+              "short_positive": 0
+            }
+          },
+          "correct": 169,
+          "correct_directional_predictions": 0,
+          "directional_precision": null,
+          "directional_prediction_rate": 0.0,
+          "directional_predictions": 0,
+          "directional_recall": 0.0,
+          "macro_f1_over_supported_classes": 0.3120960295475531,
+          "missed_as_invalid": 0,
+          "missed_as_no_opportunity": 23,
+          "missed_opportunities": 23,
+          "no_opportunity_overcalls": 0,
+          "overall_accuracy": 0.8802083333333334,
+          "per_class": {
+            "long_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 11,
+              "true_positive": 0
+            },
+            "neither_positive": {
+              "f1": 0.9362880886426593,
+              "precision": 0.8802083333333334,
+              "predicted": 192,
+              "recall": 1.0,
+              "support": 169,
+              "true_positive": 169
+            },
+            "short_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 12,
+              "true_positive": 0
+            }
+          },
+          "supported_classes": [
+            "long_positive",
+            "short_positive",
+            "neither_positive"
+          ],
+          "wrong_side_predictions": 0
+        },
+        "extra_4_ticks": {
+          "accuracy_on_valid": 0.9635416666666666,
+          "balanced_accuracy_over_supported_classes": 0.3333333333333333,
+          "confusion": {
+            "long_positive": {
+              "invalid": 0,
+              "long_positive": 0,
+              "neither_positive": 3,
+              "short_positive": 0
+            },
+            "neither_positive": {
+              "invalid": 0,
+              "long_positive": 0,
+              "neither_positive": 185,
+              "short_positive": 0
+            },
+            "short_positive": {
+              "invalid": 0,
+              "long_positive": 0,
+              "neither_positive": 4,
+              "short_positive": 0
+            }
+          },
+          "correct": 185,
+          "correct_directional_predictions": 0,
+          "directional_precision": null,
+          "directional_prediction_rate": 0.0,
+          "directional_predictions": 0,
+          "directional_recall": 0.0,
+          "macro_f1_over_supported_classes": 0.3271441202475685,
+          "missed_as_invalid": 0,
+          "missed_as_no_opportunity": 7,
+          "missed_opportunities": 7,
+          "no_opportunity_overcalls": 0,
+          "overall_accuracy": 0.9635416666666666,
+          "per_class": {
+            "long_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 3,
+              "true_positive": 0
+            },
+            "neither_positive": {
+              "f1": 0.9814323607427056,
+              "precision": 0.9635416666666666,
+              "predicted": 192,
+              "recall": 1.0,
+              "support": 185,
+              "true_positive": 185
+            },
+            "short_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 4,
+              "true_positive": 0
+            }
+          },
+          "supported_classes": [
+            "long_positive",
+            "short_positive",
+            "neither_positive"
+          ],
+          "wrong_side_predictions": 0
+        }
+      },
+      "coverage": 1.0,
+      "examples": 192,
+      "invalid_outputs": 0,
+      "valid_outputs": 192
+    },
+    "base_scores": {
+      "by_cost": {
+        "extra_1_tick": {
+          "accuracy_on_valid": null,
+          "balanced_accuracy_over_supported_classes": 0.0,
+          "confusion": {
+            "long_positive": {
+              "invalid": 20,
+              "long_positive": 0,
+              "neither_positive": 0,
+              "short_positive": 0
+            },
+            "neither_positive": {
+              "invalid": 151,
+              "long_positive": 0,
+              "neither_positive": 0,
+              "short_positive": 0
+            },
+            "short_positive": {
+              "invalid": 21,
+              "long_positive": 0,
+              "neither_positive": 0,
+              "short_positive": 0
+            }
+          },
+          "correct": 0,
+          "correct_directional_predictions": 0,
+          "directional_precision": null,
+          "directional_prediction_rate": 0.0,
+          "directional_predictions": 0,
+          "directional_recall": 0.0,
+          "macro_f1_over_supported_classes": 0.0,
+          "missed_as_invalid": 41,
+          "missed_as_no_opportunity": 0,
+          "missed_opportunities": 41,
+          "no_opportunity_overcalls": 0,
+          "overall_accuracy": 0.0,
+          "per_class": {
+            "long_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 20,
+              "true_positive": 0
+            },
+            "neither_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 151,
+              "true_positive": 0
+            },
+            "short_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 21,
+              "true_positive": 0
+            }
+          },
+          "supported_classes": [
+            "long_positive",
+            "short_positive",
+            "neither_positive"
+          ],
+          "wrong_side_predictions": 0
+        },
+        "extra_2_ticks": {
+          "accuracy_on_valid": null,
+          "balanced_accuracy_over_supported_classes": 0.0,
+          "confusion": {
+            "long_positive": {
+              "invalid": 11,
+              "long_positive": 0,
+              "neither_positive": 0,
+              "short_positive": 0
+            },
+            "neither_positive": {
+              "invalid": 169,
+              "long_positive": 0,
+              "neither_positive": 0,
+              "short_positive": 0
+            },
+            "short_positive": {
+              "invalid": 12,
+              "long_positive": 0,
+              "neither_positive": 0,
+              "short_positive": 0
+            }
+          },
+          "correct": 0,
+          "correct_directional_predictions": 0,
+          "directional_precision": null,
+          "directional_prediction_rate": 0.0,
+          "directional_predictions": 0,
+          "directional_recall": 0.0,
+          "macro_f1_over_supported_classes": 0.0,
+          "missed_as_invalid": 23,
+          "missed_as_no_opportunity": 0,
+          "missed_opportunities": 23,
+          "no_opportunity_overcalls": 0,
+          "overall_accuracy": 0.0,
+          "per_class": {
+            "long_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 11,
+              "true_positive": 0
+            },
+            "neither_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 169,
+              "true_positive": 0
+            },
+            "short_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 12,
+              "true_positive": 0
+            }
+          },
+          "supported_classes": [
+            "long_positive",
+            "short_positive",
+            "neither_positive"
+          ],
+          "wrong_side_predictions": 0
+        },
+        "extra_4_ticks": {
+          "accuracy_on_valid": null,
+          "balanced_accuracy_over_supported_classes": 0.0,
+          "confusion": {
+            "long_positive": {
+              "invalid": 3,
+              "long_positive": 0,
+              "neither_positive": 0,
+              "short_positive": 0
+            },
+            "neither_positive": {
+              "invalid": 185,
+              "long_positive": 0,
+              "neither_positive": 0,
+              "short_positive": 0
+            },
+            "short_positive": {
+              "invalid": 4,
+              "long_positive": 0,
+              "neither_positive": 0,
+              "short_positive": 0
+            }
+          },
+          "correct": 0,
+          "correct_directional_predictions": 0,
+          "directional_precision": null,
+          "directional_prediction_rate": 0.0,
+          "directional_predictions": 0,
+          "directional_recall": 0.0,
+          "macro_f1_over_supported_classes": 0.0,
+          "missed_as_invalid": 7,
+          "missed_as_no_opportunity": 0,
+          "missed_opportunities": 7,
+          "no_opportunity_overcalls": 0,
+          "overall_accuracy": 0.0,
+          "per_class": {
+            "long_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 3,
+              "true_positive": 0
+            },
+            "neither_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 185,
+              "true_positive": 0
+            },
+            "short_positive": {
+              "f1": 0.0,
+              "precision": null,
+              "predicted": 0,
+              "recall": 0.0,
+              "support": 4,
+              "true_positive": 0
+            }
+          },
+          "supported_classes": [
+            "long_positive",
+            "short_positive",
+            "neither_positive"
+          ],
+          "wrong_side_predictions": 0
+        }
+      },
+      "coverage": 0.0,
+      "examples": 192,
+      "invalid_outputs": 192,
+      "valid_outputs": 0
+    },
+    "control_scores": "Both fixed controls equal adapter_scores exactly, including all per-cost confusion matrices. All four complete pooled and 84-session scores were independently recomputed and compared to the closed run.json."
+  },
+  "interpretation": {
+    "observation": "The adapter produces valid contract outputs but predicts no opportunity for every original training case. It misses all 41, 23 and 7 directional opportunities under the extra_1_tick, extra_2_ticks and extra_4_ticks scenarios respectively.",
+    "precision": "Directional precision is undefined, not zero, because the adapter makes no directional calls. Directional recall is zero in all three scenarios.",
+    "headline_accuracy": "78.6458%, 88.0208% and 96.3542% merely reproduce the always-idle controls, not trading skill or profitability.",
+    "conclusion": "The failure is present on seen-fit examples, not solely a failure to transfer to the already-exposed development comparison.",
+    "limits": "This does not establish a sole cause such as class imbalance, an optimal strategy, or behavior under different decoding. No independent holdout, broker fills, CFD spread/slippage, realized PnL or deployment approval was measured.",
+    "loss_trace": "The old online PRE-update losses and one NNN reload probe do not prove directional recall or post-fit accuracy.",
+    "comparison_context": "The previously verified complete 5008-case development comparison also produced only NNN for the adapter. This diagnostic is separate, smaller, and uses only its original 192 fit examples."
+  },
+  "training_trace": {
+    "by_joint_state": {
+      "LLL": {
+        "examples": 3,
+        "max_pre_update_loss": 0.3154173195362091,
+        "mean_pre_update_loss": 0.20017452538013458,
+        "median_pre_update_loss": 0.18721100687980652,
+        "min_pre_update_loss": 0.09789524972438812
+      },
+      "LLN": {
+        "examples": 8,
+        "max_pre_update_loss": 0.20650988817214966,
+        "mean_pre_update_loss": 0.15846567507833242,
+        "median_pre_update_loss": 0.16291196644306183,
+        "min_pre_update_loss": 0.11145228892564774
+      },
+      "LNN": {
+        "examples": 9,
+        "max_pre_update_loss": 0.3746025264263153,
+        "mean_pre_update_loss": 0.16682807604471842,
+        "median_pre_update_loss": 0.14310845732688904,
+        "min_pre_update_loss": 0.06552665680646896
+      },
+      "NNN": {
+        "examples": 151,
+        "max_pre_update_loss": 0.37157848477363586,
+        "mean_pre_update_loss": 0.017913951782127287,
+        "median_pre_update_loss": 0.00887178722769022,
+        "min_pre_update_loss": 0.003177383914589882
+      },
+      "SNN": {
+        "examples": 9,
+        "max_pre_update_loss": 0.18120908737182617,
+        "mean_pre_update_loss": 0.12122365915113026,
+        "median_pre_update_loss": 0.10698536783456802,
+        "min_pre_update_loss": 0.09993915259838104
+      },
+      "SSN": {
+        "examples": 8,
+        "max_pre_update_loss": 0.18840612471103668,
+        "mean_pre_update_loss": 0.15147937182337046,
+        "median_pre_update_loss": 0.13668552041053772,
+        "min_pre_update_loss": 0.12407422810792923
+      },
+      "SSS": {
+        "examples": 4,
+        "max_pre_update_loss": 0.22878383100032806,
+        "mean_pre_update_loss": 0.16333440504968166,
+        "median_pre_update_loss": 0.15411202609539032,
+        "min_pre_update_loss": 0.11632973700761795
+      }
+    },
+    "interpretation": "Original online PRE-update loss by class; not post-fit loss or fit accuracy. The single reload probe is identified by its original first-example class.",
+    "reload_probe": {
+      "case_id": "f8724be385c80c5450a0eef28a1e203ad3972fd8c5fd52f49c2a8a8994ffe7a8",
+      "joint_state": "NNN",
+      "probe_loss_absolute_tolerance": 1e-05,
+      "probe_loss_after": 0.006646192166954279,
+      "probe_loss_before": 0.006646192166954279
+    }
+  },
+  "evidence": {
+    "verification": "registration revalidates the completed original pilot and full comparison; exact persisted request equality; validate_result checks all ordered predictions, all journal events, durable native receipt, source/runtime/resource guards; every pooled and per-session score is recomputed and compared exactly; six bounded raw files are hashed before and after.",
+    "sources": {
+      "completed_evaluation": "f47085813ca5b4bae9765aeff0a0329e116808180a84243c21cbdc159fa224e4",
+      "cpu_controls": "aa764808316a4cf3bb9e8b52ff374bd0f3421a19da12c9f4c42acf3547c2b97a",
+      "diagnostic": "8dc591a6955f8020ac3074313076f5431f63198fadca8664cdbf500e3d8df177",
+      "training": "1d09d351b37f0a990b43498307c41cc2146c5c82de02a6191490f30d0974cf0b"
+    },
+    "adapter_weights_unchanged": {
+      "bytes": 11815504,
+      "sha256": "4bbbc14275499decfa71f24133c46bba180d205e8cb75e3c802784d064ea77d8"
+    },
+    "ordered_examples_sha256": "b00fc48d4b41e00f1bd9b2603a68e7ef9ecdf0448c3017ab569f1fa5e398cdae",
+    "feature_file": {
+      "bytes": 695856,
+      "sha256": "6464379b66fa976544d0a0af11188d0e5f66e0c58cbab8ad8146e5ca25f0a93f"
+    },
+    "files": {
+      "events.jsonl": {
+        "bytes": 199966,
+        "sha256": "a8d5b6d7232757e0fb7ebd19ff5a1a4590f8d79093efe99d40d163b413b4a482"
+      },
+      "features.jsonl": {
+        "bytes": 695856,
+        "sha256": "6464379b66fa976544d0a0af11188d0e5f66e0c58cbab8ad8146e5ca25f0a93f"
+      },
+      "gpu_result.json": {
+        "bytes": 1242,
+        "sha256": "5a5197f4f9e64adba9d8917584d7487cd191cab0486625f2a3d6b48265a24cad"
+      },
+      "predictions.jsonl": {
+        "bytes": 159653,
+        "sha256": "1a93eb7586e05fb4790f5d7d6db27b32f113000ed94cc3474bf9915ea4377ce8"
+      },
+      "request.json": {
+        "bytes": 3346,
+        "sha256": "3fbba58f92a58217b82ee2fde65c0ccabb2742ee8d414551c8a2a57ee39da7c7"
+      },
+      "run.json": {
+        "bytes": 1163083,
+        "sha256": "b8aad9678e302203fddd819aab34c7ed1a0754725e18a2ccc0d1c3ac00c4b5f6"
+      }
+    },
+    "run_report_bytes": 1163083,
+    "artifact_limit_bytes": 2097152,
+    "prior_failed_attempt": {
+      "output": "logs/6e_qwen_fit_recall_20261004_1",
+      "registration": "logs/6e_qwen_fit_recall_20261004_1_registration.json",
+      "registration_sha256": "d12cb4acdedfe8fe65d2e676a28e7716c70f2df05b6ad7858195139696f639ce",
+      "run_json_sha256": "50d6c6134b63d57350b756f0bdba7775b2711cb0cb963329a10f225e6b40b6ff",
+      "status": "failed_or_interrupted_no_subset_score",
+      "retained_unmodified": true,
+      "scored": false,
+      "explanation": "The inherited 1 MiB writer rejected the complete 84-session report. Its native receipt was not persisted. That failed attempt remains quarantined; no missing resource evidence was reconstructed and no partial score was accepted."
+    }
+  },
+  "next_step": {
+    "status": "design_only_not_implemented_or_launched",
+    "model_still_quarantined": true,
+    "proposal": "One fresh fit-only, class-coverage-balanced pilot before any longer or autonomous training.",
+    "first_controlled_change": "Change sampling only: proposed 196 unique fit examples, 28 per each of the seven joint states, deterministic session-spread selection from the original train/inner-fit cohort. Declare exact membership and pins before launch; do not choose examples using development predictions or reserved outcomes.",
+    "unchanged_for_first_candidate": "Fresh pinned base checkpoint, causal prompt, original targets/contract/decoding, LoRA settings, optimizer, loss and seed; do not resume the collapsed adapter. Exact runtime/update/resource bounds still need an implemented and tested registration.",
+    "diagnostic_plan": "Check every selected seen-fit case for valid output, long/short recall, wrong-side and idle overcalls, with fixed controls and all evidence. Zero directional recall remains failure. Seen-fit recall is diagnostic only, never a promotion gate.",
+    "transfer_plan": "Only after a fully verified seen-fit comparison, assess the complete already-exposed development cohort at its natural distribution under a separate predeclared batch. No successful-subset scoring, automatic retry or reserved-outcome tuning.",
+    "uncertainty": "Class imbalance is a plausible contributor, not a proven cause. A sampling-only pilot is an experiment, not a promised fix. A label-focused loss or model architecture change would be a separate later hypothesis, not silently added.",
+    "activation": false,
+    "training_authorized_by_this_diagnostic": false,
+    "execution_scope": "No new training or evaluation batch started automatically."
+  },
+  "checks": {
+    "current_turn_targeted_tests": {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_six_e_fit_recall.py -q",
+      "passed": 36,
+      "seconds": 123.63
+    },
+    "current_turn_ruff": {
+      "command": ".venv/Scripts/python.exe -m ruff check .",
+      "status": "All checks passed."
+    },
+    "prior_unchanged_source_full_suite": {
+      "passed": 4164,
+      "skipped": 1,
+      "seconds": 1236.02,
+      "skip": "Optional Nautilus evaluation dependency",
+      "rerun_this_turn": false,
+      "source_unchanged": true
+    },
+    "source_or_dependency_changes_this_turn": false,
+    "partial_outputs_scored": false,
+    "reserved_data_opened": false
+  },
+  "adapter_quarantined": true,
+  "training_performed": false,
+  "independent_holdout": false,
+  "reserved_outcomes_opened": false,
+  "promotion_allowed": false,
+  "trading_enabled": false,
+  "adapter_approved_for_deployment": false,
+  "automatic_retry": false
+}
