@@ -40,6 +40,7 @@ COSTS = {
     "US100": (1300, "~1.0 index point spread, no commission, slippage; point 0.001"),
     "DE40": (1300, "~1.0 index point spread, no commission, slippage; point 0.001"),
     "US30": (2500, "~2.0 index point spread, no commission, slippage; point 0.001"),
+    "US500": (500, "~0.4 index point spread, no commission, slippage; point 0.001"),
 }
 ps.WINDOWS["us_cash"] = [(13 * 60 + 30, 20 * 60)]
 
@@ -77,7 +78,7 @@ def load_symbol(directory: Path) -> dict | None:
             "day": np.repeat(np.arange(n_days), 1440), "traded_days": len(days)}
 
 
-def run_symbol(name: str, m: dict, rng, grid: dict) -> list[dict]:
+def run_symbol(name: str, m: dict, rng, grid: dict, part: str | None = None) -> list[dict]:
     c, h, l = m["close"], m["high"], m["low"]
     n = c.size
     ps._ADJ = np.zeros(n)
@@ -90,7 +91,11 @@ def run_symbol(name: str, m: dict, rng, grid: dict) -> list[dict]:
     # never trade across a data gap (weekend / missing day): require the last 240 minutes traded or filled
     gap = ~np.isfinite(c)
     out = []
-    for combo in itertools.product(*grid.values()):
+    combos = list(itertools.product(*grid.values()))
+    if part:
+        k_, n_ = (int(v) for v in part.split("/"))
+        combos = combos[k_::n_]
+    for combo in combos:
         cfg = dict(zip(grid, combo))
         sig = raw[cfg["pattern"]].copy()
         if cfg["trend"]:
@@ -113,7 +118,14 @@ def main(argv=None):
     p.add_argument("--symbols", nargs="*", default=list(COSTS))
     p.add_argument("--output", type=Path, default=Path("data/processed/pa_multi_market_study_1.json"))
     p.add_argument("--quick", action="store_true")
+    p.add_argument("--part", default=None, help="k/N slice of the configuration grid")
+    p.add_argument("--merge", nargs="*", type=Path, help="merge part files into --output and report")
     a = p.parse_args(argv)
+    if a.merge:
+        results = [r for f in a.merge for r in json.loads(f.read_text())]
+        a.output.write_text(json.dumps(results, indent=1))
+        report(results)
+        return
     grid = dict(pattern=["breakout", "pullback", "reversal", "random"], trend=[True, False],
                 window=["sessions", "day", "us_cash"], stop_k=[1.0, 1.5], rr=[1.0, 2.0, 3.0, 4.0])
     if a.quick:
@@ -126,7 +138,7 @@ def main(argv=None):
             print(f"{name}: no data yet", flush=True)
             continue
         print(f"{name}: {m['traded_days']} days {m['dates'][0]}..{m['dates'][-1]}", flush=True)
-        res = run_symbol(name, m, rng, grid)
+        res = run_symbol(name, m, rng, grid, a.part)
         results.extend(res)
         best = max((r for r in res if r.get("trades", 0) >= 30), key=lambda r: r["mean_net_in_costs"], default=None)
         if best:
