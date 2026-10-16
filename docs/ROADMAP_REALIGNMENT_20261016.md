@@ -144,3 +144,33 @@ Original questions as asked:
 2. Make NinjaTrader 6E/M6E the primary track, and choose the instrument (6E, M6E or another CME contract)?
 3. Approve a commit of the current working tree to a WIP branch?
 4. Adopt the three-tier rigor rule, so `AGENTS.md` can be updated to match?
+
+## 8. Amendment — historical-first training (owner request, 16 Oct 2026 17:10 Lisbon)
+
+The owner asked to train on the downloaded 6E history *before* connecting NinjaTrader live data. P3 (research and training) therefore moves ahead of P1. P1 capture can start whenever convenient: it is not needed for this phase.
+
+**The data on disk.** Three Databento GLBX.MDP3 **MBO** batch downloads in `downloads/` (`GLBX-20260926-*.zip`). Together they hold 471 daily files of all 6E contracts from **2025-03-26 to 2026-09-25**, with full 24-hour sessions. The existing session manifest `data/processed/6e_training_manifest_20261002_1.json` splits them as follows:
+
+| Period | Status | Use from now on |
+|---|---|---|
+| Mar–Dec 2025 (196 decision sessions + 45 excluded) | Already exposed by earlier research | Research, feature design, training, walk-forward |
+| Jan–Mar 2026 (77 dates) | Reserved, never opened | Validation, opened once a candidate is frozen |
+| Apr–Jun 2026 (78 dates) | Reserved, never opened | Test, opened once |
+| Jul–Sep 2026 (75 dates) | Lockbox, never opened | Final go/no-go before paper |
+
+**What the earlier research found (4–8 Oct).**
+
+- Every tested intraday rule lost money after costs on the 2025 sample. Cost was modelled as crossing bid/ask on entry and exit plus 1 tick, with exits at a ±3-tick bracket or after 15 seconds:
+  - CVD-follow, liquidity-follow, absorption-fade, failed-auction, breakout and burst-follow all lost roughly −2.1 to −2.8 ticks per trade over thousands of trades.
+  - Every month was negative.
+- The ridge model's best predicted return was about −1.8 ticks everywhere, so it always abstained.
+- The earlier opportunity classifier predicted *activity* better than *direction*: balanced accuracy 34.88%.
+- Only the 12:00–16:00 UTC window was studied.
+
+**Why that matters for the next training.** At a ±3-tick, 15-second horizon, the cost of taking liquidity is about the same size as the typical move. Training a bigger AI model on the same labels will not fix that. The next study changes the *problem*, not just the model:
+
+1. **Feasibility census first.** For horizons of 1, 5, 15, 30, 60 and 240 minutes, and for each UTC hour, measure on 2025 data how often the move exceeds round-trip cost. This tells us where an edge is even possible.
+2. **NinjaTrader-compatible features only.** Live NinjaTrader gives aggregated 10-level depth and trades without an aggressor flag. Databento MBO is richer. To make a model trained on history run on live data, features are computed from an MBP-10-equivalent book plus trades classified by bid/ask, exactly as the live converter will do it.
+3. **Labels in cost units at the feasible horizons.** Compare taking liquidity with passive limit entries (modelled with conservative queue assumptions).
+4. **Models:** the existing NumPy baseline and walk-forward machinery; gradient-boosted trees or a small torch sequence model only if the baseline shows signal. PyTorch is already installed in `.venv`. Fit on 2025 only; open Jan–Mar 2026 once to validate.
+5. **Compute:** heavy decoding runs on the Windows machine, from a PowerShell command the owner starts. The linked VM is too small, with 2 CPUs and 3 GB RAM.
