@@ -14,8 +14,11 @@ DAY0 = 1_745_366_400 * 10**9  # 2025-04-23 00:00 UTC
 
 
 def test_reserved_2026_dates_are_refused_before_opening():
-    with pytest.raises(ValueError, match="reserved"):
-        census.contract_for(date(2026, 1, 2))
+    with pytest.raises(ValueError, match="lockbox"):
+        census.contract_for(date(2026, 7, 2))
+    assert census.contract_for(date(2026, 1, 2)) == "6EH6"
+    assert census.contract_for(date(2026, 3, 9)) == "6EM6"
+    assert census.contract_for(date(2026, 6, 30)) == "6EU6"
     with pytest.raises(ValueError):
         census.contract_for(date(2025, 3, 1))
     assert census.contract_for(date(2025, 6, 8)) == "6EM5"
@@ -28,11 +31,11 @@ def test_member_listing_skips_reserved_and_unavailable(tmp_path):
     conditions = [
         {"date": "2025-12-31", "condition": "available"},
         {"date": "2025-11-28", "condition": "degraded"},
-        {"date": "2026-01-02", "condition": "available"},
+        {"date": "2026-07-02", "condition": "available"},
     ]
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr("condition.json", json.dumps(conditions))
-        for day in ("20251231", "20251128", "20260102"):
+        for day in ("20251231", "20251128", "20260702"):
             archive.writestr(f"glbx-mdp3-{day}.mbo.dbn.zst", b"x")
     found = census.development_members(tmp_path)
     assert [(d.isoformat(), n) for d, _, n in found] == [
@@ -76,7 +79,7 @@ def test_census_counts_moves_in_ticks_and_never_fills_missing_minutes():
 
 
 def test_bar_loader_refuses_reserved_days(tmp_path):
-    (tmp_path / "2026-01-02.json").write_text(json.dumps({"utc_date": "2026-01-02", "bars": []}))
+    (tmp_path / "2026-07-02.json").write_text(json.dumps({"utc_date": "2026-07-02", "bars": []}))
     with pytest.raises(ValueError, match="Reserved"):
         census.load_bar_days(tmp_path)
 

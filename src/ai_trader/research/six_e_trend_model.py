@@ -36,8 +36,8 @@ import numpy as np
 
 TICK = 50_000
 MINUTE_NS = 60_000_000_000
-RESERVED_FROM = date(2026, 1, 1)
-ROLL_DAYS = (date(2025, 6, 9), date(2025, 9, 8), date(2025, 12, 8))  # declared research roll
+RESERVED_FROM = date(2026, 7, 1)  # Jul-Sep 2026 lockbox stays sealed
+ROLL_DAYS = (date(2025, 6, 9), date(2025, 9, 8), date(2025, 12, 8), date(2026, 3, 9), date(2026, 6, 8))  # declared research roll
 LIMIT_WINDOW_MIN = 60
 ATR_BARS = 24
 
@@ -56,7 +56,7 @@ def load_minutes(directory: Path):
         day = json.loads(path.read_text())
         d = date.fromisoformat(day["utc_date"])
         if d >= RESERVED_FROM:
-            raise ValueError("Reserved 2026 day found; refusing")
+            raise ValueError("Reserved lockbox day found; refusing")
         days.append((d, day))
     n = 1440 * len(days)
     ts = np.zeros(n, dtype=np.int64)
@@ -194,7 +194,7 @@ def backtest(m: dict, kind: str, entry: str, offset: float, stop_k: float, fee: 
         p = position
         net = p["direction"] * (price - p["entry_price"]) - fee
         trades.append({"entry_minute": int(p["entry_minute"]), "exit_minute": int(i),
-                       "month": dates[m["day"][i]].month, "direction": p["direction"],
+                       "month": dates[m["day"][i]].year * 100 + dates[m["day"][i]].month, "direction": p["direction"],
                        "net_ticks": float(net), "reason": reason, "entry": p["how"]})
         position = None
 
@@ -263,7 +263,7 @@ def summarize(trades: list[dict]) -> dict:
     mo = np.array([t["month"] for t in trades])
     eq = np.cumsum(v)
     gains, losses = v[v > 0].sum(), -v[v < 0].sum()
-    first, second = v[mo <= 8], v[mo >= 9]
+    first, second = v[mo <= 202512], v[mo >= 202601]
     return {
         "trades": int(v.size),
         "mean_net_ticks": round(float(v.mean()), 2),
@@ -271,8 +271,8 @@ def summarize(trades: list[dict]) -> dict:
         "win_rate": round(float((v > 0).mean()), 3),
         "profit_factor": round(float(gains / losses), 2) if losses else None,
         "max_drawdown_ticks": round(float((np.maximum.accumulate(eq) - eq).max()), 1),
-        "apr_aug_total": round(float(first.sum()), 1),
-        "sep_dec_total": round(float(second.sum()), 1),
+        "y2025_total": round(float(first.sum()), 1),
+        "h1_2026_total": round(float(second.sum()), 1),
         "monthly_total": {int(k): round(float(v[mo == k].sum()), 1) for k in np.unique(mo)},
     }
 
@@ -291,8 +291,8 @@ def run_grid(m: dict, fee: float) -> dict:
 
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--bars", type=Path, default=Path("data/processed/6e_minute_bars_2025_1"))
-    parser.add_argument("--output", type=Path, default=Path("data/processed/6e_trend_model_2025_1.json"))
+    parser.add_argument("--bars", type=Path, default=Path("data/processed/6e_minute_bars_dev_1"))
+    parser.add_argument("--output", type=Path, default=Path("data/processed/6e_trend_model_dev_1.json"))
     parser.add_argument("--fee", type=float, default=1.0)
     args = parser.parse_args(argv)
     m = load_minutes(args.bars)
@@ -301,7 +301,7 @@ def main(argv=None) -> None:
     for name, r in results.items():
         print(f"{name:34s} n={r['trades']:4d} mean={r.get('mean_net_ticks', 0):+7.2f} "
               f"total={r.get('total_net_ticks', 0):+8.1f} pf={r.get('profit_factor')} "
-              f"AprAug={r.get('apr_aug_total')} SepDec={r.get('sep_dec_total')} maxDD={r.get('max_drawdown_ticks')}")
+              f"2025={r.get('y2025_total')} H1-2026={r.get('h1_2026_total')} maxDD={r.get('max_drawdown_ticks')}")
 
 
 if __name__ == "__main__":

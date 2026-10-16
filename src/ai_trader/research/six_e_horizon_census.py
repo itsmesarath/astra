@@ -5,10 +5,10 @@ enough ticks to pay round-trip trading costs? Earlier studies only looked at a Â
 15-second scalp inside 12:00-16:00 UTC, where cost and typical move were the same size.
 
 Two stages:
-1. ``bars``: decode the Databento GLBX.MDP3 MBO daily files for 2025 only, keep trades of
-   the declared front contract, and write one compact 1-minute bar file per day.
-   Dates on or after 2026-01-01 are refused *before* any member is opened, so the
-   reserved 2026 validation/test/lockbox periods stay untouched.
+1. ``bars``: decode the Databento GLBX.MDP3 MBO daily files from 2025-03-26 to 2026-06-30
+   (owner decision 16 Oct 2026: train on 15 months), keep trades of the declared front
+   contract, and write one compact 1-minute bar file per day. Dates on or after 2026-07-01
+   (the sealed Jul-Sep 2026 lockbox) are refused *before* any member is opened.
 2. ``census``: from the bars, measure absolute price moves for several horizons and
    UTC hours, in ticks, and report how often they exceed cost thresholds.
 
@@ -29,7 +29,7 @@ from pathlib import Path
 
 TICK_NANO = 50_000  # 6E tick 0.00005 in Databento fixed-point (1e-9) price units.
 MINUTE_NS = 60_000_000_000
-RESERVED_FROM = date(2026, 1, 1)
+RESERVED_FROM = date(2026, 7, 1)  # lockbox Jul-Sep 2026 stays sealed (owner decision 16 Oct)
 DEVELOPMENT_FROM = date(2025, 3, 26)
 HORIZONS_MIN = (1, 5, 15, 30, 60, 240)
 THRESHOLDS_TICKS = (2, 3, 4, 6, 8, 12, 20)
@@ -40,13 +40,15 @@ ROLL = (
     (date(2025, 6, 9), "6EM5"),
     (date(2025, 9, 8), "6EU5"),
     (date(2025, 12, 8), "6EZ5"),
-    (date(2026, 1, 1), "6EH6"),
+    (date(2026, 3, 9), "6EH6"),
+    (date(2026, 6, 8), "6EM6"),
+    (date(2026, 7, 1), "6EU6"),
 )
 
 
 def contract_for(day: date) -> str:
     if day >= RESERVED_FROM:
-        raise ValueError(f"{day} is reserved 2026 data and must not be opened")
+        raise ValueError(f"{day} is in the reserved lockbox and must not be opened")
     if day < DEVELOPMENT_FROM:
         raise ValueError(f"{day} is before the development archive")
     for end, symbol in ROLL:
@@ -71,7 +73,7 @@ def development_members(downloads: Path) -> list[tuple[date, Path, str]]:
                     continue
                 day = datetime.strptime(match.group(1), "%Y%m%d").date()
                 if day >= RESERVED_FROM or day < DEVELOPMENT_FROM:
-                    continue  # Filter by filename only; reserved members are never opened.
+                    continue  # Filter by filename only; lockbox members are never opened.
                 if conditions.get(day.isoformat()) != "available":
                     continue
                 found.append((day, path, name))
@@ -194,7 +196,7 @@ def _bars_job(args):
 def build_bars(downloads: Path, output: Path, workers: int) -> None:
     output.mkdir(parents=True, exist_ok=True)
     jobs = [(d, str(p), n, output) for d, p, n in development_members(downloads)]
-    print(f"{len(jobs)} development days (2025 only); writing to {output}", flush=True)
+    print(f"{len(jobs)} development days (before the lockbox); writing to {output}", flush=True)
     with ProcessPoolExecutor(max_workers=workers) as pool:
         for day, status in pool.map(_bars_job, jobs):
             print(day, status, flush=True)
@@ -256,7 +258,7 @@ def load_bar_days(directory: Path) -> list[dict]:
     for path in sorted(directory.glob("*.json")):
         day = json.loads(path.read_text())
         if date.fromisoformat(day["utc_date"]) >= RESERVED_FROM:
-            raise ValueError("Reserved day found in bar directory")
+            raise ValueError("Reserved lockbox day found in bar directory")
         days.append(day)
     return days
 
@@ -266,11 +268,11 @@ def main(argv=None) -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     bars = sub.add_parser("bars", help="Decode 2025 MBO days into 1-minute bars")
     bars.add_argument("--downloads", type=Path, default=Path("downloads"))
-    bars.add_argument("--output", type=Path, default=Path("data/processed/6e_minute_bars_2025_1"))
+    bars.add_argument("--output", type=Path, default=Path("data/processed/6e_minute_bars_dev_1"))
     bars.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     report = sub.add_parser("census", help="Summarise horizon moves from the bars")
-    report.add_argument("--bars", type=Path, default=Path("data/processed/6e_minute_bars_2025_1"))
-    report.add_argument("--output", type=Path, default=Path("data/processed/6e_horizon_census_2025_1.json"))
+    report.add_argument("--bars", type=Path, default=Path("data/processed/6e_minute_bars_dev_1"))
+    report.add_argument("--output", type=Path, default=Path("data/processed/6e_horizon_census_dev_1.json"))
     args = parser.parse_args(argv)
     if args.command == "bars":
         build_bars(args.downloads, args.output, args.workers)

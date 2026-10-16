@@ -25,7 +25,7 @@ import numpy as np
 
 TICK = 50_000
 MINUTE_NS = 60_000_000_000
-RESERVED_FROM = date(2026, 1, 1)
+RESERVED_FROM = date(2026, 7, 1)  # Jul-Sep 2026 lockbox stays sealed
 HORIZONS = (15, 30, 60)
 DECISION_HOURS = (6, 17)  # [start, end) UTC
 FEATURES = (
@@ -42,7 +42,7 @@ def load_days(directory: Path) -> list[dict]:
     for path in sorted(directory.glob("*.json")):
         day = json.loads(path.read_text())
         if date.fromisoformat(day["utc_date"]) >= RESERVED_FROM:
-            raise ValueError("Reserved 2026 day found; refusing")
+            raise ValueError("Reserved lockbox day found; refusing")
         days.append(day)
     return days
 
@@ -129,7 +129,7 @@ def build_dataset(days: list[dict]) -> dict[str, np.ndarray]:
         mask = rows["usable"]
         for name in parts:
             if name == "month":
-                parts[name].append(np.full(mask.sum(), int(day["utc_date"][5:7])))
+                parts[name].append(np.full(mask.sum(), int(day["utc_date"][:4]) * 100 + int(day["utc_date"][5:7])))
             elif name == "day":
                 parts[name].append(np.full(mask.sum(), d))
             else:
@@ -173,13 +173,13 @@ def simulate(signal: np.ndarray, fwd: np.ndarray, day: np.ndarray, minute: np.nd
 
 
 def walk_forward(data: dict[str, np.ndarray], horizon: int, cost: float,
-                 first_test_month: int = 6) -> dict:
+                 first_test_month: int = 202507) -> dict:
     x = np.column_stack([data[name] for name in FEATURES])
     y = data[f"fwd{horizon}"]
     month = data["month"]
     results = {"horizon_min": horizon, "cost_ticks": cost, "months": {}}
     pooled: dict[str, list] = {}
-    for m in range(first_test_month, 13):
+    for m in sorted(int(v) for v in np.unique(month) if v >= first_test_month):
         train, test = month < m, month == m
         if not test.any() or train.sum() < 1000:
             continue
@@ -220,8 +220,8 @@ def walk_forward(data: dict[str, np.ndarray], horizon: int, cost: float,
 
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--bars", type=Path, default=Path("data/processed/6e_minute_bars_2025_1"))
-    parser.add_argument("--output", type=Path, default=Path("data/processed/6e_minute_model_2025_1.json"))
+    parser.add_argument("--bars", type=Path, default=Path("data/processed/6e_minute_bars_dev_1"))
+    parser.add_argument("--output", type=Path, default=Path("data/processed/6e_minute_model_dev_1.json"))
     parser.add_argument("--cost", type=float, nargs="+", default=[2.0, 3.0])
     args = parser.parse_args(argv)
     days = load_days(args.bars)

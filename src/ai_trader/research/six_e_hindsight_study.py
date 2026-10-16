@@ -11,11 +11,11 @@ the outcome is not counted as an opportunity.
 
 Step 2 (reverse-engineering, uses only the past). Compare the 19 causal features at those
 minutes with all other minutes:
-- the per-feature AUC on Apr-Aug 2025;
-- whether the same direction holds on Sep-Dec 2025;
-- a logistic model fitted on Apr-Aug and scored on Sep-Dec.
+- the per-feature AUC on 2025 (Mar-Dec);
+- whether the same direction holds on Jan-Jun 2026;
+- a logistic model fitted on 2025 and scored on Jan-Jun 2026.
 An AUC of 0.5 means the feature carries no information about the opportunity.
-Only 2025 data is used (2026 stays untouched).
+Only data before the Jul-Sep 2026 lockbox is used.
 """
 from __future__ import annotations
 
@@ -63,15 +63,15 @@ def auc(score: np.ndarray, positive: np.ndarray) -> float:
 
 
 def main() -> None:
-    days = mm.load_days(Path("data/processed/6e_minute_bars_2025_1"))
+    days = mm.load_days(Path("data/processed/6e_minute_bars_dev_1"))
     feats, labels, months = [], [], []
     for day in days:
         rows, label = opportunities(day)
         u = rows["usable"]
         feats.append(np.column_stack([rows[f][u] for f in mm.FEATURES]))
-        labels.append(label[u]); months.append(np.full(u.sum(), int(day["utc_date"][5:7])))
+        labels.append(label[u]); months.append(np.full(u.sum(), int(day["utc_date"][:4]) * 100 + int(day["utc_date"][5:7])))
     x, y, mo = np.vstack(feats), np.concatenate(labels), np.concatenate(months)
-    train, test = mo <= 8, mo >= 9
+    train, test = mo <= 202512, mo >= 202601
     report = {"rows": int(len(y)), "long_opportunity_share": round(float((y == 1).mean()), 4),
               "short_opportunity_share": round(float((y == -1).mean()), 4), "features": {}}
     print(f"decision minutes {len(y)}; long opportunities {int((y==1).sum())} ({(y==1).mean():.1%}), "
@@ -82,9 +82,9 @@ def main() -> None:
             a_tr = auc(x[train, k], y[train] == val); a_te = auc(x[test, k], y[test] == val)
             rows.append((abs(a_tr - 0.5), name, round(a_tr, 3), round(a_te, 3)))
         rows.sort(reverse=True)
-        report["features"][side] = [{"feature": n, "auc_apr_aug": a, "auc_sep_dec": b} for _, n, a, b in rows]
-        print(side, "top features (AUC Apr-Aug -> Sep-Dec):", [(n, a, b) for _, n, a, b in rows[:6]])
-        # Logistic model on all features, fit Apr-Aug, score Sep-Dec.
+        report["features"][side] = [{"feature": n, "auc_2025": a, "auc_h1_2026": b} for _, n, a, b in rows]
+        print(side, "top features (AUC 2025 -> H1 2026):", [(n, a, b) for _, n, a, b in rows[:6]])
+        # Logistic model on all features, fit 2025, score H1 2026.
         mean, std = x[train].mean(0), x[train].std(0); std[std == 0] = 1
         z_tr, z_te = (x[train] - mean) / std, (x[test] - mean) / std
         t = (y[train] == val).astype(float); w = np.zeros(z_tr.shape[1]); b = np.log(t.mean() / (1 - t.mean()))
@@ -97,10 +97,10 @@ def main() -> None:
         top = np.argsort(-s_te)[: int(0.05 * len(s_te))]
         hit = float((y[test][top] == val).mean())
         base = float((y[test] == val).mean())
-        report[f"{side}_model"] = {"auc_sep_dec": round(a_model, 3), "top5pct_hit": round(hit, 4), "base_rate": round(base, 4)}
-        print(f"{side} logistic model Sep-Dec AUC {a_model:.3f}; top-5% picks are real opportunities {hit:.1%} vs base {base:.1%}"
+        report[f"{side}_model"] = {"auc_h1_2026": round(a_model, 3), "top5pct_hit": round(hit, 4), "base_rate": round(base, 4)}
+        print(f"{side} logistic model H1-2026 AUC {a_model:.3f}; top-5% picks are real opportunities {hit:.1%} vs base {base:.1%}"
               f" (a 2:1 trade needs >33.3% plus costs)")
-    Path("data/processed/6e_hindsight_study_2025_1.json").write_text(json.dumps(report, indent=1))
+    Path("data/processed/6e_hindsight_study_dev_1.json").write_text(json.dumps(report, indent=1))
 
 
 if __name__ == "__main__":

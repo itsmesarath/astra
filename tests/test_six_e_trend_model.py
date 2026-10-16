@@ -32,7 +32,7 @@ def test_hold_and_donchian():
 
 
 def test_reserved_days_refused(tmp_path):
-    (tmp_path / "2026-01-05.json").write_text(json.dumps({"utc_date": "2026-01-05", "contract": "6EH6", "bars": []}))
+    (tmp_path / "2026-07-06.json").write_text(json.dumps({"utc_date": "2026-07-06", "contract": "6EU6", "bars": []}))
     with pytest.raises(ValueError, match="Reserved"):
         tm.load_minutes(tmp_path)
 

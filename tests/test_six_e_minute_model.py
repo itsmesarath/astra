@@ -70,7 +70,7 @@ def test_simulation_is_non_overlapping_and_pays_cost():
 
 
 def test_reserved_days_refused(tmp_path):
-    (tmp_path / "2026-02-02.json").write_text(json.dumps({"utc_date": "2026-02-02", "bars": []}))
+    (tmp_path / "2026-07-02.json").write_text(json.dumps({"utc_date": "2026-07-02", "bars": []}))
     with pytest.raises(ValueError, match="Reserved"):
         model.load_days(tmp_path)
 
@@ -85,6 +85,6 @@ def test_walk_forward_runs_and_tests_only_later_months():
             bar[0] = bar[0] - DAY0 + start
         days.append(d)
     data = model.build_dataset(days)
-    result = model.walk_forward(data, horizon=15, cost=2.0, first_test_month=6)
-    assert set(result["months"]) == {"6", "7"}
+    result = model.walk_forward(data, horizon=15, cost=2.0, first_test_month=202506)
+    assert set(result["months"]) == {"202506", "202507"}
     assert result["pooled"]["always_long"]["months"] == 2
