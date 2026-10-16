@@ -1,6 +1,6 @@
 # Roadmap realignment: NinjaTrader live data → paper → controlled learning → live
 
-Date: 16 October 2026. Status: **ADOPTED by the owner on 16 Oct 2026, 17:02 Lisbon** (decisions in §7). This file replaces no existing plan. Nothing has been deleted, staged or committed, and no accepted code was changed.
+Date: 16 October 2026. Status: **ADOPTED by the owner on 16 Oct 2026, 17:02 Lisbon** (decisions in §7). This file replaces no existing plan. Nothing was deleted, and the paused work is preserved. The snapshot and these changes are committed only on the local branch `wip/2026-10-16-snapshot`.
 
 ## 1. Verdict: the project has drifted off track
 
