@@ -24,7 +24,9 @@ import re
 import zipfile
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
+
+UTC = timezone.utc  # datetime.UTC needs 3.11+; the linked VM runs 3.10
 from pathlib import Path
 
 TICK_NANO = 50_000  # 6E tick 0.00005 in Databento fixed-point (1e-9) price units.
