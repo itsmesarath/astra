@@ -1,0 +1,32 @@
+{
+  "trial_id": "btcusdt-flow-pressure-v1",
+  "sources": [
+    {"source_session": "btcusdt-flow-pressure-v1-01-train", "role": "train"},
+    {"source_session": "btcusdt-flow-pressure-v1-02-train", "role": "train"},
+    {"source_session": "btcusdt-flow-pressure-v1-03-validation", "role": "validation"},
+    {"source_session": "btcusdt-flow-pressure-v1-04-reserved", "role": "reserved"}
+  ],
+  "candidate": {
+    "minimum_cvd_btc": "1",
+    "minimum_ofi_btc": "1",
+    "minimum_book_imbalance": "0.2",
+    "minimum_bid_ask_liquidity_ratio": "1.5",
+    "maximum_spread_bps": "5",
+    "maximum_trade_age_ns": 2000000000,
+    "maximum_quote_age_ns": 2000000000
+  },
+  "replay": {
+    "features": {
+      "levels": 5,
+      "rolling_window_ms": 10000,
+      "liquidity_band_bps": "10",
+      "maximum_evidence_interval_ms": 1000,
+      "retained_depth_fraction": "0.8",
+      "repeated_intervals": 3,
+      "maximum_buffered_trades": 100000
+    },
+    "max_event_lag_ns": 5000000000,
+    "max_future_skew_ns": 100000000
+  },
+  "max_total_frames": 10000
+}

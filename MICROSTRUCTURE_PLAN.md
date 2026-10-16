@@ -1,5 +1,9 @@
 # Order-book-first research roadmap
 
+The overall workflow, trade journal, memory, local-model roles and delivery sequence are defined
+in [AUTONOMOUS_SYSTEM_PLAN.md](AUTONOMOUS_SYSTEM_PLAN.md). This document remains the detailed
+microstructure feature contract. Its research stages below fit inside that broader sequence.
+
 Direction confirmed by the maintainer on 2026-09-21: the primary trading hypothesis must use
 order-book state and aggressive trade flow, including CVD, liquidity, replenishment and absorption.
 The candle trend-pullback implementation is a comparison baseline, not the primary strategy.
@@ -63,7 +67,8 @@ support hard links. Existing CSV/model schemas are unchanged; these fields are n
 
 1. Validate capture completeness, latency and usable liquidity coverage on explicitly selected
    research sessions. Add monotonic local timing and reconnect/session boundaries to ingestion
-   where needed; keep receipt and exchange clocks distinct.
+   where needed; keep receipt and exchange clocks distinct. Alongside quality reporting, define
+   immutable trade-case contracts so theses/rejections can be recorded before any new paper policy.
 2. Define a small, predeclared event hypothesis using CVD + liquidity + absorption/replenishment.
    Preserve negative/no-trade examples; evaluate false positives, not just attractive chart moves.
 3. Add L2/trade replay execution with latency, available liquidity and conservative queue/fill

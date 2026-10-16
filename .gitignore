@@ -1,5 +1,8 @@
 # Project environment
 .venv/
+.venv-nautilus/
+.venv-qwen/
+.venv-qwen-train/
 .env
 .env.*
 
@@ -35,3 +38,6 @@ Thumbs.db
 *.egg-info/
 build/
 dist/
+
+# Locally supplied licensed archives and course videos
+/downloads/

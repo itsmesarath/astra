@@ -12,12 +12,15 @@ from test_capture_replay import records
 from websockets.exceptions import ConnectionClosedError
 from websockets.frames import Close
 
+from ai_trader.features.microstructure import MicrostructureConfig
 from ai_trader.ingestion import collect_combined as module
+from ai_trader.ingestion.capture_failure import failure_details
 from ai_trader.ingestion.collect_combined import (
     CaptureInterrupted,
     CaptureLimits,
     CaptureQuotaExceeded,
 )
+from ai_trader.trading.capture_replay import CaptureReplayConfig
 
 
 class Socket:
@@ -251,6 +254,27 @@ def test_gap_never_publishes_as_complete(tmp_path, setup):
     with pytest.raises(CaptureInterrupted, match="integrity"):
         asyncio.run(module.collect(1, output_path=tmp_path / "session.jsonl"))
     assert not (tmp_path / "session.jsonl").exists()
+
+
+@pytest.mark.parametrize("stale_field", ["event", "trade_time"])
+def test_validation_identifies_stale_market_event_without_relaxing_bounds(tmp_path, stale_field):
+    rows = records()
+    if stale_field == "event":
+        rows[2]["event"]["E"] = 0
+    else:
+        rows[3]["event"]["T"] = 0
+    path = tmp_path / "capture.jsonl.partial"
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    config = CaptureReplayConfig(
+        features=MicrostructureConfig(levels=1), max_event_lag_ns=500_000_000
+    )
+    with pytest.raises(CaptureInterrupted) as caught:
+        module._validate_complete(path, config=config)
+    assert failure_details(caught.value) == {
+        "schema_version": 1,
+        "stage": "integrity",
+        "reason": "stale_event",
+    }
 
 
 def test_connection_error_is_retryable(tmp_path, monkeypatch):

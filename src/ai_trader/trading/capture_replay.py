@@ -40,6 +40,10 @@ MAX_RECORDS = 100_000
 MAX_RECORD_BYTES = 2_000_000
 
 
+class StaleMarketEventError(ValueError):
+    """An exchange event breached the frozen receipt-time freshness bounds."""
+
+
 def _digest(value):
     if (
         not isinstance(value, str)
@@ -259,7 +263,9 @@ class IncrementalCaptureFrames:
                     raise ValueError("Symbol mismatch.")
                 _integer(event.get("E"))
                 delay = received - event["E"] * 1_000_000
-                if not -self.config.max_future_skew_ns <= delay <= self.config.max_event_lag_ns:
+                if delay > self.config.max_event_lag_ns:
+                    raise StaleMarketEventError("Event latency/clock-skew bound exceeded.")
+                if delay < -self.config.max_future_skew_ns:
                     raise ValueError("Event latency/clock-skew bound exceeded.")
                 if self.subject is None and received > self.available:
                     self.subject = MicrostructureEngine(
@@ -284,11 +290,11 @@ class IncrementalCaptureFrames:
                     ):
                         raise ValueError("Trade time regressed.")
                     trade_age = received - trade.trade_time_ms * 1_000_000
-                    if (
-                        not -self.config.max_future_skew_ns
-                        <= trade_age
-                        <= self.config.max_event_lag_ns
-                    ):
+                    if trade_age > self.config.max_event_lag_ns:
+                        raise StaleMarketEventError(
+                            "Trade execution time outside freshness bounds."
+                        )
+                    if trade_age < -self.config.max_future_skew_ns:
                         raise ValueError("Trade execution time outside freshness bounds.")
                     self.last_trade_id, self.last_trade_time = (
                         trade.aggregate_trade_id,

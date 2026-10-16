@@ -1,5 +1,12 @@
 # Autonomous Paper-Trading and Training Plan
 
+Status update (2026-09-21): this document is retained as the earlier training-centric proposal.
+The authoritative sequence, evidence gates, trade-case journal and memory architecture now live
+in [AUTONOMOUS_SYSTEM_PLAN.md](AUTONOMOUS_SYSTEM_PLAN.md). Where they differ, use that plan.
+In particular, the next task is capture-quality reporting and trade-case contracts, not candle
+strategy advancement, automatic champion promotion or an authenticated adapter. Session counts
+and milestone wording below describe earlier work, not a fresh dataset inventory.
+
 ## Objective
 
 Build a recoverable Binance Spot system that can ingest public market data, validate and store it,

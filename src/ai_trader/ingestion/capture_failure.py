@@ -40,6 +40,7 @@ CODES = frozenset(
         "write.durable_callback",
         "finalize.failed",
         "integrity.rejected",
+        "integrity.stale_event",
         "publication.failed",
         "recording.failed",
         "campaign.binding_mismatch",

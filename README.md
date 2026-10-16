@@ -2,9 +2,216 @@
 
 An experimental cryptocurrency market-microstructure research system.
 
+Current project stage and the separate 6E research roadmap: [status and flowchart](PROJECT_STATUS.md).
+The 11 October payload-binding increment is accepted on constructed fixtures; the latest full
+Python regression is **10,869 passed plus three expected skips**. Native/historical integration,
+independent strategy validation and trading readiness remain separate gates. [Agent workflow](AGENTS.md)
+records the skill-guided approval, testing, review and preservation rules. This is not a service-health
+check or permission to start capture, training or orders.
+
+Development roadmap: [the autonomous research-system plan](AUTONOMOUS_SYSTEM_PLAN.md) covers
+order-book-first trading, pre/post-trade cases, decision-quality review, point-in-time memory,
+controlled experiments, local Qwen roles and deterministic risk. It distinguishes implemented
+components from future work; it is not a claim of a complete autonomous trading system.
+The [ASTRA V2 proposal review](ASTRA_V2_REVIEW.md) records the September 24 roadmap additions,
+corrections and deferred technology decisions; no proposed framework is implied to be installed.
+
+An isolated [NautilusTrader evaluation](docs/adr/trading_engine.md) now has a synthetic replay
+harness and tested reference calculations. Its historical native replay attempt was blocked by Windows Application Control;
+Nautilus is not adopted by the trading runtime. See that record for commands and limitations.
+
+[Capture-quality auditing and immutable trade cases](docs/QUALITY_AND_CASES.md) are implemented
+as a read-only research slice, with a synthetic no-order example. They do not start a paper loop.
+
+The [durable evidence and paper-account journal](docs/TRADE_JOURNAL.md) adds SQLite persistence,
+conflict-safe retries, entry/exit fills and flat-start cash/position/PnL reconstruction. It is not
+used by the default runner. An opt-in [durable paper gateway](docs/DURABLE_PAPER_GATEWAY.md) now
+simulates atomic quote fills with pre-fill risk checks and persistent kill/daily-loss/drawdown state.
+The opt-in [bounded paper controller](docs/PAPER_RUNNER.md) adds per-tick data-health checks, equity
+marks and automatic stop/target/max-hold exits. An explicit-path [capture replay adapter](docs/CAPTURE_PAPER_REPLAY.md)
+now rebuilds order-book/CVD evidence into controller ticks with snapshot timing and gap/recovery
+checks. [Bounded public capture supervision and an offline paper smoke command](docs/CAPTURE_SUPERVISION_AND_SMOKE.md)
+now add quotas, quarantined partials, finite fresh-session retries and explicit-source zero-order
+checks. These were tested synthetically; unattended operation remains planned and no service starts
+automatically.
+
+A [fresh 60-second public-data check](docs/REAL_DATA_READINESS.md) now passes recorder integrity
+and a complete offline paper replay with zero orders. It exposed and fixed snapshot-availability
+lookahead in the standalone feature exporter. All 585 corrected observations match paper replay;
+484 pass retrospective feature-quality checks, not training approval. Old standalone artifacts
+must be rebuilt under the version-2 availability contract. No unattended service or strategy edge
+is established by this one-minute operational sample.
+
+[Prospective acquisition plans](docs/PROSPECTIVE_CAPTURE_PLAN.md) now freeze train, validation and
+reserved whole-session assignments before collection. They use pinned code/runtime, finite quotas,
+write-once audits and one attempt per slot; any failure stops the campaign without replacement.
+Reserved captures stay outside research/training, and acquisition does not authorize model fitting.
+The first planned campaign completed three separate one-minute sessions without retries. Their
+transport checks passed; stricter event-label quality is assessed separately below.
+
+The [first fixed event-label experiment](docs/PROSPECTIVE_EVENT_TRIAL.md) now reconstructs both
+research sessions. Training-source quote gaps and session-end censoring leave only 31.9% of
+eligible outcomes resolved, below the frozen 50% quality gate. The whole fold and NumPy fitting
+were correctly blocked; reserved data remains unopened and no model was trained or promoted.
+
+[Bounded capture-timing diagnostics](docs/CAPTURE_TIMING.md) now separate high-resolution receipt
+gaps, event-loop lag, startup buffering, streaming queue wait and parsing/writing time. They use
+an optional sidecar and leave the market-data schema and timestamps unchanged.
+A one-minute diagnostic run passed integrity checks without reproducing the earlier >500-ms
+gaps. This does not establish their cause or make the earlier blocked training fold eligible.
+
+[Instrumented prospective campaigns](docs/INSTRUMENTED_CAMPAIGN.md) now freeze optional timing
+for train/validation, bind sidecars to capture hashes and reject incomplete reports. Reserved
+sessions stay uninstrumented and outside research. A two-minute-session recipe retains the
+same label/freshness/cost gates, with a bounded 10,000-frame aggregate processing allowance.
+The first instrumented campaign completed train but stopped near the validation deadline;
+its partial remains quarantined and reserved was never started. A separately reproduced early
+timer-wakeup defect is now fixed and tested synthetically; its role in that real interruption
+is unproven. No training followed that incomplete campaign.
+
+[Sanitized failure evidence](docs/CAPTURE_FAILURE_EVIDENCE.md) now distinguishes capture stages
+and fixed failure reasons without recording exception messages or tracebacks. Completed capture
+and timing schemas stay unchanged, and the earlier failed campaign remains quarantined.
+A new three-session campaign completed without retries. Both research sessions passed the
+unchanged label-quality gates (79.3% / 90.5% resolved), but all 856 training outcomes were net
+losses under frozen costs. The numerical baseline correctly refused its one-class dataset;
+zero epochs ran. Next broaden prospectively planned data coverage, not weaken cost or quality gates.
+
+A [training-only historical corpus audit](docs/EVENT_CORPUS_AUDIT.md) now checks pinned label
+accounting, coverage, overlap and frozen-cost arithmetic without reopening captures, validation
+labels or reserved data. The 856 resolved training labels contain only nine disjoint outcome
+intervals; their maximum inferred pre-cost ask-to-bid return was 1.10 bps versus a 24.03-bps
+break-even requirement. This describes one two-minute sample, not a strategy-wide conclusion.
+Historical code pins remain intact, and the audit cannot authorize fitting or deployment.
+
+A [bounded UTC capture-window contract](docs/CAPTURE_WINDOWS.md) now freezes separated sessions,
+exact research settings, dispatch deadlines and no-replacement failure policy offline. It checks
+warmup/horizon feasibility and aggregate frame/compute quotas before collection. The candidate
+two-train-session recipe keeps label/cost/quality settings unchanged while fitting within the
+existing 10,000-frame budget. The [window-aware runner and strict intake](docs/WINDOWED_CAPTURE_RUNTIME.md)
+now enforce these plans with durable single-use claims, connection/deadline checks, terminal failure
+records and frozen-settings research preparation. The first real four-window campaign failed
+during validation with receiver queue overflow; two training captures remain quarantined with
+the failed campaign, and reserved never started. An [offline burst diagnosis](docs/CAPTURE_BURST_DIAGNOSIS.md)
+reproduces a scheduling weakness without changing production code or opening raw captures.
+A [bounded reader/writer repair](docs/CAPTURE_BURST_REPAIR.md) now passes synthetic bursts above
+queue capacity, preserving receipt timestamps, FIFO order, quotas and overload refusal. Real-feed
+reliability and the earlier receipt-gap cause remain unproven; no replacement capture was started.
+A [separate predeclared two-minute diagnostic](docs/CAPTURE_BURST_DIAGNOSTIC.md) subsequently
+passed integrity and all frozen operational checks: 6,358 events, queue high-water 49/256,
+maximum depth-receipt gap 327 ms and zero orders. This one sample is diagnostic-only, not a
+training fold or sustained-reliability result. Next prepare fresh prospectively assigned windows.
+A [new post-repair windowed campaign](docs/WINDOWED_CAMPAIGN_20260925_3.md) started its first
+train capture at 14:03 UTC on September 25, then failed with receiver queue overflow before
+the initial snapshot became available: 257 received, 256 queued, zero processed. Both runner
+processes exited; second train, validation and reserved never started. The monitor was deleted,
+evidence retained, and no retry, labels, training or trading followed. This exposed a startup
+buffering problem. The user requested this earlier start before campaign -2 acquired anything;
+that canceled waiting run's claim/audit remain retained and cannot resume. Neither claim may
+restart. The 3,000-frame/source research cap remains a declared risk for future busy sessions,
+not a limit that can be enlarged after capture.
+A [subsequent offline startup repair](docs/CAPTURE_STARTUP_REPAIR.md) now stages events while
+the snapshot is pending and assembles the same receipt-causal format after acquisition. The
+queue stays at 256; staging and final-copy bytes share the original 32-MiB ceiling, so byte
+capacity is more conservative. Failed campaigns remain quarantined. Next consider a separately
+predeclared operational diagnostic; no new capture, training or trading was started by this repair.
+A subsequently authorized [single startup diagnostic](docs/CAPTURE_STARTUP_DIAGNOSTIC.md)
+failed with snapshot timeout. It staged 271 messages with queue high-water 2/256 and no overflow,
+but never reached snapshot availability or post-snapshot validation. Evidence is retained,
+without retries or training. Next investigate the snapshot-fetch timeout offline.
+The [offline snapshot investigation](docs/SNAPSHOT_TIMEOUT_DIAGNOSIS.md) now distinguishes
+opening, body-read and elapsed/capture deadline failures, and rejects late EOF/validation results.
+Timeouts and quality gates were not increased. The historical network cause remains unknown;
+the subsequent [single snapshot/clock probe](docs/SNAPSHOT_CLOCK_PROBE.md) passed snapshot
+validation in 1.50 seconds. Its exchange-time measurement was too uncertain to establish clock
+offset. No new capture or training followed; next obtain a tighter read-only clock assessment
+before a separately declared startup diagnostic. This does not resolve the historical timeout.
+The [subsequent transfer diagnosis and fix](docs/SNAPSHOT_TRANSFER_FIX.md) measured slow body
+delivery (8.02 seconds of a 9.33-second snapshot request). Gzip negotiation now reduces transfer
+size, with independent compressed/decoded byte caps and unchanged depth/deadlines. A separate
+late-acquisition race is fixed. Fresh NTP checks found about 156 ms of local clock lag; the
+user's resync was accepted, but clock suitability must still be verified before a new campaign.
+Neither the original timeout's network root cause nor continuous capture reliability is proven.
+The final production check passed in 7.36 seconds with 9,950 compressed bytes; the clock still
+measured about 140 ms behind its reference. Final regression: 2,780 Python passes, one optional
+skip, 38 JavaScript passes and Ruff clean. No new research capture or trading followed.
+Old runners reject the window contract. No training or trading follows capture automatically.
+
+A [registered microstructure research policy](docs/MICROSTRUCTURE_POLICY.md) now converts causal
+order-book/CVD/replenishment evidence into auditable proposals and abstentions with cost/risk checks.
+It refuses reserved sources and records research-only cases; it does not execute trades, simulate
+portfolio returns, or establish profitability.
+
+A separate [explicit offline paper simulation](docs/MICROSTRUCTURE_PAPER.md) now connects that
+frozen hypothesis to ledger-derived risk and exits-first paper execution. It requires opt-in on
+every invocation, preserves kill/loss state on resume and never promotes stored research cases.
+Verification uses synthetic inputs; quote-only fills do not establish an edge or a running paper service.
+
+A [read-only paper evaluation report](docs/PAPER_EVALUATION.md) now reconstructs executed trades,
+fee/slippage-aware PnL, sampled equity/drawdown and time in position, with a holding-cash control.
+It flags incomplete runs and unknown open-inventory values; it cannot execute or promote a strategy.
+
+[Mechanical post-trade reviews](docs/POST_TRADE_REVIEW.md) now separate outcome-blind structural
+case checks from verified PnL, retain rejected/unfilled cases, and mark lessons as anecdotes.
+They use a single read-only journal snapshot and do not train or update a policy.
+
+[Registered multi-session paper campaigns](docs/MICROSTRUCTURE_CAMPAIGN.md) now preserve one account,
+open positions and risk history across a fixed sequence of captures while rebuilding each session's
+book/CVD/warmup state. Combined read-only evaluation retains disconnect exposure and unknown marks.
+This is synthetic-tested offline continuity, not a supervised forward trading service.
+
+[Receipt-causal event labels](docs/MICROSTRUCTURE_EVENT_LABELS.md) now pair order-book/CVD/liquidity
+features with later, after-cost hypothetical Spot-long outcomes inside one registered research
+session. Unknown outcomes stay explicit and reserved sources are refused. A
+[source-verified loader and whole-session fold manifest](docs/EVENT_TRAINING_DATA.md) now reproduce
+those artifacts, enforce chronological outcome cutoffs and block the whole fold when a declared
+source fails quality checks. An [opt-in numerical event baseline](docs/EVENT_BASELINE.md) now adds
+training-only preprocessing, fixed-budget NumPy fitting, validation controls/metrics and safe JSON
+model reload. [Registered walk-forward evaluation](docs/EVENT_WALK_FORWARD.md) now refits fixed-recipe
+models on expanding earlier-session prefixes and evaluates each later research session once. Failed
+folds stay visible and suppress pooled metrics; reserved sources remain unopened. All fitting so far
+uses synthetic test fixtures, not actual market data, and is not connected to paper execution.
+
+A [non-executing model shadow adapter](docs/EVENT_SHADOW.md) now seals a single-baseline model with
+its availability time and records predictions/abstentions on later research captures. It refuses
+reused/reserved sources, stale inputs and expired predictions, and has no order-placement authority.
+
 Research software, not a profitable trading product or financial advice. No profitable strategy
-has been established. Execution is paper-only; Qwen integration and fine-tuning are planned,
-not implemented. The Python package remains named `ai-trader` (import: `ai_trader`).
+has been established. Execution is paper-only. A [bounded local Qwen reviewer adapter](docs/LOCAL_QWEN_REVIEWER.md)
+now adds an opt-in process boundary, pinned local checkpoints and strict advisory reports, verified
+with synthetic transport/runtime tests. Qwen3-4B-Base is now installed in an isolated environment
+and completed one measured local CUDA inference test. Its JSON was valid, but its positive
+economic interpretation was unsupported by the supplied evidence; this is not a trading-quality
+pass. A [25-case synthetic advisory curriculum and offline scorer](docs/QWEN_ADVISORY_EVALUATION.md)
+now checks abstention, costs, conflicting microstructure evidence and conditional positive controls.
+The frozen labels were drafts; the existing smoke fails its matched regression. The curriculum
+subset now has separately recorded delegated-agent review; development scores remain provisional.
+A separately enabled frozen-plan runner now evaluates only the development split, with at most
+seven local worker attempts, durable per-case records and no retries after worker failure. Its
+scores are provisional, not a trading-quality approval. No training or model deployment follows
+automatically. Its first approved batch matched only 2/7 draft verdicts. A
+[versioned Spot-long contract](docs/QWEN_REVIEW_CONTRACTS.md) now preserves V1 replay and makes
+the cost/stress question explicit. Its approved V2 comparison improved veto recall but passed
+only 1/7 full model checks; neither version is promoted. Independent
+[bounded evidence/arithmetic checks](docs/SPOT_LONG_EVIDENCE_CHECKS.md) now preserve those raw
+results and prepare 14 curriculum fact packets. The user explicitly delegated target decisions:
+a [versioned AI review](docs/QWEN_DELEGATED_REVIEW.md) now accepts all 14 proposed targets
+(11 veto, 3 conditional support) and exports an independently reconstructed candidate. It records
+no human approval and grants no training or execution authority.
+[Protected-evaluation metadata and training preflight](docs/QWEN_TRAINING_PREFLIGHT.md)
+now add overlap checks, completion-only loss masks and a CPU tokenizer check of all 14 proposals.
+A [separate protected-dataset intake](docs/QWEN_PROTECTED_INTAKE.md) now derives reservation
+metadata from pinned evaluation payloads and checks overlap, behavior coverage and numeric targets.
+It is synthetic-tested; no real protected dataset or custodian approval has been created.
+A [bounded LoRA worker](docs/QWEN_LORA_WORKER.md) now adds explicit opt-in, fixed-step/deadline
+supervision and adapter save/reload checks. A separate [pinned training environment and native
+tiny-model smoke](docs/QWEN_NATIVE_LORA_SMOKE.md) now pass real CPU LoRA updates and exact adapter
+reload. Actual Qwen CUDA training feasibility and the holdout reservation remain pending;
+no Qwen fitting or model promotion has occurred. The
+[offline operator-review page](docs/QWEN_REVIEW_WORKBENCH.md) remains optional for a separate
+human review; it is not needed for this delegated candidate and still needs a visual browser check.
+The Python package remains named
+`ai-trader` (import: `ai_trader`).
 
 Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Project code is available
 under the [MIT license](LICENSE); third-party dependencies and downloaded data retain their

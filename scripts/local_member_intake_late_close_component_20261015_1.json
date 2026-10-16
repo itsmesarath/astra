@@ -1,0 +1,308 @@
+{
+  "version": "local-member-intake-late-close-component-v1",
+  "basis": [
+    {"role":"host_source","path":"scripts/local_member_intake_bootstrap_host_20261015_1.py","raw_byte_length":96913,"raw_sha256":"518e75be61be5fdc5535d9619b790822a5bed8fa7f4607f1b5bfe936f2e69b7f"},
+    {"role":"protocol","path":"scripts/local_member_intake_bootstrap_protocol_20261015_3.json","raw_byte_length":171369,"raw_sha256":"2252ebefe2d38b14f5c915b3a1b9fbb2c8bc960a02477372bb1dd0ea7114c31f"},
+    {"role":"calculator_contract","path":"docs/6E_LOCAL_MEMBER_INTAKE_ENVELOPE_CALCULATOR_20261015.md","raw_byte_length":14433,"raw_sha256":"c29bfaf214dd8132d55484f2c2966b18bc6eefc64e461aa68eac2581cb37c186"},
+    {"role":"official_closehandle","path":"docs/reference_corpus/local_member_intake_20261014_1/api_10_nf-handleapi-closehandle.md","raw_byte_length":7266,"raw_sha256":"c0cd1b25e7d35a8f4fb020cfba13b9ee5b3643a332e7c1f592b507746e1e794b"}
+  ],
+  "source_sites": {
+    "host_line_ranges": {
+      "native_call": [387,453],
+      "late_loop": [1371,1373],
+      "close": [834,844],
+      "event": [814,818],
+      "terminal_list_alias": [805,805],
+      "transport_snapshot": [1133,1139]
+    },
+    "protocol_schema_names": ["ApiTrace","ApiArgument","ApiReturn","ParentClose","Lifecycle","LifecycleToken","ApiContracts"],
+    "native_api_selector": "R14/api_10_nf-handleapi-closehandle.md:CloseHandle"
+  },
+  "domains": {
+    "phase_order": ["preflight","job_created","limits_set","limits_queried","job_empty","pipes_created","attributes_ready","created_suspended","identity_checked","membership_checked","resumed","output_read","failure_selected","termination_requested","process_signalled","job_empty_final","handle_closed","finished"],
+    "role_order": ["job","process","thread","child_stdin_read","child_stdin_write","stdout_read","stdout_write","stderr_read","stderr_write"],
+    "late_role_order": ["child_stdin_read","child_stdin_write","stdout_write","stderr_write","stdout_read","stderr_read","thread","process","job"],
+    "integer_bounds": {
+      "handle": [1,18446744073709551615],
+      "api_ordinal": [0,4095],
+      "lifecycle_ordinal": [0,4095],
+      "close_ordinal": [0,15],
+      "clock": [0,18446744073709551615],
+      "negative_bool_success": [-2147483648,-1],
+      "positive_bool_success": [1,2147483647],
+      "saved_error": [0,4294967295]
+    }
+  },
+  "source_rules": {},
+  "expressions": {
+    "close_return_success": {"kind":"record","fields":[
+      ["kind",{"kind":"literal","value":"bool32"}],
+      ["raw_i64",{"kind":"one_of","items":[{"kind":"integer","lo":-2147483648,"hi":-1},{"kind":"integer","lo":1,"hi":2147483647}]}],
+      ["raw_u64",{"kind":"literal","value":null}],
+      ["win32_error_u32",{"kind":"literal","value":null}]
+    ]},
+    "close_return_failure": {"kind":"record","fields":[
+      ["kind",{"kind":"literal","value":"bool32"}],
+      ["raw_i64",{"kind":"literal","value":0}],
+      ["raw_u64",{"kind":"literal","value":null}],
+      ["win32_error_u32",{"kind":"integer","lo":0,"hi":4294967295}]
+    ]},
+    "close_trace_success": {"kind":"record","fields":[
+      ["ordinal",{"kind":"integer","lo":0,"hi":4095}],
+      ["phase",{"kind":"one_of","items":[
+        {"kind":"literal","value":"preflight"},{"kind":"literal","value":"job_created"},{"kind":"literal","value":"limits_set"},{"kind":"literal","value":"limits_queried"},{"kind":"literal","value":"job_empty"},{"kind":"literal","value":"pipes_created"},{"kind":"literal","value":"attributes_ready"},{"kind":"literal","value":"created_suspended"},{"kind":"literal","value":"identity_checked"},{"kind":"literal","value":"membership_checked"},{"kind":"literal","value":"resumed"},{"kind":"literal","value":"output_read"},{"kind":"literal","value":"failure_selected"},{"kind":"literal","value":"termination_requested"},{"kind":"literal","value":"process_signalled"},{"kind":"literal","value":"job_empty_final"},{"kind":"literal","value":"handle_closed"},{"kind":"literal","value":"finished"}
+      ]}],
+      ["api",{"kind":"literal","value":"CloseHandle"}],
+      ["source_selector",{"kind":"literal","value":"R14/api_10_nf-handleapi-closehandle.md:CloseHandle"}],
+      ["arguments",{"kind":"array","items":[{"kind":"record","fields":[
+        ["name",{"kind":"literal","value":"hObject"}],
+        ["kind",{"kind":"literal","value":"handle64"}],
+        ["value",{"kind":"integer","lo":1,"hi":18446744073709551615}]
+      ]}]}],
+      ["return",{"kind":"record","fields":[
+        ["kind",{"kind":"literal","value":"bool32"}],
+        ["raw_i64",{"kind":"one_of","items":[{"kind":"integer","lo":-2147483648,"hi":-1},{"kind":"integer","lo":1,"hi":2147483647}]}],
+        ["raw_u64",{"kind":"literal","value":null}],
+        ["win32_error_u32",{"kind":"literal","value":null}]
+      ]}],
+      ["saved_error_seed",{"kind":"literal","value":null}],
+      ["output_buffers",{"kind":"array","items":[]}],
+      ["started_monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}],
+      ["ended_monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}]
+    ]},
+    "close_trace_failure": {"kind":"record","fields":[
+      ["ordinal",{"kind":"integer","lo":0,"hi":4095}],
+      ["phase",{"kind":"one_of","items":[
+        {"kind":"literal","value":"preflight"},{"kind":"literal","value":"job_created"},{"kind":"literal","value":"limits_set"},{"kind":"literal","value":"limits_queried"},{"kind":"literal","value":"job_empty"},{"kind":"literal","value":"pipes_created"},{"kind":"literal","value":"attributes_ready"},{"kind":"literal","value":"created_suspended"},{"kind":"literal","value":"identity_checked"},{"kind":"literal","value":"membership_checked"},{"kind":"literal","value":"resumed"},{"kind":"literal","value":"output_read"},{"kind":"literal","value":"failure_selected"},{"kind":"literal","value":"termination_requested"},{"kind":"literal","value":"process_signalled"},{"kind":"literal","value":"job_empty_final"},{"kind":"literal","value":"handle_closed"},{"kind":"literal","value":"finished"}
+      ]}],
+      ["api",{"kind":"literal","value":"CloseHandle"}],
+      ["source_selector",{"kind":"literal","value":"R14/api_10_nf-handleapi-closehandle.md:CloseHandle"}],
+      ["arguments",{"kind":"array","items":[{"kind":"record","fields":[
+        ["name",{"kind":"literal","value":"hObject"}],
+        ["kind",{"kind":"literal","value":"handle64"}],
+        ["value",{"kind":"integer","lo":1,"hi":18446744073709551615}]
+      ]}]}],
+      ["return",{"kind":"record","fields":[
+        ["kind",{"kind":"literal","value":"bool32"}],
+        ["raw_i64",{"kind":"literal","value":0}],
+        ["raw_u64",{"kind":"literal","value":null}],
+        ["win32_error_u32",{"kind":"integer","lo":0,"hi":4294967295}]
+      ]}],
+      ["saved_error_seed",{"kind":"literal","value":null}],
+      ["output_buffers",{"kind":"array","items":[]}],
+      ["started_monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}],
+      ["ended_monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}]
+    ]},
+    "parent_close_success": {"kind":"record","fields":[
+      ["ordinal",{"kind":"integer","lo":0,"hi":15}],
+      ["role",{"kind":"one_of","items":[
+        {"kind":"literal","value":"job"},{"kind":"literal","value":"process"},{"kind":"literal","value":"thread"},{"kind":"literal","value":"child_stdin_read"},{"kind":"literal","value":"child_stdin_write"},{"kind":"literal","value":"stdout_read"},{"kind":"literal","value":"stdout_write"},{"kind":"literal","value":"stderr_read"},{"kind":"literal","value":"stderr_write"}
+      ]}],
+      ["handle_u64",{"kind":"integer","lo":1,"hi":18446744073709551615}],
+      ["close_attempted",{"kind":"literal","value":true}],
+      ["close_return",{"kind":"record","fields":[
+        ["kind",{"kind":"literal","value":"bool32"}],
+        ["raw_i64",{"kind":"one_of","items":[{"kind":"integer","lo":-2147483648,"hi":-1},{"kind":"integer","lo":1,"hi":2147483647}]}],
+        ["raw_u64",{"kind":"literal","value":null}],
+        ["win32_error_u32",{"kind":"literal","value":null}]
+      ]}],
+      ["close_api_ordinal",{"kind":"integer","lo":0,"hi":4095}],
+      ["disposition",{"kind":"literal","value":"closed"}]
+    ]},
+    "parent_close_failure": {"kind":"record","fields":[
+      ["ordinal",{"kind":"integer","lo":0,"hi":15}],
+      ["role",{"kind":"one_of","items":[
+        {"kind":"literal","value":"job"},{"kind":"literal","value":"process"},{"kind":"literal","value":"thread"},{"kind":"literal","value":"child_stdin_read"},{"kind":"literal","value":"child_stdin_write"},{"kind":"literal","value":"stdout_read"},{"kind":"literal","value":"stdout_write"},{"kind":"literal","value":"stderr_read"},{"kind":"literal","value":"stderr_write"}
+      ]}],
+      ["handle_u64",{"kind":"integer","lo":1,"hi":18446744073709551615}],
+      ["close_attempted",{"kind":"literal","value":true}],
+      ["close_return",{"kind":"record","fields":[
+        ["kind",{"kind":"literal","value":"bool32"}],
+        ["raw_i64",{"kind":"literal","value":0}],
+        ["raw_u64",{"kind":"literal","value":null}],
+        ["win32_error_u32",{"kind":"integer","lo":0,"hi":4294967295}]
+      ]}],
+      ["close_api_ordinal",{"kind":"integer","lo":0,"hi":4095}],
+      ["disposition",{"kind":"literal","value":"close_failed"}]
+    ]},
+    "close_lifecycle": {"kind":"record","fields":[
+      ["ordinal",{"kind":"integer","lo":0,"hi":4095}],
+      ["event",{"kind":"literal","value":"handle_closed"}],
+      ["monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}],
+      ["related_api_ordinals",{"kind":"array","items":[{"kind":"integer","lo":0,"hi":4095}]}]
+    ]},
+    "close_component": {"kind":"one_of","items":[
+      {"kind":"array","items":[
+        {"kind":"record","fields":[
+          ["ordinal",{"kind":"integer","lo":0,"hi":4095}],
+          ["phase",{"kind":"one_of","items":[
+            {"kind":"literal","value":"preflight"},{"kind":"literal","value":"job_created"},{"kind":"literal","value":"limits_set"},{"kind":"literal","value":"limits_queried"},{"kind":"literal","value":"job_empty"},{"kind":"literal","value":"pipes_created"},{"kind":"literal","value":"attributes_ready"},{"kind":"literal","value":"created_suspended"},{"kind":"literal","value":"identity_checked"},{"kind":"literal","value":"membership_checked"},{"kind":"literal","value":"resumed"},{"kind":"literal","value":"output_read"},{"kind":"literal","value":"failure_selected"},{"kind":"literal","value":"termination_requested"},{"kind":"literal","value":"process_signalled"},{"kind":"literal","value":"job_empty_final"},{"kind":"literal","value":"handle_closed"},{"kind":"literal","value":"finished"}
+          ]}],
+          ["api",{"kind":"literal","value":"CloseHandle"}],
+          ["source_selector",{"kind":"literal","value":"R14/api_10_nf-handleapi-closehandle.md:CloseHandle"}],
+          ["arguments",{"kind":"array","items":[{"kind":"record","fields":[
+            ["name",{"kind":"literal","value":"hObject"}],
+            ["kind",{"kind":"literal","value":"handle64"}],
+            ["value",{"kind":"integer","lo":1,"hi":18446744073709551615}]
+          ]}]}],
+          ["return",{"kind":"record","fields":[
+            ["kind",{"kind":"literal","value":"bool32"}],
+            ["raw_i64",{"kind":"one_of","items":[{"kind":"integer","lo":-2147483648,"hi":-1},{"kind":"integer","lo":1,"hi":2147483647}]}],
+            ["raw_u64",{"kind":"literal","value":null}],
+            ["win32_error_u32",{"kind":"literal","value":null}]
+          ]}],
+          ["saved_error_seed",{"kind":"literal","value":null}],
+          ["output_buffers",{"kind":"array","items":[]}],
+          ["started_monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}],
+          ["ended_monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}]
+        ]},
+        {"kind":"record","fields":[
+          ["ordinal",{"kind":"integer","lo":0,"hi":15}],
+          ["role",{"kind":"one_of","items":[
+            {"kind":"literal","value":"job"},{"kind":"literal","value":"process"},{"kind":"literal","value":"thread"},{"kind":"literal","value":"child_stdin_read"},{"kind":"literal","value":"child_stdin_write"},{"kind":"literal","value":"stdout_read"},{"kind":"literal","value":"stdout_write"},{"kind":"literal","value":"stderr_read"},{"kind":"literal","value":"stderr_write"}
+          ]}],
+          ["handle_u64",{"kind":"integer","lo":1,"hi":18446744073709551615}],
+          ["close_attempted",{"kind":"literal","value":true}],
+          ["close_return",{"kind":"record","fields":[
+            ["kind",{"kind":"literal","value":"bool32"}],
+            ["raw_i64",{"kind":"one_of","items":[{"kind":"integer","lo":-2147483648,"hi":-1},{"kind":"integer","lo":1,"hi":2147483647}]}],
+            ["raw_u64",{"kind":"literal","value":null}],
+            ["win32_error_u32",{"kind":"literal","value":null}]
+          ]}],
+          ["close_api_ordinal",{"kind":"integer","lo":0,"hi":4095}],
+          ["disposition",{"kind":"literal","value":"closed"}]
+        ]},
+        {"kind":"record","fields":[
+          ["ordinal",{"kind":"integer","lo":0,"hi":4095}],
+          ["event",{"kind":"literal","value":"handle_closed"}],
+          ["monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}],
+          ["related_api_ordinals",{"kind":"array","items":[{"kind":"integer","lo":0,"hi":4095}]}]
+        ]}
+      ]},
+      {"kind":"array","items":[
+        {"kind":"record","fields":[
+          ["ordinal",{"kind":"integer","lo":0,"hi":4095}],
+          ["phase",{"kind":"one_of","items":[
+            {"kind":"literal","value":"preflight"},{"kind":"literal","value":"job_created"},{"kind":"literal","value":"limits_set"},{"kind":"literal","value":"limits_queried"},{"kind":"literal","value":"job_empty"},{"kind":"literal","value":"pipes_created"},{"kind":"literal","value":"attributes_ready"},{"kind":"literal","value":"created_suspended"},{"kind":"literal","value":"identity_checked"},{"kind":"literal","value":"membership_checked"},{"kind":"literal","value":"resumed"},{"kind":"literal","value":"output_read"},{"kind":"literal","value":"failure_selected"},{"kind":"literal","value":"termination_requested"},{"kind":"literal","value":"process_signalled"},{"kind":"literal","value":"job_empty_final"},{"kind":"literal","value":"handle_closed"},{"kind":"literal","value":"finished"}
+          ]}],
+          ["api",{"kind":"literal","value":"CloseHandle"}],
+          ["source_selector",{"kind":"literal","value":"R14/api_10_nf-handleapi-closehandle.md:CloseHandle"}],
+          ["arguments",{"kind":"array","items":[{"kind":"record","fields":[
+            ["name",{"kind":"literal","value":"hObject"}],
+            ["kind",{"kind":"literal","value":"handle64"}],
+            ["value",{"kind":"integer","lo":1,"hi":18446744073709551615}]
+          ]}]}],
+          ["return",{"kind":"record","fields":[
+            ["kind",{"kind":"literal","value":"bool32"}],
+            ["raw_i64",{"kind":"literal","value":0}],
+            ["raw_u64",{"kind":"literal","value":null}],
+            ["win32_error_u32",{"kind":"integer","lo":0,"hi":4294967295}]
+          ]}],
+          ["saved_error_seed",{"kind":"literal","value":null}],
+          ["output_buffers",{"kind":"array","items":[]}],
+          ["started_monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}],
+          ["ended_monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}]
+        ]},
+        {"kind":"record","fields":[
+          ["ordinal",{"kind":"integer","lo":0,"hi":15}],
+          ["role",{"kind":"one_of","items":[
+            {"kind":"literal","value":"job"},{"kind":"literal","value":"process"},{"kind":"literal","value":"thread"},{"kind":"literal","value":"child_stdin_read"},{"kind":"literal","value":"child_stdin_write"},{"kind":"literal","value":"stdout_read"},{"kind":"literal","value":"stdout_write"},{"kind":"literal","value":"stderr_read"},{"kind":"literal","value":"stderr_write"}
+          ]}],
+          ["handle_u64",{"kind":"integer","lo":1,"hi":18446744073709551615}],
+          ["close_attempted",{"kind":"literal","value":true}],
+          ["close_return",{"kind":"record","fields":[
+            ["kind",{"kind":"literal","value":"bool32"}],
+            ["raw_i64",{"kind":"literal","value":0}],
+            ["raw_u64",{"kind":"literal","value":null}],
+            ["win32_error_u32",{"kind":"integer","lo":0,"hi":4294967295}]
+          ]}],
+          ["close_api_ordinal",{"kind":"integer","lo":0,"hi":4095}],
+          ["disposition",{"kind":"literal","value":"close_failed"}]
+        ]},
+        {"kind":"record","fields":[
+          ["ordinal",{"kind":"integer","lo":0,"hi":4095}],
+          ["event",{"kind":"literal","value":"handle_closed"}],
+          ["monotonic_ns",{"kind":"integer","lo":0,"hi":18446744073709551615}],
+          ["related_api_ordinals",{"kind":"array","items":[{"kind":"integer","lo":0,"hi":4095}]}]
+        ]}
+      ]}
+    ]}
+  },
+  "occurrences": [
+    {"array_path":["api_trace"],"index_parameter":"api_ordinal","success_expression":"close_trace_success","failure_expression":"close_trace_failure"},
+    {"array_path":["terminal","parent_closes"],"index_parameter":"close_ordinal","success_expression":"parent_close_success","failure_expression":"parent_close_failure"},
+    {"array_path":["lifecycle"],"index_parameter":"lifecycle_ordinal","success_expression":"close_lifecycle","failure_expression":"close_lifecycle"}
+  ],
+  "accounting": {
+    "category_deltas": {"B":0,"H":0,"D":0,"R":0},
+    "source_selector_characters": 50,
+    "synthetic_array_overhead_bytes": 4,
+    "real_append_equation": "C(array_of_three_rows)-4+I(api_trace_nonempty)+I(parent_closes_nonempty)+I(lifecycle_nonempty)",
+    "comma_array_paths": [["api_trace"],["terminal","parent_closes"],["lifecycle"]]
+  },
+  "association_obligations": [
+    "The handle must be the actual acquired closable kernel-object handle for the selected owned role, not a borrowed, pseudo, module, code or allocation address.",
+    "The trace ordinal must equal the actual next api_trace index; the close ordinal and lifecycle ordinal must equal their own actual next array indices.",
+    "The ApiTrace hObject argument and ParentClose handle_u64 must be identical actual handle representations.",
+    "ParentClose close_return must equal the complete actual ApiTrace return, including kind, both raw fields and saved error; the duplicate serialization is not deduplicated.",
+    "ParentClose close_api_ordinal must equal ApiTrace ordinal, and Lifecycle related_api_ordinals must be exactly the one-element list containing that ordinal.",
+    "close_attempted true requires actual native entry; an unentered or unreturned call cannot acquire a fabricated complete return.",
+    "Success requires a nonzero signed I32 return and null error, preserving negative nonzero values; failure requires zero with the actual immediately saved U32 and close_failed disposition.",
+    "The API phase must be the actual pre-call Native phase; the later handle_closed event label is emitted even for a returned zero BOOL and is not proof of release.",
+    "Actual clocks must satisfy API start less than or equal to API end less than or equal to lifecycle event time; independent interval membership does not enforce that association.",
+    "The existing API, close and lifecycle count limits and whole-prefix category, metadata and continuation capacity must be admitted independently before entry.",
+    "This late append changes the live terminal parent_closes list but does not extend the separate earlier child_stdin_parent_closes snapshot list.",
+    "The calculator checks mathematical domains and widths only; it does not implement any of these cross-occurrence ownership, order, equality or source-association obligations."
+  ],
+  "scope": {
+    "status": "sizing-component-only",
+    "math_carrier": "synthetic-array-of-three-rows-not-a-Host-field",
+    "domain_reachability": "conservative-Cartesian-shape-domain-not-whole-continuation-reachability",
+    "exclusions": [
+      "Earlier creation and rendezvous close sites and their transport-copy successors are excluded.",
+      "The later stdout_read close_refusal FaultObservation, including its actual_return copy, and its _choose/failure_selected successor are excluded.",
+      "Remaining ordinary and protected failure-tail actions, resource-interruption latches and reverse-release behavior are excluded.",
+      "Overall terminal outcome, cleanup success, complete metadata M, prior-prefix headroom and full-certificate capacity are excluded.",
+      "Ownhash construction, sealing, emission, actual native execution, root and external receipt carriers are excluded.",
+      "The synthetic array and branch witnesses are sizing data, not an atomic transaction, real persisted Host field or observed native history."
+    ],
+    "false_claims": {
+      "native_observation": false,
+      "cleanup_success": false,
+      "full_certificate": false,
+      "governor": false,
+      "runtime_integration": false,
+      "association_validation_by_calculator": false
+    },
+    "authority_flags": [
+      ["source_authenticated",false],
+      ["collection_receipt_authenticated",false],
+      ["native_runtime_authenticated",false],
+      ["native_abi_authenticated",false],
+      ["native_wire_authenticated",false],
+      ["native_header_authenticated",false],
+      ["native_eof_authenticated",false],
+      ["feed_authenticated",false],
+      ["calendar_authenticated",false],
+      ["historical_read_authorized",false],
+      ["historical_validation_authorized",false],
+      ["book_acceptance_authorized",false],
+      ["event_acceptance_authorized",false],
+      ["feature_acceptance_authorized",false],
+      ["account_authorized",false],
+      ["funding_authorized",false],
+      ["receipt_authorized",false],
+      ["cash_authorized",false],
+      ["margin_authorized",false],
+      ["risk_authorized",false],
+      ["storage_authorized",false],
+      ["resume_authorized",false],
+      ["execution_authorized",false],
+      ["trading_authorized",false],
+      ["training_authorized",false],
+      ["scoring_authorized",false],
+      ["independent_validation_authorized",false],
+      ["promotion_authorized",false]
+    ]
+  }
+}

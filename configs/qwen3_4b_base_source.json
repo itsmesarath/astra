@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "model_id": "Qwen/Qwen3-4B-Base",
+  "revision": "906bfd4b4dc7f14ee4320094d8b41684abff8539",
+  "local_directory": "checkpoints/qwen3-4b-base-906bfd4b4dc7",
+  "checkpoint_sha256": "8a1a0f20ba8a2c6d4480309f0f442114c4fa310018d143ee610061b1ecf47d3c",
+  "source": "https://huggingface.co/Qwen/Qwen3-4B-Base",
+  "license": "Apache-2.0",
+  "total_bytes": 8056519973,
+  "files": [
+    {
+      "name": "LICENSE",
+      "bytes": 11343,
+      "algorithm": "git_blob_sha1",
+      "digest": "6634c8cc3133b3848ec74b9f275acaaa1ea618ab"
+    },
+    {
+      "name": "README.md",
+      "bytes": 2937,
+      "algorithm": "git_blob_sha1",
+      "digest": "83a7f3264b60636c4c59377ac2024165f33bbb8f"
+    },
+    {
+      "name": "config.json",
+      "bytes": 727,
+      "algorithm": "git_blob_sha1",
+      "digest": "df6b6d9d0d1ce7d1456641adb64a5aefe1c4c9bc"
+    },
+    {
+      "name": "generation_config.json",
+      "bytes": 138,
+      "algorithm": "git_blob_sha1",
+      "digest": "cbbb3133034e192527e5321b4c679154e4819ab8"
+    },
+    {
+      "name": "merges.txt",
+      "bytes": 1671853,
+      "algorithm": "git_blob_sha1",
+      "digest": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7"
+    },
+    {
+      "name": "model-00001-of-00003.safetensors",
+      "bytes": 3957900840,
+      "algorithm": "sha256",
+      "digest": "4c807e2503d68ae373d508689d00a41f4b33f33c2536da97ab81a20caddc1241"
+    },
+    {
+      "name": "model-00002-of-00003.safetensors",
+      "bytes": 3987450520,
+      "algorithm": "sha256",
+      "digest": "f4707585548b2fc75a6b1d732e8465c62040a8699903c32850781beeb9b27826"
+    },
+    {
+      "name": "model-00003-of-00003.safetensors",
+      "bytes": 99630640,
+      "algorithm": "sha256",
+      "digest": "c7b1aa8fb672de2e00423c99876926022e50b18d4f0d140670788510a27f9965"
+    },
+    {
+      "name": "model.safetensors.index.json",
+      "bytes": 32819,
+      "algorithm": "git_blob_sha1",
+      "digest": "4747b0297d3109f14db49886972e3369c9a00b2a"
+    },
+    {
+      "name": "tokenizer.json",
+      "bytes": 7031645,
+      "algorithm": "git_blob_sha1",
+      "digest": "443909a61d429dff23010e5bddd28ff530edda00"
+    },
+    {
+      "name": "tokenizer_config.json",
+      "bytes": 9678,
+      "algorithm": "git_blob_sha1",
+      "digest": "6a3829ee9491f36113e64df37573be81df0366f5"
+    },
+    {
+      "name": "vocab.json",
+      "bytes": 2776833,
+      "algorithm": "git_blob_sha1",
+      "digest": "4783fe10ac3adce15ac8f358ef5462739852c569"
+    }
+  ]
+}

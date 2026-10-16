@@ -1,0 +1,37 @@
+:root { color-scheme: light; font-family: system-ui, sans-serif; color: #1b2938; background: #f3f5f6; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+header, main, footer { max-width: 1180px; margin: auto; padding: 24px; }
+header { padding-top: 42px; }
+h1 { font-size: clamp(28px, 4vw, 42px); letter-spacing: -.04em; margin: 10px 0 14px; }
+h2 { font-size: 22px; margin-top: 8px; }
+h3 { font-size: 15px; }
+p { line-height: 1.6; }
+.eyebrow { font-size: 12px; font-weight: 750; letter-spacing: .12em; color: #126d63; }
+.intro { max-width: 770px; font-size: 17px; }
+.notice { background: #eef7f4; border-left: 3px solid #178576; padding: 12px 16px; font-size: 14px; }
+.muted, footer { color: #566674; font-size: 13px; overflow-wrap: anywhere; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 20px; }
+.toolbar label { margin: 0; }
+.columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.card { border: 1px solid #d5dfe1; border-radius: 12px; background: white; padding: 24px; margin-bottom: 20px; min-width: 0; }
+.rationale { font-size: 17px; line-height: 1.75; }
+pre { padding: 14px; background: #f4f6f7; border-radius: 6px; font: 12px/1.6 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 450px; overflow: auto; }
+details { margin: 14px 0; }
+summary { cursor: pointer; font-size: 14px; font-weight: 650; padding: 5px 0; }
+label { display: block; font-size: 14px; font-weight: 600; line-height: 1.5; margin: 16px 0; }
+button, select, input, textarea { font: inherit; }
+select, input[type=text], textarea { display: block; width: 100%; margin-top: 7px; border: 1px solid #aabbbf; background: white; border-radius: 6px; padding: 10px; color: #1b2938; }
+input[type=text] { max-width: 430px; }
+textarea { resize: vertical; }
+button { background: #156f63; color: white; border: 0; padding: 11px 16px; border-radius: 6px; cursor: pointer; font-weight: 650; }
+button:disabled { background: #dde4e6; color: #5c6b74; cursor: not-allowed; }
+:focus-visible { outline: 3px solid #cf8e12; outline-offset: 3px; }
+.check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+.confirmation { display: flex; align-items: start; gap: 10px; max-width: 850px; }
+.confirmation input { margin-top: 5px; }
+.file-label { font-size: 13px; }
+.file-label input { display: block; margin-top: 8px; max-width: 270px; }
+#case-status, #export-status { color: #645015; font-size: 14px; }
+#message { color: #8a2525; }
+@media (max-width: 760px) { .columns, .check-grid { grid-template-columns: 1fr; } header, main, footer { padding: 18px; } .card { padding: 18px; } }

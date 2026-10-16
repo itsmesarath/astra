@@ -498,6 +498,11 @@ def _validate_complete(path, *, config=None):
     )
     usable = False
     for frame in replay.frames():
+        if frame.status.startswith("resync_required:StaleMarketEventError:"):
+            raise mark_failure(
+                CaptureInterrupted("Capture contains an event outside freshness bounds."),
+                "integrity.stale_event",
+            )
         if frame.status.startswith("resync_required:"):
             raise CaptureInterrupted(f"Capture integrity failure: {frame.status}")
         usable |= frame.observation is not None
