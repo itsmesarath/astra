@@ -145,14 +145,18 @@ def _header(row):
     _integer(row["max_events"], 1, MAX_EVENTS, "event limit")
     tick = _price(row["tick_size"])
     if row["provider"] == "ninjatrader":
-        match = re.fullmatch(r"6E (0[1-9]|1[0-2])-[0-9]{2}", row["instrument"])
+        # Euro FX futures: standard 6E (tick 0.00005) or micro M6E (tick 0.0001).
+        expected_tick = {"6E": 50000, "M6E": 100000}.get(row["market"])
+        match = re.fullmatch(
+            re.escape(str(row["market"])) + r" (0[1-9]|1[0-2])-[0-9]{2}", row["instrument"]
+        )
         if (
-            row["market"] != "6E"
+            expected_tick is None
             or row["feed_environment"] != "unverified"
             or not match
-            or tick != 50000
+            or tick != expected_tick
         ):
-            raise ValueError("Expected a dated 6E NinjaTrader observation capture")
+            raise ValueError("Expected a dated 6E or M6E NinjaTrader observation capture")
     elif row["provider"] == "ctrader":
         if row["market"] != "EURUSD" or row["feed_environment"] != "demo" or 100000 % tick:
             raise ValueError("Expected demo EURUSD broker quotes with valid tick size")

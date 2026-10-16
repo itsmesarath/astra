@@ -26,9 +26,12 @@ namespace AiTrader.MarketData
         private int sequence;
         private long bytes;
         private bool closed;
+        private string closeReason;
 
         public string FilePath { get; private set; }
         public bool IsClosed { get { lock (gate) { return closed; } } }
+        // Why the file ended (for example duration_limit or feed_reset); null while open.
+        public string CloseReason { get { lock (gate) { return closeReason; } } }
 
         public BoundedCaptureWriter(string directory, string provider, string market,
             string instrument, string feedEnvironment, string feedLabel, string tickSize,
@@ -144,6 +147,7 @@ namespace AiTrader.MarketData
         {
             if (closed) return;
             closed = true;
+            closeReason = reason;
             if (timer != null) timer.Dispose();
             int records = sequence;
             sequence++;

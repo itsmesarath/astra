@@ -1,6 +1,6 @@
 # Roadmap realignment: NinjaTrader live data → paper → controlled learning → live
 
-Date: 16 October 2026. Status: **PROPOSED, waiting for the owner's decision.** This file replaces no existing plan. Nothing has been deleted, staged or committed, and no accepted code was changed.
+Date: 16 October 2026. Status: **ADOPTED by the owner on 16 Oct 2026, 17:02 Lisbon** (decisions in §7). This file replaces no existing plan. Nothing has been deleted, staged or committed, and no accepted code was changed.
 
 ## 1. Verdict: the project has drifted off track
 
@@ -131,7 +131,14 @@ Exit: an owner-signed go/no-go after the P4/P5 evidence.
 
 The authoritative plan (`AUTONOMOUS_SYSTEM_PLAN.md`) is centred on BTCUSDT Spot via Binance. The owner's stated goal is NinjaTrader. **Proposed: make NinjaTrader futures (6E/M6E first) the primary track.** BTC Spot becomes a secondary research track; its components are reused where they are generic (ledger, risk, features, training). The owner must confirm this.
 
-## 7. Open decisions for the owner
+## 7. Owner decisions (16 Oct 2026)
+
+1. Intake proof chain: **PAUSED** (preserved; resume only if archive provenance becomes the bottleneck).
+2. Primary track: **NinjaTrader 6E**, with **M6E** for the eventual live pilot. BTC Spot becomes secondary.
+3. Snapshot: **committed** on local branch `wip/2026-10-16-snapshot` (commit 87c6a8f; not pushed; `main` unchanged).
+4. Rigor: **three tiers adopted**; `AGENTS.md` updated.
+
+Original questions as asked:
 
 1. Pause the intake proof chain (recommended), or continue it in parallel?
 2. Make NinjaTrader 6E/M6E the primary track, and choose the instrument (6E, M6E or another CME contract)?

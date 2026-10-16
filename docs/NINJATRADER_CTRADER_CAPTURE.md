@@ -78,3 +78,18 @@ Both original and bundled NinjaTrader sources compiled against the installed Nin
 An isolated C# smoke harness wrote explicitly synthetic files and exercised timed shutdown and the event-count limit. Python accepted their transport structure and correctly left training disabled. No trading platform was loaded by that harness; these files are not market data. The NuGet reference package used for compilation has SHA256 `571bb550d5b81e9efaf6ae8381bfddba2209ed308c209a4fff770ae88dd96b37` and remains local in ignored logs.
 
 Next, verify the NinjaTrader connection and CME depth entitlement, build/import the indicator, and audit one minute of real observations. Then verify the cTrader demo broker and gather a concurrent pair with explicit clock evidence. Only after those checks should we build a strict depth reconstructor and evaluate futures signals against broker-specific EURUSD prices and costs. The previous cost-model rejection remains unchanged.
+
+## Update 16 Oct 2026: M6E and full-session capture (roadmap P1)
+
+The NinjaTrader indicator now accepts the micro **M6E** contract (tick 0.0001) as well as **6E** (tick 0.00005). The offline auditor checks the tick grid for each. Every other contract, and continuous `##-##` charts, are still refused.
+
+For longer sessions, set **Total hours with rotating files** to 1–24. Each file keeps the same per-file limits: at most 60 minutes, 1,000,000 events and 64 MiB. When a file ends cleanly at one of those limits, the next market event opens a fresh file with a new session ID. Rotation continues until the total hours have passed, with at most 2,000 files.
+
+Any failure ends the whole capture and opens no new file. Failures include a feed reset, a platform state change, a clock jump or a writer error. The default is 0, which captures a single file as before. Every rotated file is an ordinary, independently auditable capture. Expect a short gap between files: a new file opens only at the next market event.
+
+Suggested first runs:
+
+1. **Smoke:** Enable capture on, 1 minute, Total hours 0, on a dated 6E or M6E chart with Level 2 visible. Audit the file.
+2. **Session:** 60-minute files, Total hours 8, during liquid hours (for example 08:00–16:00 Lisbon). Audit every file and keep all of them, including failures.
+
+C# changes are not compiled in this repository. Compile in the NinjaScript Editor and report any compiler message.

@@ -284,3 +284,40 @@ def test_source_packaging_is_self_contained_pinned_and_never_installs(tmp_path):
         )
     with pytest.raises(ValueError, match="overwrite"):
         package(target)
+
+
+def _micro(rows):
+    rows[0].update(market="M6E", instrument="M6E 12-26", tick_size="0.0001")
+    return rows
+
+
+def test_micro_m6e_capture_is_accepted_on_its_own_tick_grid(tmp_path):
+    result = capture.load_capture(save(tmp_path, _micro(records())))
+    assert result.summary["transport_format_valid"] is True
+    assert result.summary["training_ready"] is result.summary["trading_enabled"] is False
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda r: r[0].update(tick_size="0.00005"),  # M6E header with the 6E tick
+        lambda r: r[0].update(instrument="6E 12-26"),  # market/instrument mismatch
+        lambda r: r[0].update(instrument="M6E ##-##"),  # continuous contract refused
+        lambda r: r[0].update(market="MES", instrument="MES 12-26"),  # other contracts refused
+        lambda r: r[1].update(price="1.10005"),  # off the 0.0001 grid
+    ],
+)
+def test_micro_m6e_capture_still_fails_closed(tmp_path, change):
+    rows = _micro(records())
+    change(rows)
+    with pytest.raises(ValueError):
+        capture.load_capture(save(tmp_path, rows))
+
+
+def test_ninjatrader_adapter_rotates_only_after_clean_limits():
+    ninja = (ROOT / "integrations/ninjatrader/AiTraderSixEDataCapture.cs").read_text()
+    writer = (ROOT / "integrations/market_data/BoundedCaptureWriter.cs").read_text()
+    assert '"M6E"' in ninja and "TotalHours = 0" in ninja
+    for reason in ("duration_limit", "event_limit", "byte_limit"):
+        assert '"' + reason + '"' in ninja
+    assert "public string CloseReason" in writer
