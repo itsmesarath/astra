@@ -174,3 +174,35 @@ The owner asked to train on the downloaded 6E history *before* connecting NinjaT
 3. **Labels in cost units at the feasible horizons.** Compare taking liquidity with passive limit entries (modelled with conservative queue assumptions).
 4. **Models:** the existing NumPy baseline and walk-forward machinery; gradient-boosted trees or a small torch sequence model only if the baseline shows signal. PyTorch is already installed in `.venv`. Fit on 2025 only; open Jan–Mar 2026 once to validate.
 5. **Compute:** heavy decoding runs on the Windows machine, from a PowerShell command the owner starts. The linked VM is too small, with 2 CPUs and 3 GB RAM.
+
+## 9. Amendment 16 Oct 2026 (evening): execution venue and data — owner decisions
+
+Owner statements: wants intraday trading, 5–10 trades a day, patterns (breakouts, reversals,
+trends) combined with Level 2 "so entries are more perfect and losses smaller", a better P/L
+ratio; has an IC Markets account; intends to **take Level 2 from NinjaTrader (CME 6E book,
+customised CME plan ≈ €16/month) and execute on cTrader (IC Markets)**.
+
+Evidence that shaped the plan (docs/6E_SESSION_PRICE_ACTION_STUDY_20261016.md):
+- At sub-hour holds every pattern loses the cost; P/L ratio is a dial (wider target ⇒ lower
+  win rate, same expectancy). Trade count must come from breadth (many instruments), not from
+  lowering the bar on one.
+- The book carries no direction but works as a *filter*: the failed-breakout reversal with
+  the 4-hour trend, in the London window, only when the book is thick, is the first
+  non-negative candidate (~70 trades, CI includes zero).
+- IC Markets Raw Spread costs ≈ half of 6E round trip; micro lots allow live learning at
+  cents of risk; one account covers FX majors, gold, indices.
+
+Plan changes:
+- **P1 (capture)** unchanged: NinjaTrader `AiTraderSixEDataCapture` streams the 6E book.
+  Add a rolling 6E-minus-spot basis estimate so book levels map onto spot EURUSD.
+- **P3 (strategy research)**: multi-market, multi-year test on free Dukascopy 1-minute
+  history (`scripts/data/fetch_dukascopy_minutes.py`, `pa_multi_market_study.py`) with the
+  IC Markets cost model; the 6E archive remains the testbed for the book filters.
+- **P4 (paper)**: replace Sim101 with an **IC Markets cTrader demo via the cTrader Open
+  API**: engine reads the NinjaTrader book tail + cTrader prices, places bracket orders,
+  the auditor logs every decision with the book state that justified it. Trade only when
+  both feeds are live; flat before CME/CFD session gaps.
+- **P6 (live pilot)**: 0.01-lot live on IC Markets after a recorded demo period passes the
+  T2/T3 gates; NinjaTrader/CME futures execution deferred.
+- Entries are market-like at the CFD (no CME queue position); the 0.8-tick passive saving
+  does not transfer and is no longer assumed.

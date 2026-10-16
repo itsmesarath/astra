@@ -125,11 +125,12 @@ def pattern_signals(c, h, l, a, kind: str, rng: np.random.Generator | None = Non
 
 
 def simulate(c, h, l, a, mod, dayk, books, sig, entry: str, stop_k: float, rr: float, hold: int,
-             book_exit: bool, depth_ok: np.ndarray | None) -> list[dict]:
+             book_exit: bool, depth_ok: np.ndarray | None, cost: float | None = None) -> list[dict]:
     n = c.size
     trades = []
     busy_until = -1
-    cost = MARKET_COST if entry == "market" else PASSIVE_COST
+    if cost is None:
+        cost = MARKET_COST if entry == "market" else PASSIVE_COST
     for i in np.flatnonzero(sig):
         if i <= busy_until or mod[i] >= DAY_END:
             continue
