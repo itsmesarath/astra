@@ -171,7 +171,10 @@ def _hold(events: np.ndarray) -> np.ndarray:
 
 
 # ------------------------------------------------------------ backtest -------------------
-def backtest(m: dict, kind: str, entry: str, offset: float, stop_k: float, fee: float) -> list[dict]:
+def backtest(m: dict, kind: str, entry: str, offset: float, stop_k: float, fee: float,
+             agree_4h: bool = False, breakeven_after: float | None = None) -> list[dict]:
+    """agree_4h: only enter when the 240-minute move agrees with the signal (autopsy idea 1).
+    breakeven_after: once open profit reaches this many ticks, move the stop to entry (idea 2)."""
     bars = hourly_bars(m)
     a = atr(bars)
     target = signal_series(bars, kind, a)
@@ -215,6 +218,11 @@ def backtest(m: dict, kind: str, entry: str, offset: float, stop_k: float, fee: 
                 fill = (o[i] if gap else stop) - d  # 1 tick worse than the stop
                 close_trade(i, fill, "stop")
                 return
+            if breakeven_after is not None:
+                fav = (h[i] - position["entry_price"]) if d > 0 else (position["entry_price"] - l[i])
+                if fav >= breakeven_after:
+                    be = position["entry_price"]
+                    position["stop"] = max(position["stop"], be) if d > 0 else min(position["stop"], be)
 
     last_minute = -1
     for b in range(len(bars["close"])):
@@ -232,7 +240,17 @@ def backtest(m: dict, kind: str, entry: str, offset: float, stop_k: float, fee: 
             if want != d:  # signal exit at next minute's open with slippage
                 close_trade(i + 1, o[i + 1] - d, "signal")
                 last_minute = i + 1
-        if position is None and want != 0 and not must_be_flat(i + 1):
+        adj_close = c[i] + m["adj"][i]
+        if agree_4h and want != 0 and i >= 240:
+            move4h = adj_close - (c[i - 240] + m["adj"][i - 240])
+            if np.sign(move4h) != want:
+                want_entry = 0
+            else:
+                want_entry = want
+        else:
+            want_entry = want
+        if position is None and want_entry != 0 and not must_be_flat(i + 1):
+            want = want_entry
             if entry == "market":
                 price, at = o[i + 1] + want, i + 1
             else:
