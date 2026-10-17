@@ -41,3 +41,9 @@ dist/
 
 # Locally supplied licensed archives and course videos
 /downloads/
+
+# cTrader credentials and bridge audit (never commit)
+config/ctrader_demo.json
+config/ctrader_live.json
+config/ctrader_kill_switch
+logs/ctrader/
