@@ -46,3 +46,20 @@ compared against that.
   negative after 40 trades.
 - Trade frequency expectation: 3–6 per month on 6E alone. Breadth comes later from other
   CME books (ES/NQ for US indices, GC for gold), not from loosening the rule.
+
+## History connector (added 17 Oct 2026)
+
+`integrations/ninjatrader/AiTraderHistoryConnector.cs` is installed as a NinjaScript AddOn
+(bin/Custom/AddOns). It polls `Documents\NinjaTrader 8\ai-trader-requests\*.json` every 15 s and
+fulfils each request through BarsRequest, one JSONL file per CME session day under
+`ai-trader-history\<instrument>\tick_<date>.jsonl` (trade price, size, bid, ask) or `minute_<date>.jsonl`.
+Finished requests become `.done` / `.error`. Its log lines appear only if a NinjaScript Output window
+is open (Control Center → New → NinjaScript Output).
+
+Python: `python -m ai_trader.live.nt_history request "6E 12-26" 2026-10-01 2026-10-16`,
+`... status`, `... convert 6E_12-26 --output data/live/6e_history_bars` (buyer = trade at/above ask,
+seller = at/below bid; refuses lockbox days unless `--allow-lockbox`).
+
+Verified 17 Oct: 6E 12-26, 1–16 Oct 2026 → 1.2 M ticks, sessions 22:00–21:00 UTC, no overlaps;
+converted to 14 UTC day files. Feed lookback observed: tick history back to late Dec 2025.
+Level 2 is live-only; historical depth remains a Market Replay download (manual).
