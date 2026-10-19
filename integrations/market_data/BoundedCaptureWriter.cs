@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Threading;
 
@@ -129,18 +128,70 @@ namespace AiTrader.MarketData
             record.Add("sequence", sequence);
             record.Add("observed_utc_ns", utc);
             record.Add("elapsed_ns", elapsed);
-            using (var buffer = new MemoryStream())
+            string line = ToJson(record);
+            int length = Encoding.UTF8.GetByteCount(line);
+            if (length > 4095 || bytes + length + 1 > MaxBytes)
+                throw new InvalidOperationException("Capture byte budget exceeded.");
+            output.WriteLine(line);
+            output.Flush();
+            bytes += length + 1;
+        }
+
+
+        // Minimal JSON for flat records: strings, integers, doubles, booleans and null. No external
+        // serializer so the file compiles inside NinjaTrader's default references.
+        private static string ToJson(Dictionary<string, object> record)
+        {
+            var sb = new StringBuilder(256);
+            sb.Append('{');
+            bool first = true;
+            foreach (var pair in record)
             {
-                var serializer = new DataContractJsonSerializer(typeof(Dictionary<string, object>),
-                    new DataContractJsonSerializerSettings { UseSimpleDictionaryFormat = true });
-                serializer.WriteObject(buffer, record);
-                if (buffer.Length > 4095 || bytes + buffer.Length + 1 > MaxBytes)
-                    throw new InvalidOperationException("Capture byte budget exceeded.");
-                string line = Encoding.UTF8.GetString(buffer.ToArray());
-                output.WriteLine(line);
-                output.Flush();
-                bytes += buffer.Length + 1;
+                if (!first) sb.Append(',');
+                first = false;
+                AppendString(sb, pair.Key);
+                sb.Append(':');
+                AppendValue(sb, pair.Value);
             }
+            sb.Append('}');
+            return sb.ToString();
+        }
+
+        private static void AppendValue(StringBuilder sb, object value)
+        {
+            if (value == null) { sb.Append("null"); return; }
+            if (value is bool) { sb.Append((bool)value ? "true" : "false"); return; }
+            if (value is string) { AppendString(sb, (string)value); return; }
+            if (value is int || value is long || value is short || value is byte)
+            { sb.Append(Convert.ToInt64(value).ToString(CultureInfo.InvariantCulture)); return; }
+            if (value is double || value is float || value is decimal)
+            {
+                double d = Convert.ToDouble(value);
+                if (double.IsNaN(d) || double.IsInfinity(d)) throw new ArgumentException("Nonfinite value.");
+                sb.Append(d.ToString("R", CultureInfo.InvariantCulture)); return;
+            }
+            AppendString(sb, value.ToString());
+        }
+
+        private static void AppendString(StringBuilder sb, string text)
+        {
+            sb.Append('"');
+            foreach (char ch in text)
+            {
+                switch (ch)
+                {
+                    case '"': sb.Append("\\\""); break;
+                    case '\\': sb.Append("\\\\"); break;
+                    case '\n': sb.Append("\\n"); break;
+                    case '\r': sb.Append("\\r"); break;
+                    case '\t': sb.Append("\\t"); break;
+                    default:
+                        if (ch < 0x20) sb.Append("\\u").Append(((int)ch).ToString("x4"));
+                        else sb.Append(ch);
+                        break;
+                }
+            }
+            sb.Append('"');
         }
 
         private void FinishLocked(string reason, bool clean)

@@ -3,4 +3,4 @@ rem London-window live loop: capture -> rule -> DEMO bracket orders (only with -
 cd /d "%~dp0..\.."
 set PYTHONPATH=%CD%\src
 if not exist logs\live mkdir logs\live
-.venv\Scripts\python.exe -m ai_trader.live.live_loop %* >> logs\live\loop.log 2>&1
+.venv\Scripts\python.exe -u -m ai_trader.live.live_loop %* >> logs\live\loop.log 2>&1
