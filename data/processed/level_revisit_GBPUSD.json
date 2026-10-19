@@ -1,0 +1,315 @@
+{
+ "symbol": "GBPUSD",
+ "cost": 12,
+ "levels": 61617,
+ "events": 97271,
+ "traded_days": 1716,
+ "events_per_day": 56.68,
+ "all": {
+  "n": 97271,
+  "break": 0.397,
+  "hold": 0.57,
+  "net_fade": -0.44,
+  "net_break": -1.6
+ },
+ "dev": {
+  "n": 62241,
+  "break": 0.394,
+  "hold": 0.572,
+  "net_fade": -0.57,
+  "net_break": -1.48
+ },
+ "test": {
+  "n": 35030,
+  "break": 0.401,
+  "hold": 0.566,
+  "net_fade": -0.2,
+  "net_break": -1.83
+ },
+ "by_bucket": {
+  "b_approach": {
+   "fast": {
+    "dev": {
+     "n": 30715,
+     "break": 0.418,
+     "hold": 0.571,
+     "net_fade": -0.79,
+     "net_break": -1.27
+    },
+    "test": {
+     "n": 15079,
+     "break": 0.438,
+     "hold": 0.553,
+     "net_fade": -0.38,
+     "net_break": -1.64
+    }
+   },
+   "mid": {
+    "dev": {
+     "n": 17765,
+     "break": 0.431,
+     "hold": 0.537,
+     "net_fade": -0.77,
+     "net_break": -1.28
+    },
+    "test": {
+     "n": 11489,
+     "break": 0.434,
+     "hold": 0.541,
+     "net_fade": -0.4,
+     "net_break": -1.69
+    }
+   },
+   "slow": {
+    "dev": {
+     "n": 13761,
+     "break": 0.294,
+     "hold": 0.619,
+     "net_fade": 0.19,
+     "net_break": -2.18
+    },
+    "test": {
+     "n": 8462,
+     "break": 0.289,
+     "hold": 0.624,
+     "net_fade": 0.38,
+     "net_break": -2.37
+    }
+   }
+  },
+  "b_trend4": {
+   "against": {
+    "dev": {
+     "n": 10610,
+     "break": 0.331,
+     "hold": 0.629,
+     "net_fade": -0.8,
+     "net_break": -1.32
+    },
+    "test": {
+     "n": 5071,
+     "break": 0.383,
+     "hold": 0.568,
+     "net_fade": -0.72,
+     "net_break": -1.21
+    }
+   },
+   "with": {
+    "dev": {
+     "n": 51631,
+     "break": 0.407,
+     "hold": 0.56,
+     "net_fade": -0.52,
+     "net_break": -1.51
+    },
+    "test": {
+     "n": 29959,
+     "break": 0.404,
+     "hold": 0.566,
+     "net_fade": -0.11,
+     "net_break": -1.93
+    }
+   }
+  },
+  "b_touch": {
+   "first": {
+    "dev": {
+     "n": 31892,
+     "break": 0.404,
+     "hold": 0.578,
+     "net_fade": -0.93,
+     "net_break": -1.31
+    },
+    "test": {
+     "n": 17104,
+     "break": 0.434,
+     "hold": 0.55,
+     "net_fade": -0.51,
+     "net_break": -1.52
+    }
+   },
+   "repeat": {
+    "dev": {
+     "n": 30349,
+     "break": 0.384,
+     "hold": 0.564,
+     "net_fade": -0.19,
+     "net_break": -1.66
+    },
+    "test": {
+     "n": 17926,
+     "break": 0.369,
+     "hold": 0.581,
+     "net_fade": 0.09,
+     "net_break": -2.12
+    }
+   }
+  },
+  "b_age": {
+   "<1d": {
+    "dev": {
+     "n": 25158,
+     "break": 0.389,
+     "hold": 0.576,
+     "net_fade": -0.5,
+     "net_break": -1.36
+    },
+    "test": {
+     "n": 13017,
+     "break": 0.386,
+     "hold": 0.583,
+     "net_fade": -0.35,
+     "net_break": -1.9
+    }
+   },
+   "<4h": {
+    "dev": {
+     "n": 29226,
+     "break": 0.407,
+     "hold": 0.555,
+     "net_fade": -0.64,
+     "net_break": -1.48
+    },
+    "test": {
+     "n": 18154,
+     "break": 0.412,
+     "hold": 0.552,
+     "net_fade": -0.28,
+     "net_break": -1.63
+    }
+   },
+   ">1d": {
+    "dev": {
+     "n": 7857,
+     "break": 0.362,
+     "hold": 0.619,
+     "net_fade": -0.55,
+     "net_break": -1.83
+    },
+    "test": {
+     "n": 3859,
+     "break": 0.402,
+     "hold": 0.574,
+     "net_fade": 0.7,
+     "net_break": -2.55
+    }
+   }
+  },
+  "b_window": {
+   "london": {
+    "dev": {
+     "n": 8716,
+     "break": 0.403,
+     "hold": 0.597,
+     "net_fade": -0.29,
+     "net_break": -1.35
+    },
+    "test": {
+     "n": 4420,
+     "break": 0.455,
+     "hold": 0.515,
+     "net_fade": -1.02,
+     "net_break": -0.98
+    }
+   },
+   "ny": {
+    "dev": {
+     "n": 8191,
+     "break": 0.425,
+     "hold": 0.574,
+     "net_fade": -0.58,
+     "net_break": -1.86
+    },
+    "test": {
+     "n": 5673,
+     "break": 0.442,
+     "hold": 0.557,
+     "net_fade": -0.76,
+     "net_break": -0.99
+    }
+   },
+   "other": {
+    "dev": {
+     "n": 45334,
+     "break": 0.387,
+     "hold": 0.566,
+     "net_fade": -0.62,
+     "net_break": -1.43
+    },
+    "test": {
+     "n": 24937,
+     "break": 0.382,
+     "hold": 0.577,
+     "net_fade": 0.07,
+     "net_break": -2.17
+    }
+   }
+  }
+ },
+ "policy": {
+  "mid|against": {
+   "choice": "skip",
+   "dev_fade": -0.88,
+   "dev_break": -1.47,
+   "n_dev": 3355,
+   "n_test": 1943
+  },
+  "fast|with": {
+   "choice": "skip",
+   "dev_fade": -0.82,
+   "dev_break": -1.28,
+   "n_dev": 26383,
+   "n_test": 13365
+  },
+  "fast|against": {
+   "choice": "skip",
+   "dev_fade": -0.62,
+   "dev_break": -1.26,
+   "n_dev": 4332,
+   "n_test": 1714
+  },
+  "slow|against": {
+   "choice": "skip",
+   "dev_fade": -0.95,
+   "dev_break": -1.25,
+   "n_dev": 2923,
+   "n_test": 1414
+  },
+  "slow|with": {
+   "choice": "fade",
+   "dev_fade": 0.49,
+   "dev_break": -2.43,
+   "n_dev": 10838,
+   "n_test": 7048
+  },
+  "mid|with": {
+   "choice": "skip",
+   "dev_fade": -0.75,
+   "dev_break": -1.23,
+   "n_dev": 14410,
+   "n_test": 9546
+  }
+ },
+ "policy_dev": {
+  "n": 10838,
+  "mean_in_costs": 0.49
+ },
+ "policy_test": {
+  "n": 7048,
+  "mean_in_costs": 0.53,
+  "ci95_in_costs": [
+   0.34,
+   0.73
+  ],
+  "win": 0.437,
+  "per_day": 10.82
+ },
+ "config": {
+  "swing": 30,
+  "sharp": 1.0,
+  "tol": 0.2,
+  "expiry": 4320,
+  "horizon": 120,
+  "rr": 2.0
+ }
+}

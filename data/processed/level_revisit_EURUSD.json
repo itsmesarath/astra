@@ -1,0 +1,315 @@
+{
+ "symbol": "EURUSD",
+ "cost": 9,
+ "levels": 60061,
+ "events": 93929,
+ "traded_days": 1819,
+ "events_per_day": 51.64,
+ "all": {
+  "n": 93929,
+  "break": 0.406,
+  "hold": 0.57,
+  "net_fade": -0.3,
+  "net_break": -1.68
+ },
+ "dev": {
+  "n": 57879,
+  "break": 0.406,
+  "hold": 0.571,
+  "net_fade": -0.21,
+  "net_break": -1.68
+ },
+ "test": {
+  "n": 36050,
+  "break": 0.407,
+  "hold": 0.569,
+  "net_fade": -0.45,
+  "net_break": -1.68
+ },
+ "by_bucket": {
+  "b_approach": {
+   "fast": {
+    "dev": {
+     "n": 29339,
+     "break": 0.445,
+     "hold": 0.548,
+     "net_fade": -0.42,
+     "net_break": -1.64
+    },
+    "test": {
+     "n": 16079,
+     "break": 0.444,
+     "hold": 0.551,
+     "net_fade": -0.64,
+     "net_break": -1.46
+    }
+   },
+   "mid": {
+    "dev": {
+     "n": 16413,
+     "break": 0.414,
+     "hold": 0.555,
+     "net_fade": -0.33,
+     "net_break": -1.63
+    },
+    "test": {
+     "n": 11701,
+     "break": 0.427,
+     "hold": 0.549,
+     "net_fade": -0.51,
+     "net_break": -1.67
+    }
+   },
+   "slow": {
+    "dev": {
+     "n": 12127,
+     "break": 0.301,
+     "hold": 0.647,
+     "net_fade": 0.47,
+     "net_break": -1.86
+    },
+    "test": {
+     "n": 8270,
+     "break": 0.309,
+     "hold": 0.63,
+     "net_fade": 0.0,
+     "net_break": -2.11
+    }
+   }
+  },
+  "b_trend4": {
+   "against": {
+    "dev": {
+     "n": 9541,
+     "break": 0.39,
+     "hold": 0.589,
+     "net_fade": -0.65,
+     "net_break": -1.16
+    },
+    "test": {
+     "n": 5388,
+     "break": 0.382,
+     "hold": 0.596,
+     "net_fade": -0.74,
+     "net_break": -1.6
+    }
+   },
+   "with": {
+    "dev": {
+     "n": 48338,
+     "break": 0.409,
+     "hold": 0.567,
+     "net_fade": -0.12,
+     "net_break": -1.79
+    },
+    "test": {
+     "n": 30662,
+     "break": 0.412,
+     "hold": 0.564,
+     "net_fade": -0.4,
+     "net_break": -1.69
+    }
+   }
+  },
+  "b_touch": {
+   "first": {
+    "dev": {
+     "n": 29912,
+     "break": 0.427,
+     "hold": 0.559,
+     "net_fade": -0.46,
+     "net_break": -1.47
+    },
+    "test": {
+     "n": 17886,
+     "break": 0.433,
+     "hold": 0.556,
+     "net_fade": -0.67,
+     "net_break": -1.49
+    }
+   },
+   "repeat": {
+    "dev": {
+     "n": 27967,
+     "break": 0.384,
+     "hold": 0.583,
+     "net_fade": 0.06,
+     "net_break": -1.91
+    },
+    "test": {
+     "n": 18164,
+     "break": 0.382,
+     "hold": 0.581,
+     "net_fade": -0.24,
+     "net_break": -1.86
+    }
+   }
+  },
+  "b_age": {
+   "<1d": {
+    "dev": {
+     "n": 23277,
+     "break": 0.4,
+     "hold": 0.584,
+     "net_fade": -0.16,
+     "net_break": -1.82
+    },
+    "test": {
+     "n": 13509,
+     "break": 0.395,
+     "hold": 0.581,
+     "net_fade": -0.55,
+     "net_break": -1.64
+    }
+   },
+   "<4h": {
+    "dev": {
+     "n": 27413,
+     "break": 0.43,
+     "hold": 0.542,
+     "net_fade": -0.43,
+     "net_break": -1.35
+    },
+    "test": {
+     "n": 18768,
+     "break": 0.417,
+     "hold": 0.557,
+     "net_fade": -0.56,
+     "net_break": -1.64
+    }
+   },
+   ">1d": {
+    "dev": {
+     "n": 7189,
+     "break": 0.331,
+     "hold": 0.637,
+     "net_fade": 0.49,
+     "net_break": -2.53
+    },
+    "test": {
+     "n": 3773,
+     "break": 0.404,
+     "hold": 0.58,
+     "net_fade": 0.46,
+     "net_break": -1.99
+    }
+   }
+  },
+  "b_window": {
+   "london": {
+    "dev": {
+     "n": 7504,
+     "break": 0.428,
+     "hold": 0.572,
+     "net_fade": -0.34,
+     "net_break": -1.66
+    },
+    "test": {
+     "n": 4800,
+     "break": 0.444,
+     "hold": 0.556,
+     "net_fade": -1.22,
+     "net_break": -0.84
+    }
+   },
+   "ny": {
+    "dev": {
+     "n": 8724,
+     "break": 0.456,
+     "hold": 0.534,
+     "net_fade": -0.53,
+     "net_break": -0.75
+    },
+    "test": {
+     "n": 5836,
+     "break": 0.447,
+     "hold": 0.55,
+     "net_fade": -0.8,
+     "net_break": -1.03
+    }
+   },
+   "other": {
+    "dev": {
+     "n": 41651,
+     "break": 0.392,
+     "hold": 0.578,
+     "net_fade": -0.12,
+     "net_break": -1.88
+    },
+    "test": {
+     "n": 25414,
+     "break": 0.391,
+     "hold": 0.575,
+     "net_fade": -0.23,
+     "net_break": -1.98
+    }
+   }
+  }
+ },
+ "policy": {
+  "mid|against": {
+   "choice": "skip",
+   "dev_fade": -0.78,
+   "dev_break": -1.14,
+   "n_dev": 2992,
+   "n_test": 2109
+  },
+  "slow|against": {
+   "choice": "skip",
+   "dev_fade": -0.63,
+   "dev_break": -0.68,
+   "n_dev": 2114,
+   "n_test": 1415
+  },
+  "mid|with": {
+   "choice": "skip",
+   "dev_fade": -0.23,
+   "dev_break": -1.74,
+   "n_dev": 13421,
+   "n_test": 9592
+  },
+  "fast|with": {
+   "choice": "skip",
+   "dev_fade": -0.39,
+   "dev_break": -1.69,
+   "n_dev": 24904,
+   "n_test": 14215
+  },
+  "slow|with": {
+   "choice": "fade",
+   "dev_fade": 0.7,
+   "dev_break": -2.1,
+   "n_dev": 10013,
+   "n_test": 6855
+  },
+  "fast|against": {
+   "choice": "skip",
+   "dev_fade": -0.58,
+   "dev_break": -1.39,
+   "n_dev": 4435,
+   "n_test": 1864
+  }
+ },
+ "policy_dev": {
+  "n": 10013,
+  "mean_in_costs": 0.7
+ },
+ "policy_test": {
+  "n": 6855,
+  "mean_in_costs": 0.05,
+  "ci95_in_costs": [
+   -0.16,
+   0.27
+  ],
+  "win": 0.429,
+  "per_day": 10.52
+ },
+ "config": {
+  "swing": 30,
+  "sharp": 1.0,
+  "tol": 0.2,
+  "expiry": 4320,
+  "horizon": 120,
+  "rr": 2.0
+ }
+}

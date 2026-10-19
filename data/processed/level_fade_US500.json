@@ -1,0 +1,112 @@
+{
+ "symbol": "US500",
+ "rr": 2.0,
+ "window": "all",
+ "rows": [
+  {
+   "year": 2021,
+   "n": 866,
+   "per_day": 3.34,
+   "win": 0.383,
+   "net_in_costs": -0.15,
+   "mean_R": -0.057,
+   "sum_R": -49.4,
+   "pf": 0.97,
+   "exits": {
+    "stop": 493,
+    "target": 280,
+    "time": 93
+   }
+  },
+  {
+   "year": 2022,
+   "n": 853,
+   "per_day": 3.27,
+   "win": 0.414,
+   "net_in_costs": 2.1,
+   "mean_R": 0.099,
+   "sum_R": 84.1,
+   "pf": 1.24,
+   "exits": {
+    "stop": 476,
+    "target": 301,
+    "time": 76
+   }
+  },
+  {
+   "year": 2023,
+   "n": 887,
+   "per_day": 3.4,
+   "win": 0.384,
+   "net_in_costs": 0.12,
+   "mean_R": -0.059,
+   "sum_R": -52.3,
+   "pf": 1.02,
+   "exits": {
+    "stop": 510,
+    "target": 302,
+    "time": 75
+   }
+  },
+  {
+   "year": 2024,
+   "n": 925,
+   "per_day": 3.54,
+   "win": 0.385,
+   "net_in_costs": -0.21,
+   "mean_R": -0.07,
+   "sum_R": -64.8,
+   "pf": 0.96,
+   "exits": {
+    "stop": 529,
+    "target": 288,
+    "time": 108
+   }
+  },
+  {
+   "year": 2025,
+   "n": 890,
+   "per_day": 3.41,
+   "win": 0.398,
+   "net_in_costs": 0.36,
+   "mean_R": 0.025,
+   "sum_R": 22.6,
+   "pf": 1.04,
+   "exits": {
+    "stop": 495,
+    "target": 285,
+    "time": 110
+   }
+  },
+  {
+   "year": 2026,
+   "n": 452,
+   "per_day": 3.5,
+   "win": 0.358,
+   "net_in_costs": -0.46,
+   "mean_R": -0.053,
+   "sum_R": -24.1,
+   "pf": 0.96,
+   "exits": {
+    "stop": 269,
+    "target": 132,
+    "time": 51
+   }
+  },
+  {
+   "year": "all",
+   "n": 4873,
+   "per_day": 3.4,
+   "win": 0.389,
+   "net_in_costs": 0.35,
+   "mean_R": -0.017,
+   "sum_R": -83.9,
+   "pf": 1.05,
+   "exits": {
+    "stop": 2772,
+    "target": 1588,
+    "time": 513
+   }
+  }
+ ]
+}

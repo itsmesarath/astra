@@ -1,0 +1,112 @@
+{
+ "symbol": "GBPUSD",
+ "rr": 2.0,
+ "window": "all",
+ "rows": [
+  {
+   "year": 2021,
+   "n": 1015,
+   "per_day": 3.91,
+   "win": 0.405,
+   "net_in_costs": 0.18,
+   "mean_R": 0.003,
+   "sum_R": 3.5,
+   "pf": 1.04,
+   "exits": {
+    "stop": 535,
+    "target": 334,
+    "time": 146
+   }
+  },
+  {
+   "year": 2022,
+   "n": 968,
+   "per_day": 3.71,
+   "win": 0.403,
+   "net_in_costs": 0.37,
+   "mean_R": -0.001,
+   "sum_R": -1.3,
+   "pf": 1.06,
+   "exits": {
+    "stop": 526,
+    "target": 308,
+    "time": 134
+   }
+  },
+  {
+   "year": 2023,
+   "n": 926,
+   "per_day": 3.55,
+   "win": 0.388,
+   "net_in_costs": 0.07,
+   "mean_R": -0.084,
+   "sum_R": -77.6,
+   "pf": 1.02,
+   "exits": {
+    "stop": 513,
+    "target": 291,
+    "time": 122
+   }
+  },
+  {
+   "year": 2024,
+   "n": 1003,
+   "per_day": 3.84,
+   "win": 0.406,
+   "net_in_costs": -0.13,
+   "mean_R": -0.052,
+   "sum_R": -51.9,
+   "pf": 0.96,
+   "exits": {
+    "stop": 524,
+    "target": 321,
+    "time": 158
+   }
+  },
+  {
+   "year": 2025,
+   "n": 980,
+   "per_day": 3.76,
+   "win": 0.376,
+   "net_in_costs": -0.38,
+   "mean_R": -0.076,
+   "sum_R": -74.5,
+   "pf": 0.92,
+   "exits": {
+    "stop": 541,
+    "target": 295,
+    "time": 144
+   }
+  },
+  {
+   "year": 2026,
+   "n": 455,
+   "per_day": 3.52,
+   "win": 0.402,
+   "net_in_costs": 0.09,
+   "mean_R": -0.014,
+   "sum_R": -6.2,
+   "pf": 1.02,
+   "exits": {
+    "stop": 243,
+    "target": 149,
+    "time": 63
+   }
+  },
+  {
+   "year": "all",
+   "n": 5347,
+   "per_day": 3.73,
+   "win": 0.396,
+   "net_in_costs": 0.03,
+   "mean_R": -0.039,
+   "sum_R": -208.0,
+   "pf": 1.01,
+   "exits": {
+    "stop": 2882,
+    "target": 1698,
+    "time": 767
+   }
+  }
+ ]
+}
