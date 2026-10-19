@@ -130,17 +130,23 @@ def main(argv=None):
     p.add_argument("--warmup-book", type=Path, default=Path("data/processed/6e_book_minutes_dev_1"))
     p.add_argument("--state", type=Path, default=Path("logs/live/sent.jsonl"))
     p.add_argument("--config", type=Path, default=Path("config/ctrader_demo.json"))
-    p.add_argument("--arm", action="store_true", help="actually place DEMO orders (needs config); default logs only")
+    p.add_argument("--arm", action="store_true", help="actually place DEMO orders; default logs only")
+    p.add_argument("--transport", choices=["file", "api"], default="file",
+                   help="file = AiTraderFileBridge cBot inside cTrader (no API app needed); api = Open API (needs config)")
     p.add_argument("--once", action="store_true", help="run one cycle now and exit")
     p.add_argument("--interval", type=int, default=60)
     a = p.parse_args(argv)
     bridge = None
     if a.arm:
-        from ai_trader.live import ctrader_bridge as cb
-        cfg = cb.load_config(a.config)
-        host = tuple(cfg["host"]) if cfg.get("host") else cb.DEMO_HOST
-        bridge = cb.CTraderBridge(cb.TlsTransport(host), cfg, Path("logs/ctrader/audit.jsonl"))
-        print("bridge:", bridge.connect())
+        if a.transport == "api":
+            from ai_trader.live import ctrader_bridge as cb
+            cfg = cb.load_config(a.config)
+            host = tuple(cfg["host"]) if cfg.get("host") else cb.DEMO_HOST
+            bridge = cb.CTraderBridge(cb.TlsTransport(host), cfg, Path("logs/ctrader/audit.jsonl"))
+        else:
+            from ai_trader.live import ctrader_file_bridge as fb
+            bridge = fb.FileBridge()
+        print("bridge:", bridge.connect(), flush=True)
     state = LoopState(a.state)
     while True:
         now = datetime.now(timezone.utc)
