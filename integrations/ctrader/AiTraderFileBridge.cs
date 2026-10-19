@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Text;
 using System.Text.Json;
 using cAlgo.API;
@@ -45,12 +44,12 @@ namespace cAlgo.Robots
 
         protected override void OnStart()
         {
-            baseDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            baseDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 "cAlgo", "Data", "cBots", "AiTraderFileBridge");
-            ordersDir = Path.Combine(baseDir, "orders");
-            auditPath = Path.Combine(baseDir, "audit.log");
-            Directory.CreateDirectory(ordersDir);
-            File.WriteAllText(Path.Combine(baseDir, "status.json"),
+            ordersDir = System.IO.Path.Combine(baseDir, "orders");
+            auditPath = System.IO.Path.Combine(baseDir, "audit.log");
+            System.IO.Directory.CreateDirectory(ordersDir);
+            System.IO.File.WriteAllText(System.IO.Path.Combine(baseDir, "status.json"),
                 "{\"running\":true,\"is_live\":" + (Account.IsLive ? "true" : "false") + ",\"broker\":\"" + Account.BrokerName
                 + "\",\"account\":\"" + Account.Number + "\",\"symbol\":\"" + SymbolName + "\",\"pip_size\":"
                 + Symbol.PipSize.ToString(CultureInfo.InvariantCulture) + ",\"started_utc\":\"" + DateTime.UtcNow.ToString("o") + "\"}");
@@ -61,26 +60,26 @@ namespace cAlgo.Robots
 
         protected override void OnStop()
         {
-            try { File.WriteAllText(Path.Combine(baseDir, "status.json"), "{\"running\":false}"); } catch { }
+            try { System.IO.File.WriteAllText(System.IO.Path.Combine(baseDir, "status.json"), "{\"running\":false}"); } catch { }
             Audit("stopped");
         }
 
         protected override void OnTimer()
         {
             string[] files;
-            try { files = Directory.GetFiles(ordersDir, "*.json"); } catch { return; }
+            try { files = System.IO.Directory.GetFiles(ordersDir, "*.json"); } catch { return; }
             Array.Sort(files, StringComparer.Ordinal);
             foreach (string path in files)
             {
                 if (path.EndsWith(".done.json")) continue;
                 string donePath = path.Substring(0, path.Length - 5) + ".done.json";
-                if (File.Exists(donePath)) continue;
+                if (System.IO.File.Exists(donePath)) continue;
                 string result;
-                try { result = Handle(File.ReadAllText(path)); }
+                try { result = Handle(System.IO.File.ReadAllText(path)); }
                 catch (Exception ex) { result = Json(false, null, 0, "exception: " + ex.Message); }
-                File.WriteAllText(donePath + ".partial", result);
-                File.Move(donePath + ".partial", donePath);
-                Audit(Path.GetFileName(path) + " -> " + result);
+                System.IO.File.WriteAllText(donePath + ".partial", result);
+                System.IO.File.Move(donePath + ".partial", donePath);
+                Audit(System.IO.Path.GetFileName(path) + " -> " + result);
             }
         }
 
@@ -90,7 +89,7 @@ namespace cAlgo.Robots
             {
                 JsonElement root = doc.RootElement;
                 string action = Get(root, "action") ?? "place";
-                if (File.Exists(Path.Combine(baseDir, "KILL"))) return Json(false, null, 0, "kill switch present");
+                if (System.IO.File.Exists(System.IO.Path.Combine(baseDir, "KILL"))) return Json(false, null, 0, "kill switch present");
                 if (Account.IsLive) return Json(false, null, 0, "live account refused");
                 if (action == "reconcile") return Reconcile();
                 if (action == "close")
@@ -171,7 +170,7 @@ namespace cAlgo.Robots
 
         private void Audit(string text)
         {
-            try { File.AppendAllText(auditPath, DateTime.UtcNow.ToString("o") + " " + text + Environment.NewLine); } catch { }
+            try { System.IO.File.AppendAllText(auditPath, DateTime.UtcNow.ToString("o") + " " + text + Environment.NewLine); } catch { }
             Print(text);
         }
     }
