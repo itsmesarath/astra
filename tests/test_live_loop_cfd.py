@@ -33,6 +33,10 @@ def test_cfd_cycle_places_once(tmp_path, monkeypatch):
     out = ll.cfd_cycle(now, state, ["XAUUSD"], b, armed=True, lots=0.01, log=logs.append)
     assert len(out) == 1 and out[0]["action"] == "placed" and b.placed[0]["symbol"] == "XAUUSD"
     assert ll.cfd_cycle(now, state, ["XAUUSD"], b, armed=True, lots=0.01, log=logs.append) == []  # same key: not resent
+    dec["minute_utc"] = "13:36"   # next minute, same symbol still open: skipped, not refused
+    assert ll.cfd_cycle(now.replace(minute=37), state, ["XAUUSD"], b, armed=True, lots=0.01, log=logs.append) == []
+    assert len(b.placed) == 1
+    dec["minute_utc"] = "13:35"
     # outside the window nothing is evaluated
     assert ll.cfd_cycle(now.replace(hour=11), state, ["XAUUSD"], b, armed=True, lots=0.01, log=logs.append) == []
     # unarmed: logged only

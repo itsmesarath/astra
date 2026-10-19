@@ -1,4 +1,5 @@
-// AiTraderFileBridge: file-driven DEMO order and data bridge for cTrader Automate (cBot).
+// AiTraderFileBridge v2: file-driven DEMO order and data bridge for cTrader Automate (cBot).
+// Single-instance: if two instances run, one holds instance.lock and the other stands by.
 //
 // The Python live loop writes one JSON intent per file into this cBot's data folder, sub-folder
 // "orders" (Documents\cAlgo\Data\cBots\AiTraderFileBridge\orders\<id>.json):
@@ -37,6 +38,9 @@ namespace cAlgo.Robots
         private string ordersDir;
         private string auditPath;
         private string configPath;
+        private string lockPath;
+        private readonly string instanceId = Guid.NewGuid().ToString("N");
+        private bool active = false;
 
         // limits (from bridge_config.json; defaults below)
         private double maxLots = 0.01;
@@ -51,12 +55,12 @@ namespace cAlgo.Robots
             ordersDir = System.IO.Path.Combine(baseDir, "orders");
             auditPath = System.IO.Path.Combine(baseDir, "audit.log");
             configPath = System.IO.Path.Combine(baseDir, "bridge_config.json");
+            lockPath = System.IO.Path.Combine(baseDir, "instance.lock");
             System.IO.Directory.CreateDirectory(ordersDir);
             if (!System.IO.File.Exists(configPath))
                 System.IO.File.WriteAllText(configPath,
                     "{\"max_lots\":0.01,\"max_positions\":2,\"allowed_symbols\":[\"EURUSD\",\"XAUUSD\"],\"label_prefix\":\"aitrader\"}");
             LoadConfig();
-            WriteStatus(true);
             Audit("started v2; live=" + Account.IsLive + " broker=" + Account.BrokerName + " chart=" + SymbolName
                   + " allowed=" + string.Join(",", allowed) + " maxLots=" + maxLots + " maxPositions=" + maxPositions);
             if (Account.IsLive) { Audit("LIVE account: bridge refuses every intent"); }
@@ -65,8 +69,38 @@ namespace cAlgo.Robots
 
         protected override void OnStop()
         {
-            try { System.IO.File.WriteAllText(System.IO.Path.Combine(baseDir, "status.json"), "{\"running\":false}"); } catch { }
-            Audit("stopped");
+            if (active)
+            {
+                try { System.IO.File.WriteAllText(System.IO.Path.Combine(baseDir, "status.json"), "{\"running\":false}"); } catch { }
+                try { System.IO.File.Delete(lockPath); } catch { }
+            }
+            Audit("stopped (" + (active ? "active" : "standby") + " instance " + instanceId.Substring(0, 8) + ")");
+        }
+
+        // Only one running instance may act on the orders folder. The active one refreshes
+        // instance.lock every second; another instance stays on standby until the lock is stale (>5 s).
+        private bool ClaimLock()
+        {
+            try
+            {
+                if (System.IO.File.Exists(lockPath))
+                {
+                    string[] parts = System.IO.File.ReadAllText(lockPath).Split('|');
+                    if (parts.Length == 2 && parts[0] != instanceId)
+                    {
+                        DateTime t;
+                        if (DateTime.TryParse(parts[1], null, DateTimeStyles.RoundtripKind, out t) && (DateTime.UtcNow - t).TotalSeconds < 5)
+                        {
+                            if (active) { active = false; Audit("lost lock to instance " + parts[0].Substring(0, 8) + "; standby"); }
+                            return false;
+                        }
+                    }
+                }
+                System.IO.File.WriteAllText(lockPath, instanceId + "|" + DateTime.UtcNow.ToString("o"));
+                if (!active) { active = true; Audit("active instance " + instanceId.Substring(0, 8) + " on chart " + SymbolName); WriteStatus(true); }
+                return true;
+            }
+            catch { return active; }
         }
 
         private void LoadConfig()
@@ -123,6 +157,7 @@ namespace cAlgo.Robots
 
         protected override void OnTimer()
         {
+            if (!ClaimLock()) return;
             LoadConfig();
             string[] files;
             try { files = System.IO.Directory.GetFiles(ordersDir, "*.json"); } catch { return; }

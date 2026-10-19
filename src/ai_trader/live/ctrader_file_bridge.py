@@ -45,11 +45,8 @@ class FileBridge:
     def _send(self, intent: dict, audit_result: bool = True) -> dict:
         if not self.orders.exists():
             raise BridgeError(f"cBot folder not found: {self.orders} (is AiTraderFileBridge running in cTrader?)")
-        status_path = self.base / "status.json"
-        if status_path.exists():
-            status = json.loads(status_path.read_text() or "{}")
-            if not status.get("running", False):
-                raise BridgeError("cBot is not running")
+        if not self._alive():
+            raise BridgeError("cBot is not running (no fresh instance.lock heartbeat and status.json not running)")
         intent = {"id": uuid.uuid4().hex, **intent}
         path = self.orders / f"{intent['id']}.json"
         tmp = path.with_suffix(".partial")
@@ -71,6 +68,21 @@ class FileBridge:
             time.sleep(0.25)
         self._audit("timeout", id=intent["id"])
         raise BridgeError("no response from cBot within timeout")
+
+    def _alive(self) -> bool:
+        """v2 cBots refresh instance.lock every second; fall back to status.json for v1."""
+        lock = self.base / "instance.lock"
+        try:
+            if lock.exists():
+                _id, stamp = lock.read_text().strip().split("|")
+                age = datetime.now(timezone.utc) - datetime.fromisoformat(stamp[:26] + "+00:00")
+                return age.total_seconds() < 5
+        except Exception:
+            pass
+        status_path = self.base / "status.json"
+        if status_path.exists():
+            return bool(json.loads(status_path.read_text() or "{}").get("running", False))
+        return True
 
     # interface shared with CTraderBridge
     def connect(self) -> dict:

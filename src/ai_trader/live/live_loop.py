@@ -110,6 +110,8 @@ def cfd_cycle(now: datetime, state: LoopState, symbols: list[str], bridge, armed
         key = f"{sym} {d['date']} {d['minute_utc']} {d['side']}"
         if any(r["key"] == key for r in state.rows):
             continue
+        if any(r["intent"].get("symbol") == sym for r in state.open_orders()):
+            continue  # one position per symbol, as in the study (consecutive signal minutes)
         intent = cs.intent_from_decision(d, lots=lots)
         row = {"key": key, "utc": now.isoformat(timespec="seconds"), "decision": d, "intent": intent}
         if armed:
