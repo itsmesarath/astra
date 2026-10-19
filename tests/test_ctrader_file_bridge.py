@@ -28,6 +28,8 @@ class FakeCBot(threading.Thread):
                     res = {"ok": False, "error": "kill switch present"}
                 elif self.is_live:
                     res = {"ok": False, "error": "live account refused"}
+                elif intent["action"] == "bars":
+                    res = {"ok": True, "symbol": intent["symbol"], "bars": [[1760000000000 + 60000 * i, 1.1, 1.2, 1.0, 1.1, 5] for i in range(intent["count"])]}
                 elif intent["action"] == "reconcile":
                     res = {"ok": True, "is_live": self.is_live, "broker": "Demo", "balance": 10000.0, "positions": list(self.positions)}
                 elif intent["action"] == "place":
@@ -50,8 +52,13 @@ def test_place_close_and_limits(tmp_path):
     out = b.place_bracket("EURUSD", "BUY", 0.01, 0.0006, 0.0018, "shadow test")
     assert out["position_id"] == 900 and out["execution_type"] == "ORDER_FILLED"
     assert len(b.open_positions()) == 1
-    with pytest.raises(fb.BridgeError, match="max open"):
+    with pytest.raises(fb.BridgeError, match="already in a position"):
         b.place_bracket("EURUSD", "SELL", 0.01, 0.0006, 0.0018, "second")
+    assert b.place_bracket("XAUUSD", "SELL", 0.01, 6.0, 18.0, "gold")["position_id"] == 901
+    with pytest.raises(fb.BridgeError, match="max open"):
+        b.place_bracket("EURUSD", "SELL", 0.01, 0.0006, 0.0018, "third")
+    assert b.close_position(901)["execution_type"] == "ORDER_FILLED"
+    assert len(b.bars("XAUUSD", 7)) == 7
     with pytest.raises(fb.BridgeError, match="exceeds max"):
         b.place_bracket("EURUSD", "SELL", 0.05, 0.0006, 0.0018, "big")
     assert b.close_position(900)["execution_type"] == "ORDER_FILLED"

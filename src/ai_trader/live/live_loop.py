@@ -7,7 +7,10 @@ Each cycle (default every 60 s between 06:55 and 09:05 UTC, plus housekeeping un
    turned into a bracket intent (ctrader_bridge.intent_from_decision) and, if the loop is **armed**
    and a bridge is available, placed on the DEMO account; otherwise it is logged as ``would_place``;
 4. positions opened by this loop are closed after ``hold`` minutes or at 20:55 UTC (the bracket's own
-   stop/target close them earlier at the broker).
+   stop/target close them earlier at the broker);
+5. for each CFD stream (``--cfd-symbols XAUUSD``) in its session windows, the last ~3 days of minute bars
+   are pulled from cTrader through the file bridge and the book-free reversal rule (cfd_signals) is
+   evaluated for the minute that just closed.
 
 State lives in ``logs/live/sent.jsonl`` (one row per decision handled) so restarts never resend.
 A kill-switch file stops orders without stopping the loop. Nothing here is a learning loop: the
@@ -24,6 +27,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from ai_trader.live import capture_minutes as cm
+from ai_trader.live import cfd_signals as cs
 from ai_trader.live import shadow_signals as ss
 
 WINDOW = (6 * 60 + 55, 9 * 60 + 5)   # minutes of UTC day in which entries are evaluated
@@ -83,11 +87,53 @@ def fresh_decisions(store: Path, warm_bars: Path | None, warm_book: Path | None,
     return fresh
 
 
+def cfd_window(cur: int, symbol: str, slack: int = 5) -> bool:
+    rule = cs.RULES[symbol]
+    return any(lo - slack <= cur <= hi + slack for lo, hi in cs.WINDOW_MINUTES[rule["window"]])
+
+
+def cfd_cycle(now: datetime, state: LoopState, symbols: list[str], bridge, armed: bool, lots: float, log=print) -> list[dict]:
+    """One pass over the CFD streams: bars from cTrader -> rule -> (demo) bracket; never raises."""
+    actions = []
+    cur = now.hour * 60 + now.minute
+    for sym in symbols:
+        if not cfd_window(cur, sym) or bridge is None:
+            continue
+        try:
+            bars = bridge.bars(sym, 4500)
+            d = cs.decide(sym, bars, now)
+        except Exception as exc:
+            log(f"{sym}: bars/decide failed: {exc}")
+            continue
+        if d is None:
+            continue
+        key = f"{sym} {d['date']} {d['minute_utc']} {d['side']}"
+        if any(r["key"] == key for r in state.rows):
+            continue
+        intent = cs.intent_from_decision(d, lots=lots)
+        row = {"key": key, "utc": now.isoformat(timespec="seconds"), "decision": d, "intent": intent}
+        if armed:
+            try:
+                result = bridge.place_bracket(**intent)
+                row.update(action="placed", result=result, close_after=(now + timedelta(minutes=d["hold"])).isoformat())
+            except Exception as exc:
+                row.update(action="refused", error=str(exc))
+        else:
+            row.update(action="would_place")
+        state.record(row)
+        actions.append(row)
+        log(f"{row['action']}: {key} stop {intent['stop_price_distance']} target {intent['target_price_distance']}")
+    return actions
+
+
 def cycle(now: datetime, state: LoopState, store: Path, capture_glob: str, warm_bars, warm_book,
-          bridge=None, armed: bool = False, lots: float = 0.01, hold: int = 240, log=print) -> list[dict]:
+          bridge=None, armed: bool = False, lots: float = 0.01, hold: int = 240, log=print,
+          cfd_symbols: list[str] | None = None) -> list[dict]:
     from ai_trader.live.ctrader_bridge import intent_from_decision
     actions = []
     cur = now.hour * 60 + now.minute
+    if cfd_symbols:
+        actions += cfd_cycle(now, state, cfd_symbols, bridge, armed, lots, log)
     if WINDOW[0] <= cur <= WINDOW[1]:
         n = convert_today(capture_glob, store)
         for d in fresh_decisions(store, warm_bars, warm_book, now):
@@ -133,6 +179,7 @@ def main(argv=None):
     p.add_argument("--arm", action="store_true", help="actually place DEMO orders; default logs only")
     p.add_argument("--transport", choices=["file", "api"], default="file",
                    help="file = AiTraderFileBridge cBot inside cTrader (no API app needed); api = Open API (needs config)")
+    p.add_argument("--cfd-symbols", nargs="*", default=[], help="CFD streams on cTrader bars, e.g. XAUUSD")
     p.add_argument("--once", action="store_true", help="run one cycle now and exit")
     p.add_argument("--interval", type=int, default=60)
     a = p.parse_args(argv)
@@ -147,10 +194,18 @@ def main(argv=None):
             from ai_trader.live import ctrader_file_bridge as fb
             bridge = fb.FileBridge()
         print("bridge:", bridge.connect(), flush=True)
+    elif a.cfd_symbols:
+        # unarmed: the file bridge is still needed to read bars (it never places without --arm)
+        from ai_trader.live import ctrader_file_bridge as fb
+        bridge = fb.FileBridge()
+        print("bridge (data only):", bridge.connect(), flush=True)
+    for sym in a.cfd_symbols:
+        if sym not in cs.RULES:
+            raise SystemExit(f"no rule for {sym}; known: {list(cs.RULES)}")
     state = LoopState(a.state)
     while True:
         now = datetime.now(timezone.utc)
-        cycle(now, state, a.store, a.capture_glob, a.warmup_bars, a.warmup_book, bridge, a.arm)
+        cycle(now, state, a.store, a.capture_glob, a.warmup_bars, a.warmup_book, bridge, a.arm, cfd_symbols=a.cfd_symbols)
         if a.once:
             break
         time.sleep(a.interval)

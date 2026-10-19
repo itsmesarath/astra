@@ -30,7 +30,7 @@ def default_base() -> Path:
 
 class FileBridge:
     def __init__(self, base: Path | None = None, audit_path: Path = Path("logs/ctrader/file_bridge_audit.jsonl"),
-                 max_lots: float = 0.01, max_open_positions: int = 1, symbols: tuple[str, ...] = ("EURUSD",),
+                 max_lots: float = 0.01, max_open_positions: int = 2, symbols: tuple[str, ...] = ("EURUSD", "XAUUSD"),
                  timeout: float = 15.0):
         self.base = base or default_base()
         self.orders = self.base / "orders"
@@ -42,7 +42,7 @@ class FileBridge:
         with self.audit_path.open("a") as fh:
             fh.write(json.dumps({"utc": datetime.now(timezone.utc).isoformat(timespec="milliseconds"), "kind": kind, **fields}) + "\n")
 
-    def _send(self, intent: dict) -> dict:
+    def _send(self, intent: dict, audit_result: bool = True) -> dict:
         if not self.orders.exists():
             raise BridgeError(f"cBot folder not found: {self.orders} (is AiTraderFileBridge running in cTrader?)")
         status_path = self.base / "status.json"
@@ -63,7 +63,10 @@ class FileBridge:
                 text = done.read_text()
                 if text.strip():
                     result = json.loads(text)
-                    self._audit("recv", id=intent["id"], **result)
+                    if audit_result:
+                        self._audit("recv", id=intent["id"], **result)
+                    else:
+                        self._audit("recv", id=intent["id"], ok=result.get("ok"), n=len(result.get("bars", [])), error=result.get("error"))
                     return result
             time.sleep(0.25)
         self._audit("timeout", id=intent["id"])
@@ -94,8 +97,11 @@ class FileBridge:
             raise BridgeError(f"lots {lots} exceeds max {self.max_lots}")
         if stop_price_distance <= 0 or target_price_distance <= 0:
             raise BridgeError("stop and target distances must be positive")
-        if len(self.open_positions()) >= self.max_open:
+        open_now = self.open_positions()
+        if len(open_now) >= self.max_open:
             raise BridgeError("max open positions reached")
+        if any(p.get("symbol") == symbol for p in open_now):
+            raise BridgeError(f"already in a position on {symbol}")
         r = self._send({"action": "place", "symbol": symbol, "side": side.upper(), "lots": lots,
                         "stop_price_distance": stop_price_distance, "target_price_distance": target_price_distance,
                         "label": label[:80]})
@@ -110,6 +116,13 @@ class FileBridge:
             raise BridgeError(r.get("error") or "close refused")
         return {"execution_type": "ORDER_FILLED"}
 
+    def bars(self, symbol: str, count: int = 4500) -> list[list]:
+        """Last ``count`` completed 1-minute bars of ``symbol`` from cTrader: [[open_ms, o, h, l, c, vol], ...]."""
+        r = self._send({"action": "bars", "symbol": symbol, "count": int(count)}, audit_result=False)
+        if not r.get("ok"):
+            raise BridgeError(r.get("error") or "bars refused")
+        return r["bars"]
+
     def close(self):
         pass
 
@@ -118,10 +131,15 @@ def main(argv=None):
     import argparse
     p = argparse.ArgumentParser(description="cTrader file bridge check: reconcile the demo account through the cBot")
     p.add_argument("--base", type=Path, default=None)
+    p.add_argument("--bars", default=None, help="symbol: print the last bars from cTrader")
+    p.add_argument("--count", type=int, default=5)
     a = p.parse_args(argv)
     b = FileBridge(a.base)
     print("connected:", b.connect())
     print("open positions:", b.open_positions())
+    if a.bars:
+        rows = b.bars(a.bars, a.count)
+        print(f"{len(rows)} bars; last:", rows[-3:])
 
 
 if __name__ == "__main__":
