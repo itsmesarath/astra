@@ -28,6 +28,7 @@ from pathlib import Path
 
 from ai_trader.live import capture_minutes as cm
 from ai_trader.live import cfd_signals as cs
+from ai_trader.live import level_tracker as lt
 from ai_trader.live import shadow_signals as ss
 
 WINDOW = (6 * 60 + 55, 9 * 60 + 5)   # minutes of UTC day in which entries are evaluated
@@ -182,6 +183,7 @@ def main(argv=None):
     p.add_argument("--transport", choices=["file", "api"], default="file",
                    help="file = AiTraderFileBridge cBot inside cTrader (no API app needed); api = Open API (needs config)")
     p.add_argument("--cfd-symbols", nargs="*", default=[], help="CFD streams on cTrader bars, e.g. XAUUSD")
+    p.add_argument("--no-levels", action="store_true", help="do not run the 6E level tracker each minute")
     p.add_argument("--once", action="store_true", help="run one cycle now and exit")
     p.add_argument("--interval", type=int, default=60)
     a = p.parse_args(argv)
@@ -205,9 +207,20 @@ def main(argv=None):
         if sym not in cs.RULES:
             raise SystemExit(f"no rule for {sym}; known: {list(cs.RULES)}")
     state = LoopState(a.state)
+    tracker = None if a.no_levels else lt.LevelTracker([Path("data/live/6e_history_bars"), a.store / "bars"], a.capture_glob,
+                                                        Path("logs/live/levels/events.jsonl"))
+    last_tracked = None
     while True:
         now = datetime.now(timezone.utc)
         cycle(now, state, a.store, a.capture_glob, a.warmup_bars, a.warmup_book, bridge, a.arm, cfd_symbols=a.cfd_symbols)
+        if tracker is not None and now.minute != last_tracked:
+            last_tracked = now.minute
+            try:
+                rep = tracker.run_once(now)
+                if rep.get("events"):
+                    print(f"levels: {rep['events']} new touch(es), {len(rep.get('active', []))} active levels", flush=True)
+            except Exception as exc:
+                print(f"level tracker failed: {exc}", flush=True)
         if a.once:
             break
         time.sleep(a.interval)
