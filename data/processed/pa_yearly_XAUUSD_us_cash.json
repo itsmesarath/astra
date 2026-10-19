@@ -1,0 +1,79 @@
+[
+ {
+  "year": 2021,
+  "n": 101,
+  "per_day": 0.39,
+  "win": 0.416,
+  "mean_pts": 1007.9,
+  "net_in_costs": 4.03,
+  "mean_R": 0.3,
+  "sum_R": 30.3,
+  "pf": 1.47
+ },
+ {
+  "year": 2022,
+  "n": 78,
+  "per_day": 0.3,
+  "win": 0.359,
+  "mean_pts": 106.3,
+  "net_in_costs": 0.43,
+  "mean_R": 0.057,
+  "sum_R": 4.5,
+  "pf": 1.04
+ },
+ {
+  "year": 2023,
+  "n": 111,
+  "per_day": 0.43,
+  "win": 0.306,
+  "mean_pts": -303.3,
+  "net_in_costs": -1.21,
+  "mean_R": -0.117,
+  "sum_R": -13.0,
+  "pf": 0.83
+ },
+ {
+  "year": 2024,
+  "n": 90,
+  "per_day": 0.34,
+  "win": 0.256,
+  "mean_pts": -952.9,
+  "net_in_costs": -3.81,
+  "mean_R": -0.252,
+  "sum_R": -22.7,
+  "pf": 0.73
+ },
+ {
+  "year": 2025,
+  "n": 73,
+  "per_day": 0.28,
+  "win": 0.384,
+  "mean_pts": 374.3,
+  "net_in_costs": 1.5,
+  "mean_R": -0.106,
+  "sum_R": -7.7,
+  "pf": 1.08
+ },
+ {
+  "year": 2026,
+  "n": 33,
+  "per_day": 0.26,
+  "win": 0.636,
+  "mean_pts": 10478.5,
+  "net_in_costs": 41.91,
+  "mean_R": 0.918,
+  "sum_R": 30.3,
+  "pf": 2.62
+ },
+ {
+  "year": "all",
+  "n": 486,
+  "per_day": 0.34,
+  "win": 0.362,
+  "mean_pts": 748.5,
+  "net_in_costs": 2.99,
+  "mean_R": 0.044,
+  "sum_R": 21.6,
+  "pf": 1.25
+ }
+]
